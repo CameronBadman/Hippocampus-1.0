@@ -215,31 +215,8 @@ def _infer_owner_count(values: Any) -> int | None:
     return None
 
 
-def _infer_width(values: Any, family_name: str) -> int:
-    if isinstance(values, PackedManifoldFamily):
-        return values.width
-    if isinstance(values, (RaggedManifoldComponents, DenseCandidateComponents)):
-        return values.width
-    if isinstance(values, torch.Tensor):
-        if values.ndim < 2:
-            raise ValueError(f"cannot infer {family_name} width")
-        return int(values.shape[-1])
-    if is_ragged_tuple(values):
-        return int(values[0].shape[-1])
-    if isinstance(values, Sequence):
-        for tensor in values:
-            if isinstance(tensor, torch.Tensor):
-                return int(tensor.shape[-1])
-    raise ValueError(
-        f"a GraphSchema is required because {family_name} width cannot be inferred"
-    )
-
-
 def _resolve_schema(
     topology: PackedTopology,
-    summaries: Any,
-    contexts: Any,
-    edges: Any,
     schema: GraphSchema | None,
 ) -> GraphSchema:
     if schema is not None:
@@ -248,10 +225,9 @@ def _resolve_schema(
         return schema
     if topology.schema is not None:
         return topology.schema
-    return GraphSchema(
-        summary_dim=_infer_width(summaries, "summary"),
-        context_dim=_infer_width(contexts, "context"),
-        edge_dim=_infer_width(edges, "edge"),
+    raise ValueError(
+        "pack_graph_from_topology requires a GraphSchema supplied by the "
+        "PackedTopology or the explicit schema keyword"
     )
 
 
@@ -308,9 +284,7 @@ def pack_graph_from_topology(
 
     if not isinstance(topology, PackedTopology):
         raise TypeError("topology must be a PackedTopology")
-    resolved_schema = _resolve_schema(
-        topology, summaries, contexts, edges, schema
-    )
+    resolved_schema = _resolve_schema(topology, schema)
     resolved_policy = (
         topology.execution_policy
         if execution_policy is None
