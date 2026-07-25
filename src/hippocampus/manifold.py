@@ -542,6 +542,28 @@ class PackedManifoldFamily:
         )
 
 
+def is_ragged_tuple(components: Any) -> bool:
+    if not (
+        isinstance(components, tuple)
+        and len(components) in (2, 3)
+        and isinstance(components[0], torch.Tensor)
+        and components[0].ndim == 2
+    ):
+        return False
+    offsets = components[1]
+    if isinstance(offsets, torch.Tensor):
+        return offsets.ndim == 1 and offsets.dtype in (
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+            torch.uint8,
+        )
+    if isinstance(offsets, Sequence):
+        return all(isinstance(offset, int) and not isinstance(offset, bool) for offset in offsets)
+    return False
+
+
 def value_tensors(components: Any) -> tuple[torch.Tensor, ...]:
     if isinstance(components, PackedManifoldFamily):
         tensors = [components.values]
@@ -555,12 +577,7 @@ def value_tensors(components: Any) -> tuple[torch.Tensor, ...]:
         return tuple(tensors)
     if isinstance(components, torch.Tensor):
         return (components,)
-    if (
-        isinstance(components, tuple)
-        and len(components) in (2, 3)
-        and isinstance(components[0], torch.Tensor)
-        and isinstance(components[1], (torch.Tensor, Sequence))
-    ):
+    if is_ragged_tuple(components):
         tensors = [components[0]]
         if len(components) == 3 and components[2] is not None:
             tensors.append(components[2])
@@ -675,11 +692,7 @@ def normalise_manifold_components(
             owner_count + 1, dtype=torch.int32, device=components.device
         )
         return RaggedManifoldComponents(components, offsets)
-    if (
-        isinstance(components, tuple)
-        and len(components) in (2, 3)
-        and isinstance(components[0], torch.Tensor)
-    ):
+    if is_ragged_tuple(components):
         return RaggedManifoldComponents(
             values=components[0],
             offsets=components[1],

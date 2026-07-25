@@ -185,6 +185,10 @@ def resolve_pack_config(
         device = torch.device(fallback_device or "cpu")
     else:
         device = torch.device(device)
+    if device.type == "cuda" and device.index is None:
+        if not torch.cuda.is_available():
+            raise RuntimeError("a CUDA pack target was requested, but CUDA is unavailable")
+        device = torch.device("cuda", torch.cuda.current_device())
     if dtype is None:
         dtype = fallback_dtype or torch.float32
 
