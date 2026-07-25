@@ -1,0 +1,59 @@
+{
+  "name": "tiny_overfit",
+  "schema": {
+    "summary_dim": 16,
+    "context_dim": 16,
+    "edge_dim": 16,
+    "query_dim": 16
+  },
+  "dataset": {
+    "version": "spider-programs-v0.1",
+    "split": "tiny_overfit",
+    "cases": 48,
+    "seed": 1101
+  },
+  "model": {
+    "kind": "spider",
+    "d_model": 32,
+    "num_heads": 4,
+    "num_blocks": 1,
+    "tied_recurrence": true,
+    "path_rows": 4,
+    "evidence_rows": 4,
+    "edge_mode": "standard",
+    "edge_transforms": 4,
+    "adapter_rank": 8,
+    "dropout": 0.0
+  },
+  "controller": {
+    "max_rounds": 6,
+    "frontier_width": 16,
+    "hypotheses_per_node": 2,
+    "context_read_budget": 4,
+    "max_depth": 8
+  },
+  "training": {
+    "stage": "tiny_overfit",
+    "steps": 500,
+    "batch_size": 8,
+    "learning_rate": 0.003,
+    "weight_decay": 0.0,
+    "seed": 17,
+    "device": "auto",
+    "dtype": "float32",
+    "log_every": 25,
+    "checkpoint_every": 100
+  },
+  "loss": {
+    "priority": 1.0,
+    "expand": 1.0,
+    "context": 0.5,
+    "evidence": 0.75,
+    "support_conflict": 0.5,
+    "remaining_cost": 0.25,
+    "termination": 1.0,
+    "consistency": 0.0,
+    "search_cost": 0.0,
+    "context_cost": 0.0
+  }
+}
