@@ -19,5 +19,9 @@ packages = ["src/hippocampus"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"
+pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "cuda: requires a CUDA-capable test process",
+]
 
