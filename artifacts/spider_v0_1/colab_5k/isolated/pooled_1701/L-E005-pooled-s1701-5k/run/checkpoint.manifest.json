@@ -1,0 +1,7 @@
+{
+  "checkpoint_path": "/content/spider-v01-colab-5k-isolated/L-E005-pooled-s1701-5k/run/checkpoint.pt",
+  "checkpoint_sha256": "aa1dac82040735efbd9f6bd3e4ddb1b66184c820311de74d64237deba9d49230",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "evidence_threshold": 0.23233048617839813,
+  "source_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746"
+}
