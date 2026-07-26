@@ -36,6 +36,16 @@
         "drive_size_verified": true,
         "drive_url": "https://drive.google.com/file/d/1zB5hHNJ1aZ_1ql79XZXDxhDnSX_LUYMZ/view?usp=drivesdk",
         "sha256": "26b3dee0df741088bdaf90aa74fb23d2d49c0adf9f09761d33fb05218f0443f6"
+      },
+      "checkpoint_step_004000.pt": {
+        "bytes": 3750143,
+        "drive_created_time": "2026-07-26T14:32:40.800Z",
+        "drive_id": "1W1_TFF-lno4G_h4G6nI_NNmLpm9hmZY3",
+        "drive_mime_type": "application/x-zip",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1W1_TFF-lno4G_h4G6nI_NNmLpm9hmZY3/view?usp=drivesdk",
+        "sha256": "5a2bc3738a153e575863bf0c3cde06d874f4190ae491bfc96ddc6b14735e1ed6"
       }
     }
   },
