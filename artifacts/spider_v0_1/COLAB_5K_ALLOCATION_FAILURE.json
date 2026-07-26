@@ -1,0 +1,27 @@
+{
+  "accepted_runs": 0,
+  "attempted_at": "2026-07-26T05:12:21Z",
+  "attempts": [
+    {
+      "accelerator": "H100",
+      "cleanup_succeeded": true,
+      "error": "Backend rejected accelerator 'H100'. You may not have quota or entitlement for this accelerator on your account.",
+      "failed_step": "provision",
+      "state": "failed"
+    },
+    {
+      "accelerator": "A100",
+      "cleanup_succeeded": true,
+      "error": "Backend rejected accelerator 'A100'. You may not have quota or entitlement for this accelerator on your account.",
+      "failed_step": "provision",
+      "state": "failed"
+    }
+  ],
+  "credits_consumed": false,
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "fallback_executed": false,
+  "next_action": "rerun the frozen protocol after H100 or A100 quota is available",
+  "protocol": "artifacts/spider_v0_1/COLAB_5K_PROTOCOL.json",
+  "sealed_access_count": 0,
+  "training_steps_completed": 0
+}
