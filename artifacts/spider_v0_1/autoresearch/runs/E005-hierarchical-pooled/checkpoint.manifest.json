@@ -1,0 +1,7 @@
+{
+  "checkpoint_path": "/home/cameron/projects/Hippocampus-1.0/artifacts/spider_v0_1/autoresearch/runs/E005-hierarchical-pooled/checkpoint.pt",
+  "checkpoint_sha256": "8ec985dde099e53fee61b15c714613d3974500ecabb1932f5967fe7767a2014b",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "evidence_threshold": 0.6779748201370239,
+  "source_commit": "496b7500042d2ac4a04edf9b362a874ba208ce53"
+}

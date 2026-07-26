@@ -1,0 +1,11 @@
+iteration	experiment_id	hypothesis	score	best_so_far	status	runtime_seconds	notes
+1	E000-old-checkpoint-corrected	The old checkpoint diagnoses controller correction without altering historical v0 evidence.	0.08380681818181818	0.08380681818181818	accepted	38.9532171979954	
+2	E001-unified-oracle	Unified post-transition state supervision removes feature and termination-boundary mismatch.	0.36363636363636365	0.36363636363636365	accepted	98.1976222979938	
+3	E002-scheduled-closed-loop	Independent scheduled actions expose recoverable model states and reduce autonomous one-round collapse.	0.2840909090909091	0.36363636363636365	accepted	101.71948431499914	
+4	E003-balanced-evidence	Balanced and set-level evidence pressure improves autonomous evidence recall.	0.30113636363636365	0.36363636363636365	accepted	96.06301234199782	
+5	E004-hierarchical-recurrent	Hierarchical stop/reason supervision improves autonomous success.	0.265625	0.36363636363636365	accepted	104.77169226400292	
+6	E005-hierarchical-pooled	A matched pooled controller is the fixed architectural control.	0.2784090909090909	0.36363636363636365	accepted	78.46486529999675	
+7	F-E004-hierarchical-recurrent-s502	Recurrent finalist independent-seed replicate.	0.34801136363636365	0.36363636363636365	accepted	100.47997447100352	
+8	F-E005-hierarchical-pooled-s502	Pooled finalist independent-seed replicate.	0.29261363636363635	0.36363636363636365	accepted	77.36816539100255	
+9	F-E004-hierarchical-recurrent-s603	Recurrent finalist independent-seed replicate.	0.3536931818181818	0.36363636363636365	accepted	100.30385655099963	
+10	F-E005-hierarchical-pooled-s603	Pooled finalist independent-seed replicate.	0.2784090909090909	0.36363636363636365	accepted	76.34087315699435	

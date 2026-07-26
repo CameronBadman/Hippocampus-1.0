@@ -54,6 +54,9 @@ from .losses import (
 from .model import CandidateScorerBase, SpiderModel
 from .protocol_v0_1 import (
     DATASET_VERSION_V0_2,
+    SEALED_SPLIT_V0_2,
+    SealedEvaluationAuthorization,
+    authorize_v0_2_sealed_evaluation,
     validate_v0_1_artifact_input,
     validate_v0_1_split_access,
 )
@@ -111,6 +114,8 @@ __all__ = [
     "PrecisionRecallPoint",
     "ResolvedExperiment",
     "RolloutRoundDiagnostic",
+    "SEALED_SPLIT_V0_2",
+    "SealedEvaluationAuthorization",
     "SparseControllerConfig",
     "SparseWavefrontController",
     "SpiderModel",
@@ -124,6 +129,7 @@ __all__ = [
     "TrainingRecord",
     "TrainingResult",
     "attention_backend_status",
+    "authorize_v0_2_sealed_evaluation",
     "behavioural_consistency_loss",
     "binary_average_precision",
     "build_model",

@@ -86,5 +86,25 @@ evaluation are available. The loop runs unattended and does not pause.
 
 ## History
 
-No v0.1 experiment has run. E000 begins only after the unified controller,
-v0.2 manifests, metrics, and guard tests are committed.
+The fixed ten-record loop completed on 2026-07-26 under source commit
+`496b750` and dataset digest `101af9fd…a3105`.
+
+| Iteration | Experiment | Score | Status |
+|---:|---|---:|---|
+| 1 | E000 old checkpoint, corrected controller | 0.0838 | accepted |
+| 2 | E001 unified transition, oracle actions | 0.3636 | accepted |
+| 3 | E002 scheduled closed loop | 0.2841 | accepted |
+| 4 | E003 balanced/set evidence | 0.3011 | accepted |
+| 5 | E004 hierarchical recurrent | 0.2656 | accepted |
+| 6 | E005 hierarchical pooled | 0.2784 | accepted |
+| 7 | E004 recurrent seed 502 | 0.3480 | accepted |
+| 8 | E005 pooled seed 502 | 0.2926 | accepted |
+| 9 | E004 recurrent seed 603 | 0.3537 | accepted |
+| 10 | E005 pooled seed 603 | 0.2784 | accepted |
+
+There were no crashes, guard violations, invariant mismatches, or sealed
+accesses. The recurrent finalist mean was `0.3224 ± 0.0402`; the matched
+pooled mean was `0.2831 ± 0.0067`. Alignment was the largest causal
+improvement. Scheduled execution reduced one-round stopping but did not
+improve the primary score or answered risk. The complete immutable records
+are in `artifacts/spider_v0_1/experiments.jsonl`.

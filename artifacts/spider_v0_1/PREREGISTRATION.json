@@ -1,0 +1,20 @@
+{
+  "accepted_experiment_budget": 10,
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "dataset_version": "spider-programs-v0.2",
+  "evaluation_case_limit": 0,
+  "finalist_rule": "three-seed mean autonomous success; evidence F1, false-answer rate, arcs scored, experiment ID tie-breaks",
+  "frozen_at": "2026-07-26T03:41:54.593242+00:00",
+  "old_v0_sealed_accesses": 0,
+  "primary_metric": "complete-validation autonomous success",
+  "primary_seed": 401,
+  "replicate_seeds": [
+    502,
+    603
+  ],
+  "sealed_policy": "test_sealed_v0_2 remains unopened until finalist manifest exists",
+  "source_commit": "496b7500042d2ac4a04edf9b362a874ba208ce53",
+  "threshold_calibration": "maximum evidence F1 on complete validation_id, higher recall then lower threshold tie-break",
+  "training_case_count": 512,
+  "training_steps": 400
+}

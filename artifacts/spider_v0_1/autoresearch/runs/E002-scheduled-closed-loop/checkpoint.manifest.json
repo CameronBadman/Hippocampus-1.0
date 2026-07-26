@@ -1,0 +1,7 @@
+{
+  "checkpoint_path": "/home/cameron/projects/Hippocampus-1.0/artifacts/spider_v0_1/autoresearch/runs/E002-scheduled-closed-loop/checkpoint.pt",
+  "checkpoint_sha256": "0d6e79f44d05662e20f7a288db24b076111c6f5038fdcbe33313695398a99105",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "evidence_threshold": 0.669102132320404,
+  "source_commit": "496b7500042d2ac4a04edf9b362a874ba208ce53"
+}

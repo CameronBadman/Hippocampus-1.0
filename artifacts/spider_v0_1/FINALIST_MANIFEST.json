@@ -1,0 +1,30 @@
+{
+  "checkpoint_path": "artifacts/spider_v0_1/autoresearch/runs/F-E004-hierarchical-recurrent-s603/checkpoint.pt",
+  "checkpoint_sha256": "a4d6fc82930b0fc7d1fa0d0936a19fa3ea17eccf5849185f5fca842748d71b87",
+  "config_path": "artifacts/spider_v0_1/autoresearch/configs/F-E004-hierarchical-recurrent-s603.json",
+  "config_sha256": "19cf16f415aa25ca9f56b84918aa96fa8278ad91210d7b979a1ec549c787a1c4",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "dataset_version": "spider-programs-v0.2",
+  "evidence_threshold": 0.48635318875312805,
+  "experiment_id": "F-E004-hierarchical-recurrent-s603",
+  "frozen_at": "2026-07-26T03:58:23Z",
+  "model_family": "tied recurrent multi-set Spider",
+  "primary_autonomous_success": 0.3536931818181818,
+  "recurrent_three_seed_mean": 0.3224431818181818,
+  "recurrent_three_seed_population_stddev": 0.04024342681984049,
+  "pooled_three_seed_mean": 0.2831439393939394,
+  "pooled_three_seed_population_stddev": 0.006696086943054434,
+  "seed": 603,
+  "sealed_evaluation_protocol": {
+    "calibration_during_evaluation": false,
+    "calibration_split": "validation_id",
+    "invariance_sample_limit": 32,
+    "permuted_row_seed_offset": 400000,
+    "renderer_seed": 91337,
+    "row_seed_offset": 300000
+  },
+  "sealed_opened": false,
+  "sealed_split_sha256": "d89ca1e17c1d587678eb888ae4714286f1f7bd4e5e5fab5d9eee34d8a493f049",
+  "selection_reason": "The recurrent model won the frozen three-seed primary autonomous-success comparison; seed 603 was its highest validation checkpoint.",
+  "source_commit": "496b7500042d2ac4a04edf9b362a874ba208ce53"
+}
