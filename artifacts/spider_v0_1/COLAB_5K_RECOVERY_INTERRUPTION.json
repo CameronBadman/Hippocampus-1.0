@@ -1,0 +1,21 @@
+{
+  "analysis_status": "infrastructure interruption; excluded from the final 5k aggregate",
+  "artifact_recovered": false,
+  "checkpoint_observed": false,
+  "concurrent_session": {
+    "experiment_id": "L-E005-pooled-s1903-5k",
+    "session_name": "hippocampus-spider-v01-p1903-d39705d6",
+    "state_after_interruption": "healthy"
+  },
+  "created_at": "2026-07-26T08:55:32Z",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "experiment_id": "L-E004-recurrent-s1903-5k",
+  "failure": "the official Colab CLI no longer listed the recurrent session and session status returned found=false",
+  "last_observed_evaluator_elapsed_seconds": 575,
+  "likely_cause": "concurrent-session eviction or account concurrency limit; this is an inference, not a confirmed provider diagnosis",
+  "result_accepted": false,
+  "retry_policy": "complete pooled seed 1903, back it up, then rerun recurrent seed 1903 alone in a fresh A100 session",
+  "sealed_access_count_observed": 0,
+  "session_name": "hippocampus-spider-v01-r1903-3fa7fc6c",
+  "source_model_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746"
+}
