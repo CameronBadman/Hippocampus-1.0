@@ -23,5 +23,12 @@
   },
   "installed_better_colab_version": "0.1.dev86+g9cc61d15a.d20260726",
   "keep_alive_py_sha256": "8a72df81bdee0fe955a1470aa1933589491a06935af76aeef9eba043ef031363",
+  "local_verification": {
+    "cuda_device": "NVIDIA GeForce RTX 5070 Ti",
+    "cuda_runtime": "13.0",
+    "driver": "595.84",
+    "result": "174 passed",
+    "torch": "2.13.0+cu130"
+  },
   "schema_version": 1
 }
