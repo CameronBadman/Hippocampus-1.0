@@ -252,7 +252,6 @@ def train_one(
     output: Path,
 ) -> dict[str, object]:
     run_output = output / "run"
-    run_output.mkdir()
     log_path = output / "training.log"
     arguments = [
         sys.executable,

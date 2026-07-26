@@ -32,6 +32,15 @@ def test_colab_worker_is_pinned_and_has_no_sealed_dataset() -> None:
     assert len(str(constants["VALIDATION_MANIFEST_SHA256"])) == 64
 
 
+def test_training_entrypoint_owns_creation_of_run_directory() -> None:
+    source = Path(
+        "scripts/colab_spider_v0_2_recurrence_worker.py"
+    ).read_text()
+
+    assert "run_output.mkdir" not in source
+    assert 'str(run_output),' in source
+
+
 def test_launch_specs_cover_the_frozen_six_run_matrix() -> None:
     specs = {}
     worker_hashes = set()
