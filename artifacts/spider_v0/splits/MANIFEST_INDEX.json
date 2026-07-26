@@ -1,0 +1,26 @@
+{
+  "aggregate_sha256": "3f93841b41f025e72e176be4b0934b18a9ab1b8c37e5449cc971abb9684c8404",
+  "generator_version": "spider-programs-v0.1",
+  "leakage_diagnostic": {
+    "answerability_advantage": 0.0,
+    "best_stump_accuracy": 0.484375,
+    "case_count": 128,
+    "fixed_answer_position_rate": 0.109375,
+    "fixed_edge_position_rate": 0.10759493670886076,
+    "majority_accuracy": 0.5
+  },
+  "sealed_test_generated_but_not_opened": true,
+  "split_hashes": {
+    "test_sealed": "d85563673af3cea605858b3344483a4a9b74731330f4514864bee7c7fde7f67d",
+    "train": "83859af154194f415f7615f5bf59945345f31ec976d4e219b645f3d920b6282d",
+    "validation_cardinality_ood": "9d4657013b3ec88b4aa193b2a376358114b836fcb051f7f1a1e87a66da8005e1",
+    "validation_composition_ood": "5f62a7da40b175dad0c200fc810cfeeaeed12a8266c2696a445e729960ddbaf7",
+    "validation_equivalent_view_ood": "daff4a4075f382238e2bbe8ba58011df7ed5c3f19006cd76b780809c2db31bd4",
+    "validation_graph_size_ood": "4118379e372d1419dcac17565f3ea7e22b761705968bd852b8ede30bda1087fa",
+    "validation_id": "7a55f728eed4453273572c417c138ca1fa57546e0fa765245809ce6d1c3fd539",
+    "validation_path_length_ood": "c3fa7d4d42ac43ccfac95f7d6855fe3d238b6f74512aa8e587ca97ceb79a5218",
+    "validation_topology_ood": "c05808ddad22925ba735b60af5ac47c06b9ff47db25106ca4c9e362a1ad8d775"
+  },
+  "verification_error_count": 0,
+  "verification_errors": []
+}

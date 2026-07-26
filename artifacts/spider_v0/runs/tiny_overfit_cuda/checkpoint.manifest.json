@@ -1,0 +1,7 @@
+{
+  "checkpoint": "artifacts/spider_v0/runs/tiny_overfit_cuda/checkpoint.pt",
+  "device": "cuda",
+  "dtype": "torch.float32",
+  "sha256": "d3f3718e10d5b920789934d93f1d79d0c36e49c0fd950602261d3b04f328ec0b",
+  "tracked": false
+}

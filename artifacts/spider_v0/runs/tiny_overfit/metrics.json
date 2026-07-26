@@ -1,0 +1,37 @@
+{
+  "case_count": 48,
+  "checkpoint": "artifacts/spider_v0/runs/tiny_overfit/checkpoint.pt",
+  "config": "configs/spider_v0/tiny_overfit.json",
+  "cuda_device": null,
+  "cuda_runtime": "13.0",
+  "device": "cpu",
+  "dtype": "torch.float32",
+  "experiment": "tiny_overfit",
+  "final": {
+    "candidate_count": 196,
+    "candidate_expand_accuracy": 1.0,
+    "candidate_top1": 1.0,
+    "conflict_accuracy": 1.0,
+    "context_read_accuracy": 1.0,
+    "evidence_inclusion_accuracy": 1.0,
+    "joint_action_accuracy": 1.0,
+    "support_accuracy": 1.0,
+    "termination_accuracy": 1.0
+  },
+  "initial": {
+    "candidate_count": 196,
+    "candidate_expand_accuracy": 0.5561224489795918,
+    "candidate_top1": 0.391304347826087,
+    "conflict_accuracy": 0.9693877551020408,
+    "context_read_accuracy": 0.7704081632653061,
+    "evidence_inclusion_accuracy": 0.37244897959183676,
+    "joint_action_accuracy": 0.03571428571428571,
+    "support_accuracy": 0.576530612244898,
+    "termination_accuracy": 0.03571428571428571
+  },
+  "model_kind": "spider",
+  "parameter_count": 47769,
+  "runtime_seconds": 30.367510992999087,
+  "status": "completed",
+  "torch_version": "2.13.0+cu130"
+}

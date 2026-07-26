@@ -1,0 +1,7 @@
+{
+  "checkpoint": "artifacts/spider_v0/runs/tiny_overfit/checkpoint.pt",
+  "device": "cpu",
+  "dtype": "torch.float32",
+  "sha256": "27caf08090f3b9de43cacb37c310ebafc28c290c57db9f4cf113f05dcdcacdaf",
+  "tracked": false
+}

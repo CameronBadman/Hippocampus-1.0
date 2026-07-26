@@ -7,4 +7,4 @@ htmlcov/
 dist/
 build/
 *.egg-info/
-
+artifacts/**/checkpoint.pt

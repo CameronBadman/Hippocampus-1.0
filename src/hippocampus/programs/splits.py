@@ -4,6 +4,10 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 
+from .equivalent_views import make_equivalent_view
+from .generator import GeneratorConfig, GraphProgramGenerator
+from .schema import GraphProgramCase, ProgramFamily
+
 
 @dataclass(frozen=True, slots=True)
 class SplitSpec:
@@ -153,3 +157,57 @@ def build_split_manifest(spec: SplitSpec) -> SplitManifest:
         case_ids=case_ids,
         sha256=hashlib.sha256(payload).hexdigest(),
     )
+
+
+def generate_split_cases(
+    spec: SplitSpec,
+    *,
+    limit: int | None = None,
+) -> tuple[GraphProgramCase, ...]:
+    """Materialise a deterministic split without storing a parallel graph form."""
+
+    case_count = spec.case_count if limit is None else min(limit, spec.case_count)
+    if case_count <= 0:
+        raise ValueError("split case limit must be positive")
+    row_scale = max(1, round(spec.cardinality_scale))
+    generator = GraphProgramGenerator(
+        GeneratorConfig(
+            min_nodes=spec.min_nodes,
+            max_nodes=spec.max_nodes,
+            min_path_length=spec.min_path_length,
+            max_path_length=spec.max_path_length,
+            min_summary_rows=1,
+            max_summary_rows=5 * row_scale,
+            min_context_rows=0,
+            max_context_rows=6 * row_scale,
+            max_distractor_edges=(
+                16 if spec.held_out_topology else 8
+            ),
+            generator_version=spec.generator_version,
+        )
+    )
+    families = tuple(ProgramFamily)
+    cases: list[GraphProgramCase] = []
+    for index in range(case_count):
+        family = families[index % len(families)]
+        answerable = (index // len(families)) % 2 == 0
+        case = generator.generate(
+            family=family,
+            seed=spec.seed_start + index,
+            answerable=answerable,
+            require_multiple_paths=(
+                family is ProgramFamily.REACHABILITY
+                and (
+                    spec.held_out_topology
+                    or spec.held_out_composition
+                    or index % 3 == 0
+                )
+            ),
+        )
+        if spec.domain != "train":
+            case = make_equivalent_view(
+                case,
+                seed=spec.seed_start * 17 + index,
+            )
+        cases.append(case)
+    return tuple(cases)

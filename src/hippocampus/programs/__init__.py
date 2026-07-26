@@ -21,7 +21,13 @@ from .schema import (
     TerminationDecision,
     TerminationTarget,
 )
-from .splits import SplitManifest, SplitSpec, build_split_manifest, default_split_specs
+from .splits import (
+    SplitManifest,
+    SplitSpec,
+    build_split_manifest,
+    default_split_specs,
+    generate_split_cases,
+)
 
 __all__ = [
     "CandidateTarget",
@@ -47,6 +53,7 @@ __all__ = [
     "VerificationReport",
     "build_split_manifest",
     "default_split_specs",
+    "generate_split_cases",
     "make_counterfactual",
     "make_equivalent_view",
     "metadata_leakage_report",
