@@ -1,0 +1,90 @@
+{
+  "calibration_and_evaluation_same_development_split": true,
+  "case_count": 128,
+  "checkpoint_sha256": "03db6a832b2271e0bd90e49a7dc37c470551f4180c30cdccc64e9aca0956d543",
+  "checkpoint_step": 6000,
+  "dataset_version": "spider-programs-v0.3-recurrence-dev",
+  "device": {
+    "cuda": "13.0",
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "torch": "2.13.0+cu130"
+  },
+  "evidence_threshold": 0.8697775602340698,
+  "experiment_id": "REC-recurrent-s1701-6k",
+  "interventions": {
+    "detach": {
+      "evidence_exact_set_accuracy": 0.3828125,
+      "evidence_f1": 0.6190476190476191,
+      "evidence_precision": 0.6290322580645161,
+      "evidence_recall": 0.609375,
+      "final_autonomous_success": 0.0078125,
+      "mean_arcs_scored": 17.90625,
+      "mean_rounds": 5.96875,
+      "replay_mismatches": 0,
+      "row_permutation_mismatches": 0,
+      "structural_success": 0.3828125,
+      "trace_validity": 1.0,
+      "valid_path_rate": 1.0
+    },
+    "none": {
+      "evidence_exact_set_accuracy": 0.3828125,
+      "evidence_f1": 0.6190476190476191,
+      "evidence_precision": 0.6290322580645161,
+      "evidence_recall": 0.609375,
+      "final_autonomous_success": 0.0078125,
+      "mean_arcs_scored": 17.90625,
+      "mean_rounds": 5.96875,
+      "replay_mismatches": 0,
+      "row_permutation_mismatches": 0,
+      "structural_success": 0.3828125,
+      "trace_validity": 1.0,
+      "valid_path_rate": 1.0
+    },
+    "pooled_current_node": {
+      "evidence_exact_set_accuracy": 0.0625,
+      "evidence_f1": 0.24137931034482757,
+      "evidence_precision": 0.16666666666666666,
+      "evidence_recall": 0.4375,
+      "final_autonomous_success": 0.0,
+      "mean_arcs_scored": 17.90625,
+      "mean_rounds": 5.96875,
+      "replay_mismatches": 0,
+      "row_permutation_mismatches": 0,
+      "structural_success": 0.0625,
+      "trace_validity": 1.0,
+      "valid_path_rate": 1.0
+    },
+    "reset": {
+      "evidence_exact_set_accuracy": 0.0,
+      "evidence_f1": 0.0,
+      "evidence_precision": 0.0,
+      "evidence_recall": 0.0,
+      "final_autonomous_success": 0.0,
+      "mean_arcs_scored": 17.90625,
+      "mean_rounds": 5.96875,
+      "replay_mismatches": 0,
+      "row_permutation_mismatches": 0,
+      "structural_success": 0.0,
+      "trace_validity": 1.0,
+      "valid_path_rate": 1.0
+    },
+    "shuffle": {
+      "evidence_exact_set_accuracy": 0.0859375,
+      "evidence_f1": 0.5737704918032787,
+      "evidence_precision": 0.603448275862069,
+      "evidence_recall": 0.546875,
+      "final_autonomous_success": 0.0,
+      "mean_arcs_scored": 17.90625,
+      "mean_rounds": 5.96875,
+      "replay_mismatches": 0,
+      "row_permutation_mismatches": 0,
+      "structural_success": 0.0859375,
+      "trace_validity": 1.0,
+      "valid_path_rate": 1.0
+    }
+  },
+  "purpose": "independent full-development reproduction while the A100 worker packaged its authoritative report",
+  "sealed_access_count": 0,
+  "source_commit": "acb533666d481daf9b6fb56562d69a5dd78c5e0e",
+  "split": "validation_recurrence_necessity"
+}
