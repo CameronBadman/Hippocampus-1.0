@@ -8,3 +8,4 @@ dist/
 build/
 *.egg-info/
 artifacts/**/checkpoint.pt
+artifacts/spider_v0_1/colab_5k/**/*.tar.gz
