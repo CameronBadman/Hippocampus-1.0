@@ -80,6 +80,27 @@ not released until:
 The local checkpoint binaries and final ZIP are ignored by Git; hashes,
 metrics, manifests, and Drive IDs remain versioned.
 
+Sequential A100 runs may reuse the existing source checkout and editable
+environment to conserve Colab credits. Reuse is allowed only when `HEAD`
+matches the frozen model source commit and the checkout has no tracked
+modifications. Each training run still uses a fresh subprocess, model,
+optimizer, seed, output directory, and artifact archive. The worker records
+whether it used a fresh clone or a verified checkout in `ENVIRONMENT.json`.
+
+The final matrix is accepted only after two fail-closed checks:
+
+```bash
+.venv/bin/python scripts/verify_spider_v0_2_recurrence_run.py \
+  artifacts/spider_v0_2/training/isolated/recurrent_1701/REC-recurrent-s1701-6k
+
+.venv/bin/python scripts/aggregate_spider_v0_2_training.py
+```
+
+The verifier checks every manifest byte and checkpoint payload. The aggregator
+requires the exact six-run matrix, all 42 Drive artifacts, zero sealed access,
+zero replay mismatches, zero row-permutation decision mismatches, and the
+frozen dataset/source identities before it computes a paired result.
+
 ## Commands
 
 Smoke:
