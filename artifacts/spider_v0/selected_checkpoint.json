@@ -1,0 +1,15 @@
+{
+  "checkpoint": "/home/cameron/projects/Hippocampus-1.0/artifacts/spider_v0/autoresearch/runs/E003-recurrent-standard/checkpoint.pt",
+  "checkpoint_sha256": "16bb5f9b5a4f4b13acaaacc83f376b96e561066bc2dfc4e426563afaa2b4813b",
+  "config_path": "/home/cameron/projects/Hippocampus-1.0/artifacts/spider_v0/autoresearch/configs/E003-recurrent-standard.json",
+  "dataset_split_hash": "3f93841b41f025e72e176be4b0934b18a9ab1b8c37e5449cc971abb9684c8404",
+  "experiment_id": "E003-recurrent-standard",
+  "parent_experiment": "E003-recurrent-standard",
+  "score": 0.5045833333333333,
+  "sealed_test_opened": true,
+  "sealed_test_report": "artifacts/spider_v0/evaluations/selected-test-sealed.json",
+  "sealed_test_report_sha256": "656f767a031e5622edc555f670cbe24305fb31db2a4306e1f8c280d5d8d9a70a",
+  "seed": 101,
+  "source_commit": "ca8fa864004c15c7dae85280d8ea5b70268bd007",
+  "tracked": false
+}

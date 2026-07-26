@@ -1,0 +1,67 @@
+{
+  "case_count": 256,
+  "checkpoint": "artifacts/spider_v0/autoresearch/runs/E003-recurrent-standard/checkpoint.pt",
+  "config": "artifacts/spider_v0/autoresearch/configs/E003-recurrent-standard.json",
+  "efficiency": {
+    "mean_arcs_scored": 3.66796875,
+    "mean_contexts_read": 0.9296875,
+    "mean_nodes_expanded": 3.66796875,
+    "mean_recurrent_rounds": 1.0,
+    "mean_wall_clock_latency_seconds": 0.010574700824193428,
+    "peak_cuda_memory_bytes": 56162304
+  },
+  "invariance": {
+    "deterministic_replay_mismatches": 0,
+    "deterministic_replay_samples": 8,
+    "maximum_score_delta": 2.384185791015625e-07,
+    "row_permutation_decision_mismatches": 0,
+    "row_permutation_samples": 8
+  },
+  "oracle_loss": 2.7590331363026053,
+  "peak_cuda_memory_bytes": 56162304,
+  "rollout": {
+    "answered_coverage": 0.6875,
+    "context_read_precision": 0.8067226890756303,
+    "context_read_recall": 1.0,
+    "evidence_f1": 0.023166023166023165,
+    "evidence_precision": 1.0,
+    "evidence_recall": 0.01171875,
+    "exact_evidence_set_accuracy": 0.2578125,
+    "exact_valid_path_rate": 0.765625,
+    "false_answer_rate": 0.36328125,
+    "false_unknown_rate": 0.17578125,
+    "risk_among_answered": 0.5284090909090909,
+    "risk_coverage_operating_point": {
+      "coverage": 0.6875,
+      "risk": 0.5284090909090909
+    },
+    "semantic_invalid_expansion_rate": 0.31309904153354634,
+    "termination_accuracy": 0.4609375,
+    "trace_validity": 1.0,
+    "unknown_reason_accuracy": 0.2734375,
+    "unnecessary_reads_per_query": 0.1796875,
+    "useful_read_recall": 1.0
+  },
+  "runtime_seconds": 7.292337108003267,
+  "sealed_test_opened": true,
+  "split": "test_sealed",
+  "teacher_forced": {
+    "candidate_count": 1206,
+    "candidate_expand_accuracy": 0.7271973466003316,
+    "candidate_mrr": 0.9740566037735849,
+    "candidate_top1": 0.9481132075471698,
+    "conflict_accuracy": 0.9469320066334992,
+    "context_read_accuracy": 0.9145936981757877,
+    "context_read_precision": 0.6508474576271186,
+    "context_read_recall": 1.0,
+    "evidence_f1": 0.24032586558044808,
+    "evidence_inclusion_accuracy": 0.6907131011608624,
+    "evidence_precision": 0.28780487804878047,
+    "evidence_recall": 0.2062937062937063,
+    "invalid_expansion_rate": 0.12648221343873517,
+    "joint_action_accuracy": 0.46774193548387094,
+    "support_accuracy": 0.7835820895522388,
+    "termination_accuracy": 0.46774193548387094,
+    "valid_frontier_recall_at_4": 1.0
+  }
+}

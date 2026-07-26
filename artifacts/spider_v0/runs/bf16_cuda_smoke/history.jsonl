@@ -1,0 +1,4 @@
+{"elapsed_seconds": 0.0, "gradient_norm": 0.0, "loss": 4.259623184800148, "step": 0}
+{"elapsed_seconds": 3.8723210620009922, "gradient_norm": 1.53125, "loss": 2.142937183380127, "step": 25}
+{"elapsed_seconds": 5.984374300001946, "gradient_norm": 3.65625, "loss": 1.4491771459579468, "step": 40}
+{"elapsed_seconds": 5.984379059002094, "gradient_norm": 3.65625, "loss": 0.7458240035921335, "step": 40}

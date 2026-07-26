@@ -1,0 +1,58 @@
+{
+  "controller": {
+    "context_read_budget": 4,
+    "frontier_width": 32,
+    "hypotheses_per_node": 2,
+    "max_depth": 10,
+    "max_rounds": 6,
+    "search_budget": 4096
+  },
+  "dataset": {
+    "manifest_dir": "artifacts/spider_v0/splits",
+    "version": "spider-programs-v0.1"
+  },
+  "loss": {
+    "consistency": 0.0,
+    "context": 0.5,
+    "context_cost": 0.01,
+    "evidence": 0.75,
+    "expand": 1.0,
+    "priority": 1.0,
+    "remaining_cost": 0.25,
+    "search_cost": 0.01,
+    "support_conflict": 0.5,
+    "termination": 1.0
+  },
+  "model": {
+    "adapter_rank": 0,
+    "d_model": 64,
+    "dropout": 0.0,
+    "edge_mode": "standard",
+    "edge_transforms": 0,
+    "evidence_rows": 4,
+    "kind": "flat_transformer",
+    "num_blocks": 2,
+    "num_heads": 4,
+    "path_rows": 4,
+    "tied_recurrence": true
+  },
+  "name": "E002-flat",
+  "schema": {
+    "context_dim": 16,
+    "edge_dim": 16,
+    "query_dim": 16,
+    "summary_dim": 16
+  },
+  "training": {
+    "batch_size": 16,
+    "checkpoint_every": 200,
+    "device": "auto",
+    "dtype": "float32",
+    "learning_rate": 0.001,
+    "log_every": 50,
+    "seed": 101,
+    "stage": "oracle",
+    "steps": 600,
+    "weight_decay": 0.0001
+  }
+}

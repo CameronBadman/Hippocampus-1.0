@@ -1,0 +1,7 @@
+{
+  "checkpoint": "artifacts/spider_v0/runs/bf16_cuda_smoke/checkpoint.pt",
+  "device": "cuda",
+  "dtype": "torch.bfloat16",
+  "sha256": "1f2a9006bc57561c481a286a958cda3771b664ffd28671f99d4b5efc3721aafb",
+  "tracked": false
+}

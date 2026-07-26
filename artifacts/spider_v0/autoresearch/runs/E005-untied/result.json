@@ -1,0 +1,621 @@
+{
+  "checkpoint": "/home/cameron/projects/Hippocampus-1.0/artifacts/spider_v0/autoresearch/runs/E005-untied/checkpoint.pt",
+  "checkpoint_sha256": "f9ee71be162d259245e94305afa7eff6211f6b18657e5befae2411f47bb4cf67",
+  "config": {
+    "controller": {
+      "context_read_budget": 4,
+      "frontier_width": 32,
+      "hypotheses_per_node": 2,
+      "max_depth": 10,
+      "max_rounds": 6,
+      "search_budget": 4096
+    },
+    "dataset": {
+      "manifest_dir": "artifacts/spider_v0/splits",
+      "version": "spider-programs-v0.1"
+    },
+    "loss": {
+      "consistency": 0.1,
+      "context": 0.5,
+      "context_cost": 0.01,
+      "evidence": 0.75,
+      "expand": 1.0,
+      "priority": 1.0,
+      "remaining_cost": 0.25,
+      "search_cost": 0.01,
+      "support_conflict": 0.5,
+      "termination": 1.0
+    },
+    "model": {
+      "adapter_rank": 0,
+      "d_model": 64,
+      "dropout": 0.0,
+      "edge_mode": "standard",
+      "edge_transforms": 0,
+      "evidence_rows": 4,
+      "kind": "spider",
+      "num_blocks": 2,
+      "num_heads": 4,
+      "path_rows": 4,
+      "tied_recurrence": false,
+      "untied_rounds": 6
+    },
+    "name": "E005-untied",
+    "schema": {
+      "context_dim": 16,
+      "edge_dim": 16,
+      "query_dim": 16,
+      "summary_dim": 16
+    },
+    "training": {
+      "batch_size": 16,
+      "checkpoint_every": 200,
+      "device": "auto",
+      "dtype": "float32",
+      "learning_rate": 0.0005,
+      "log_every": 50,
+      "oracle_fraction_schedule": [
+        1.0,
+        0.75,
+        0.5,
+        0.25
+      ],
+      "seed": 101,
+      "stage": "oracle_then_mixed",
+      "steps": 800,
+      "weight_decay": 0.0001
+    }
+  },
+  "config_path": "/home/cameron/projects/Hippocampus-1.0/artifacts/spider_v0/autoresearch/configs/E005-untied.json",
+  "cuda_runtime": "13.0",
+  "dataset_split_hash": "3f93841b41f025e72e176be4b0934b18a9ab1b8c37e5449cc971abb9684c8404",
+  "deterministic_replay_mismatches": 0,
+  "device": "cuda",
+  "device_name": "NVIDIA GeForce RTX 5070 Ti",
+  "dtype": "torch.float32",
+  "evaluation_case_count_per_split": 8,
+  "experiment_id": "E005-untied",
+  "failure_reason": null,
+  "metrics": {
+    "validation_cardinality_ood": {
+      "case_count": 8,
+      "efficiency": {
+        "mean_arcs_scored": 3.625,
+        "mean_contexts_read": 0.75,
+        "mean_nodes_expanded": 3.625,
+        "mean_recurrent_rounds": 1.0,
+        "mean_wall_clock_latency_seconds": 0.01063937487469957,
+        "peak_cuda_memory_bytes": 75496960
+      },
+      "invariance": {
+        "deterministic_replay_mismatches": 0,
+        "deterministic_replay_samples": 4,
+        "maximum_score_delta": 3.5762786865234375e-07,
+        "row_permutation_decision_mismatches": 0,
+        "row_permutation_samples": 4
+      },
+      "oracle_loss": 2.724056825041771,
+      "peak_cuda_memory_bytes": 75496960,
+      "rollout": {
+        "answered_coverage": 0.625,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "exact_evidence_set_accuracy": 0.25,
+        "exact_valid_path_rate": 0.75,
+        "false_answer_rate": 0.375,
+        "false_unknown_rate": 0.25,
+        "risk_among_answered": 0.6,
+        "risk_coverage_operating_point": {
+          "coverage": 0.625,
+          "risk": 0.6
+        },
+        "semantic_invalid_expansion_rate": 0.3103448275862069,
+        "termination_accuracy": 0.375,
+        "trace_validity": 1.0,
+        "unknown_reason_accuracy": 0.25,
+        "unnecessary_reads_per_query": 0.0,
+        "useful_read_recall": 1.0
+      },
+      "runtime_seconds": 0.35729171200000565,
+      "split": "validation_cardinality_ood",
+      "teacher_forced": {
+        "candidate_count": 34,
+        "candidate_expand_accuracy": 0.7058823529411765,
+        "candidate_mrr": 0.9,
+        "candidate_top1": 0.8,
+        "conflict_accuracy": 0.9411764705882353,
+        "context_read_accuracy": 1.0,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.3636363636363636,
+        "evidence_inclusion_accuracy": 0.7941176470588235,
+        "evidence_precision": 1.0,
+        "evidence_recall": 0.2222222222222222,
+        "invalid_expansion_rate": 0.2,
+        "joint_action_accuracy": 0.5,
+        "support_accuracy": 0.7647058823529411,
+        "termination_accuracy": 0.5,
+        "valid_frontier_recall_at_4": 1.0
+      }
+    },
+    "validation_composition_ood": {
+      "case_count": 8,
+      "efficiency": {
+        "mean_arcs_scored": 3.875,
+        "mean_contexts_read": 0.875,
+        "mean_nodes_expanded": 3.875,
+        "mean_recurrent_rounds": 1.0,
+        "mean_wall_clock_latency_seconds": 0.010890763749102916,
+        "peak_cuda_memory_bytes": 75453440
+      },
+      "invariance": {
+        "deterministic_replay_mismatches": 0,
+        "deterministic_replay_samples": 4,
+        "maximum_score_delta": 4.76837158203125e-07,
+        "row_permutation_decision_mismatches": 0,
+        "row_permutation_samples": 4
+      },
+      "oracle_loss": 2.6281264796853065,
+      "peak_cuda_memory_bytes": 75453440,
+      "rollout": {
+        "answered_coverage": 0.625,
+        "context_read_precision": 0.8571428571428571,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "exact_evidence_set_accuracy": 0.25,
+        "exact_valid_path_rate": 0.75,
+        "false_answer_rate": 0.125,
+        "false_unknown_rate": 0.0,
+        "risk_among_answered": 0.2,
+        "risk_coverage_operating_point": {
+          "coverage": 0.625,
+          "risk": 0.2
+        },
+        "semantic_invalid_expansion_rate": 0.3225806451612903,
+        "termination_accuracy": 0.875,
+        "trace_validity": 1.0,
+        "unknown_reason_accuracy": 0.75,
+        "unnecessary_reads_per_query": 0.125,
+        "useful_read_recall": 1.0
+      },
+      "runtime_seconds": 0.3526073549983266,
+      "split": "validation_composition_ood",
+      "teacher_forced": {
+        "candidate_count": 38,
+        "candidate_expand_accuracy": 0.6842105263157895,
+        "candidate_mrr": 0.9,
+        "candidate_top1": 0.8,
+        "conflict_accuracy": 0.9473684210526315,
+        "context_read_accuracy": 1.0,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.3333333333333333,
+        "evidence_inclusion_accuracy": 0.7894736842105263,
+        "evidence_precision": 0.6666666666666666,
+        "evidence_recall": 0.2222222222222222,
+        "invalid_expansion_rate": 0.42857142857142855,
+        "joint_action_accuracy": 0.6842105263157895,
+        "support_accuracy": 0.7368421052631579,
+        "termination_accuracy": 0.8,
+        "valid_frontier_recall_at_4": 1.0
+      }
+    },
+    "validation_equivalent_view_ood": {
+      "case_count": 8,
+      "efficiency": {
+        "mean_arcs_scored": 3.625,
+        "mean_contexts_read": 0.875,
+        "mean_nodes_expanded": 3.625,
+        "mean_recurrent_rounds": 1.0,
+        "mean_wall_clock_latency_seconds": 0.010586366624920629,
+        "peak_cuda_memory_bytes": 75359232
+      },
+      "invariance": {
+        "deterministic_replay_mismatches": 0,
+        "deterministic_replay_samples": 4,
+        "maximum_score_delta": 2.384185791015625e-07,
+        "row_permutation_decision_mismatches": 0,
+        "row_permutation_samples": 4
+      },
+      "oracle_loss": 2.399193122982979,
+      "peak_cuda_memory_bytes": 75359232,
+      "rollout": {
+        "answered_coverage": 0.625,
+        "context_read_precision": 0.8571428571428571,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "exact_evidence_set_accuracy": 0.25,
+        "exact_valid_path_rate": 0.75,
+        "false_answer_rate": 0.25,
+        "false_unknown_rate": 0.125,
+        "risk_among_answered": 0.4,
+        "risk_coverage_operating_point": {
+          "coverage": 0.625,
+          "risk": 0.4
+        },
+        "semantic_invalid_expansion_rate": 0.3103448275862069,
+        "termination_accuracy": 0.625,
+        "trace_validity": 1.0,
+        "unknown_reason_accuracy": 0.5,
+        "unnecessary_reads_per_query": 0.125,
+        "useful_read_recall": 1.0
+      },
+      "runtime_seconds": 0.35669183699792484,
+      "split": "validation_equivalent_view_ood",
+      "teacher_forced": {
+        "candidate_count": 35,
+        "candidate_expand_accuracy": 0.6857142857142857,
+        "candidate_mrr": 0.95,
+        "candidate_top1": 0.9,
+        "conflict_accuracy": 0.9428571428571428,
+        "context_read_accuracy": 1.0,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.26666666666666666,
+        "evidence_inclusion_accuracy": 0.6857142857142857,
+        "evidence_precision": 0.3333333333333333,
+        "evidence_recall": 0.2222222222222222,
+        "invalid_expansion_rate": 0.3333333333333333,
+        "joint_action_accuracy": 0.6,
+        "support_accuracy": 0.7428571428571429,
+        "termination_accuracy": 0.6,
+        "valid_frontier_recall_at_4": 1.0
+      }
+    },
+    "validation_graph_size_ood": {
+      "case_count": 8,
+      "efficiency": {
+        "mean_arcs_scored": 3.625,
+        "mean_contexts_read": 0.75,
+        "mean_nodes_expanded": 3.625,
+        "mean_recurrent_rounds": 1.0,
+        "mean_wall_clock_latency_seconds": 0.010730460500326444,
+        "peak_cuda_memory_bytes": 75638272
+      },
+      "invariance": {
+        "deterministic_replay_mismatches": 0,
+        "deterministic_replay_samples": 4,
+        "maximum_score_delta": 4.76837158203125e-07,
+        "row_permutation_decision_mismatches": 0,
+        "row_permutation_samples": 4
+      },
+      "oracle_loss": 2.730105236172676,
+      "peak_cuda_memory_bytes": 75638272,
+      "rollout": {
+        "answered_coverage": 0.5,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "exact_evidence_set_accuracy": 0.25,
+        "exact_valid_path_rate": 0.75,
+        "false_answer_rate": 0.25,
+        "false_unknown_rate": 0.25,
+        "risk_among_answered": 0.5,
+        "risk_coverage_operating_point": {
+          "coverage": 0.5,
+          "risk": 0.5
+        },
+        "semantic_invalid_expansion_rate": 0.3103448275862069,
+        "termination_accuracy": 0.5,
+        "trace_validity": 1.0,
+        "unknown_reason_accuracy": 0.5,
+        "unnecessary_reads_per_query": 0.0,
+        "useful_read_recall": 1.0
+      },
+      "runtime_seconds": 0.39970972400260507,
+      "split": "validation_graph_size_ood",
+      "teacher_forced": {
+        "candidate_count": 45,
+        "candidate_expand_accuracy": 0.7555555555555555,
+        "candidate_mrr": 0.95,
+        "candidate_top1": 0.9,
+        "conflict_accuracy": 0.9555555555555556,
+        "context_read_accuracy": 1.0,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.16,
+        "evidence_inclusion_accuracy": 0.5333333333333333,
+        "evidence_precision": 0.125,
+        "evidence_recall": 0.2222222222222222,
+        "invalid_expansion_rate": 0.125,
+        "joint_action_accuracy": 0.4,
+        "support_accuracy": 0.6,
+        "termination_accuracy": 0.4,
+        "valid_frontier_recall_at_4": 1.0
+      }
+    },
+    "validation_id": {
+      "case_count": 8,
+      "efficiency": {
+        "mean_arcs_scored": 3.625,
+        "mean_contexts_read": 0.75,
+        "mean_nodes_expanded": 3.625,
+        "mean_recurrent_rounds": 1.0,
+        "mean_wall_clock_latency_seconds": 0.010872034875774261,
+        "peak_cuda_memory_bytes": 75374592
+      },
+      "invariance": {
+        "deterministic_replay_mismatches": 0,
+        "deterministic_replay_samples": 4,
+        "maximum_score_delta": 2.384185791015625e-07,
+        "row_permutation_decision_mismatches": 0,
+        "row_permutation_samples": 4
+      },
+      "oracle_loss": 2.8403955549001694,
+      "peak_cuda_memory_bytes": 75374592,
+      "rollout": {
+        "answered_coverage": 0.5,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "exact_evidence_set_accuracy": 0.25,
+        "exact_valid_path_rate": 0.75,
+        "false_answer_rate": 0.375,
+        "false_unknown_rate": 0.375,
+        "risk_among_answered": 0.75,
+        "risk_coverage_operating_point": {
+          "coverage": 0.5,
+          "risk": 0.75
+        },
+        "semantic_invalid_expansion_rate": 0.3103448275862069,
+        "termination_accuracy": 0.25,
+        "trace_validity": 1.0,
+        "unknown_reason_accuracy": 0.25,
+        "unnecessary_reads_per_query": 0.0,
+        "useful_read_recall": 1.0
+      },
+      "runtime_seconds": 0.3493431019996933,
+      "split": "validation_id",
+      "teacher_forced": {
+        "candidate_count": 34,
+        "candidate_expand_accuracy": 0.7058823529411765,
+        "candidate_mrr": 0.95,
+        "candidate_top1": 0.9,
+        "conflict_accuracy": 0.9411764705882353,
+        "context_read_accuracy": 1.0,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.2857142857142857,
+        "evidence_inclusion_accuracy": 0.7058823529411765,
+        "evidence_precision": 0.4,
+        "evidence_recall": 0.2222222222222222,
+        "invalid_expansion_rate": 0.2,
+        "joint_action_accuracy": 0.3,
+        "support_accuracy": 0.7647058823529411,
+        "termination_accuracy": 0.3,
+        "valid_frontier_recall_at_4": 1.0
+      }
+    },
+    "validation_path_length_ood": {
+      "case_count": 8,
+      "efficiency": {
+        "mean_arcs_scored": 3.625,
+        "mean_contexts_read": 0.75,
+        "mean_nodes_expanded": 3.625,
+        "mean_recurrent_rounds": 1.0,
+        "mean_wall_clock_latency_seconds": 0.010795929499181511,
+        "peak_cuda_memory_bytes": 75457536
+      },
+      "invariance": {
+        "deterministic_replay_mismatches": 0,
+        "deterministic_replay_samples": 4,
+        "maximum_score_delta": 2.384185791015625e-07,
+        "row_permutation_decision_mismatches": 0,
+        "row_permutation_samples": 4
+      },
+      "oracle_loss": 2.784316971898079,
+      "peak_cuda_memory_bytes": 75457536,
+      "rollout": {
+        "answered_coverage": 0.625,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "exact_evidence_set_accuracy": 0.25,
+        "exact_valid_path_rate": 0.75,
+        "false_answer_rate": 0.25,
+        "false_unknown_rate": 0.125,
+        "risk_among_answered": 0.4,
+        "risk_coverage_operating_point": {
+          "coverage": 0.625,
+          "risk": 0.4
+        },
+        "semantic_invalid_expansion_rate": 0.3103448275862069,
+        "termination_accuracy": 0.625,
+        "trace_validity": 1.0,
+        "unknown_reason_accuracy": 0.5,
+        "unnecessary_reads_per_query": 0.0,
+        "useful_read_recall": 1.0
+      },
+      "runtime_seconds": 0.39057577199855587,
+      "split": "validation_path_length_ood",
+      "teacher_forced": {
+        "candidate_count": 42,
+        "candidate_expand_accuracy": 0.7619047619047619,
+        "candidate_mrr": 0.9351851851851853,
+        "candidate_top1": 0.8888888888888888,
+        "conflict_accuracy": 0.9523809523809523,
+        "context_read_accuracy": 1.0,
+        "context_read_precision": 1.0,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.18181818181818185,
+        "evidence_inclusion_accuracy": 0.5714285714285714,
+        "evidence_precision": 0.15384615384615385,
+        "evidence_recall": 0.2222222222222222,
+        "invalid_expansion_rate": 0.07692307692307693,
+        "joint_action_accuracy": 0.5,
+        "support_accuracy": 0.6190476190476191,
+        "termination_accuracy": 0.5,
+        "valid_frontier_recall_at_4": 1.0
+      }
+    },
+    "validation_topology_ood": {
+      "case_count": 8,
+      "efficiency": {
+        "mean_arcs_scored": 4.0,
+        "mean_contexts_read": 0.875,
+        "mean_nodes_expanded": 4.0,
+        "mean_recurrent_rounds": 1.0,
+        "mean_wall_clock_latency_seconds": 0.010765239374904922,
+        "peak_cuda_memory_bytes": 75449856
+      },
+      "invariance": {
+        "deterministic_replay_mismatches": 0,
+        "deterministic_replay_samples": 4,
+        "maximum_score_delta": 2.384185791015625e-07,
+        "row_permutation_decision_mismatches": 0,
+        "row_permutation_samples": 4
+      },
+      "oracle_loss": 2.875659294426441,
+      "peak_cuda_memory_bytes": 75449856,
+      "rollout": {
+        "answered_coverage": 0.5,
+        "context_read_precision": 0.8571428571428571,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "exact_evidence_set_accuracy": 0.25,
+        "exact_valid_path_rate": 0.75,
+        "false_answer_rate": 0.375,
+        "false_unknown_rate": 0.375,
+        "risk_among_answered": 0.75,
+        "risk_coverage_operating_point": {
+          "coverage": 0.5,
+          "risk": 0.75
+        },
+        "semantic_invalid_expansion_rate": 0.3125,
+        "termination_accuracy": 0.25,
+        "trace_validity": 1.0,
+        "unknown_reason_accuracy": 0.25,
+        "unnecessary_reads_per_query": 0.125,
+        "useful_read_recall": 1.0
+      },
+      "runtime_seconds": 0.3460163540003123,
+      "split": "validation_topology_ood",
+      "teacher_forced": {
+        "candidate_count": 34,
+        "candidate_expand_accuracy": 0.7352941176470589,
+        "candidate_mrr": 1.0,
+        "candidate_top1": 1.0,
+        "conflict_accuracy": 0.9411764705882353,
+        "context_read_accuracy": 0.9705882352941176,
+        "context_read_precision": 0.8571428571428571,
+        "context_read_recall": 1.0,
+        "evidence_f1": 0.0,
+        "evidence_inclusion_accuracy": 0.7352941176470589,
+        "evidence_precision": 0.0,
+        "evidence_recall": 0.0,
+        "invalid_expansion_rate": 0.0,
+        "joint_action_accuracy": 0.5555555555555556,
+        "support_accuracy": 0.7941176470588235,
+        "termination_accuracy": 0.5555555555555556,
+        "valid_frontier_recall_at_4": 1.0
+      }
+    }
+  },
+  "parameter_count": 1324889,
+  "peak_memory_bytes": 75453440,
+  "row_permutation_mismatches": 0,
+  "runtime_seconds": 18.214985729002365,
+  "score": 0.47375000000000006,
+  "sealed_test_opened": false,
+  "seed": 101,
+  "source_commit": "ca8fa864004c15c7dae85280d8ea5b70268bd007",
+  "status": "accepted",
+  "timestamp": "2026-07-26T01:27:37.605610+00:00",
+  "torch_version": "2.13.0+cu130",
+  "train_case_count": 48,
+  "training": {
+    "final": {
+      "candidate_count": 201,
+      "candidate_expand_accuracy": 0.7263681592039801,
+      "candidate_mrr": 0.9907407407407407,
+      "candidate_top1": 0.9814814814814815,
+      "conflict_accuracy": 0.9402985074626866,
+      "context_read_accuracy": 0.9751243781094527,
+      "context_read_precision": 0.8780487804878049,
+      "context_read_recall": 1.0,
+      "evidence_f1": 0.22222222222222224,
+      "evidence_inclusion_accuracy": 0.7213930348258707,
+      "evidence_precision": 0.42105263157894735,
+      "evidence_recall": 0.1509433962264151,
+      "invalid_expansion_rate": 0.16666666666666666,
+      "joint_action_accuracy": 0.7213930348258707,
+      "support_accuracy": 0.7910447761194029,
+      "termination_accuracy": 0.8245614035087719,
+      "valid_frontier_recall_at_4": 1.0
+    },
+    "history": [
+      {
+        "elapsed_seconds": 0.0,
+        "gradient_norm": 0.0,
+        "loss": 4.426081751783689,
+        "step": 0
+      },
+      {
+        "elapsed_seconds": 3.062664371998835,
+        "gradient_norm": 2.0373003482818604,
+        "loss": 2.955231189727783,
+        "step": 15
+      },
+      {
+        "elapsed_seconds": 6.13529881499926,
+        "gradient_norm": 2.4148313999176025,
+        "loss": 3.0982131958007812,
+        "step": 30
+      },
+      {
+        "elapsed_seconds": 9.220743294998101,
+        "gradient_norm": 3.247832775115967,
+        "loss": 2.5605111122131348,
+        "step": 45
+      },
+      {
+        "elapsed_seconds": 12.1620077209991,
+        "gradient_norm": 2.114262819290161,
+        "loss": 2.3174118995666504,
+        "step": 60
+      },
+      {
+        "elapsed_seconds": 12.162013671997556,
+        "gradient_norm": 2.114262819290161,
+        "loss": 2.208373423665762,
+        "step": 60
+      }
+    ],
+    "initial": {
+      "candidate_count": 201,
+      "candidate_expand_accuracy": 0.36318407960199006,
+      "candidate_mrr": 0.6867283950617283,
+      "candidate_top1": 0.48148148148148145,
+      "conflict_accuracy": 0.9303482587064676,
+      "context_read_accuracy": 0.8208955223880597,
+      "context_read_precision": 0.0,
+      "context_read_recall": 0.0,
+      "evidence_f1": 0.368421052631579,
+      "evidence_inclusion_accuracy": 0.5223880597014925,
+      "evidence_precision": 0.2828282828282828,
+      "evidence_recall": 0.5283018867924528,
+      "invalid_expansion_rate": 0.6461538461538462,
+      "joint_action_accuracy": 0.15789473684210525,
+      "support_accuracy": 0.3482587064676617,
+      "termination_accuracy": 0.15789473684210525,
+      "valid_frontier_recall_at_4": 0.9629629629629629
+    },
+    "runtime_seconds": 12.162013671997556
+  },
+  "training_steps": 60
+}
