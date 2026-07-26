@@ -237,3 +237,48 @@ tracked. Start with the [Spider final
 report](docs/spider_v0/FINAL_REPORT.md), then see
 [training](docs/spider_v0/TRAINING.md), [design](docs/spider_v0/DESIGN.md),
 and the [dataset card](docs/spider_v0/DATASET_CARD.md).
+
+## Spider v0.1 closed-loop alignment
+
+Generate the v0.2 manifests without materialising sealed cases:
+
+```bash
+.venv/bin/python scripts/generate_spider_v0_2_dataset.py
+```
+
+Run the frozen ten-record controller-alignment matrix:
+
+```bash
+.venv/bin/python scripts/run_spider_v0_1_autoresearch.py \
+  --steps 400 --train-cases 512 --device cuda --dtype float32
+```
+
+The one-time sealed command is intentionally guarded by finalist, config,
+checkpoint, dataset, and split hashes. It must be run only after freezing the
+finalist and threshold; a second invocation refuses access:
+
+```bash
+.venv/bin/python scripts/evaluate_spider_v0_1.py --allow-v0-2-sealed
+```
+
+The post-sealed long-run protocol uses three recurrent and three pooled runs
+at 5,000 steps each on an H100 or A100 (A100 fallback only; no lower
+accelerator fallback). Inspect the frozen protocol before launching:
+
+```bash
+python -m json.tool artifacts/spider_v0_1/COLAB_5K_PROTOCOL.json
+```
+
+The remote entry point is `scripts/colab_spider_v0_1_long_run.py`. It checks
+out the frozen model commit, validates the accelerator and full test suite,
+runs only non-sealed splits, and emits a JSONL ledger plus aggregate report.
+`scripts/colab_spider_v0_1_status.py` reports bounded status for the guarded
+detached launcher. The aborted earlier T4 attempt remains recorded and is
+excluded from all aggregates.
+
+See the [Spider v0.1 final
+report](docs/spider_v0_1/FINAL_REPORT.md), [failure
+audit](docs/spider_v0_1/FAILURE_AUDIT.md), [training
+protocol](docs/spider_v0_1/TRAINING.md), and [v0.2 dataset
+card](docs/spider_v0_1/DATASET_CARD.md). Spider v0 remains immutable historical
+evidence; v0.1 does not reinterpret its sealed result.

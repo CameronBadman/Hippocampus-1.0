@@ -28,6 +28,14 @@ Every split uses `generator_version="spider-programs-v0.2"` and seeds disjoint
 from v0 and from every other v0.2 split. Manifests hash specifications, case
 IDs, and rollout-stress descriptors.
 
+The aggregate manifest digest is
+`101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105`.
+The sealed split digest is
+`d89ca1e17c1d587678eb888ae4714286f1f7bd4e5e5fab5d9eee34d8a493f049`.
+The leakage diagnostic found majority accuracy `0.5000`, best single-metadata
+stump accuracy `0.5078`, and answerability advantage `0.0078`; all generated
+diagnostic cases passed the exact verifier.
+
 ## Rollout-stress states
 
 Supervisor-only stress fixtures cover:
@@ -59,3 +67,7 @@ The v0.2 sealed cases are generated and hashed before training but are not
 materialised by search commands. The primary metric, evidence threshold
 procedure, source commit, finalists, and finalist seeds must be frozen before
 the sole `--allow-v0-2-sealed` evaluation.
+
+That single evaluation occurred at `2026-07-26T04:07:00Z` over all 256 sealed
+cases. `SEALED_ACCESS.json` records the opening, and the evaluator now refuses
+another access. No threshold calibration was performed on sealed data.

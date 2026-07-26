@@ -68,3 +68,48 @@ finalist is selected by mean autonomous success, with the frozen tie-breakers.
 Its exact source, dataset digest, threshold, seed, checkpoint hash, and
 selection record are frozen before v0.2 sealed access. The sealed split is
 opened once.
+
+## Realised local matrix
+
+The ten accepted records ran on an NVIDIA GeForce RTX 5070 Ti in FP32 for
+400 optimiser steps per trained record. All runs used all 512 training cases
+and all non-sealed validation cases. The matrix source was commit `496b750`;
+the sealed evaluator and frozen finalist were committed separately before
+access.
+
+The recurrent three-seed autonomous-success mean was `0.3224 ± 0.0402`
+(population standard deviation). The matched pooled mean was
+`0.2831 ± 0.0067`. The selected recurrent seed was 603, with validation
+aggregate `0.3537` and evidence threshold `0.486353`, calibrated once on
+validation ID.
+
+The complete records are:
+
+- `artifacts/spider_v0_1/experiments.jsonl`;
+- `artifacts/spider_v0_1/EXPERIMENT_SUMMARY.md`;
+- `artifacts/spider_v0_1/autoresearch/`; and
+- `artifacts/spider_v0_1/FINALIST_MANIFEST.json`.
+
+## Post-sealed Colab replication
+
+The 400-step matrix is a controlled comparison, not a convergence study. A
+separate Google Colab replication was therefore pre-registered after the
+sealed result had been opened. The initial 2,000-step T4 attempt was
+interrupted at the user's request while the remote workflow was being
+investigated. It produced zero accepted records and is retained only as the
+machine-readable abort record
+`artifacts/spider_v0_1/COLAB_2K_ABORT.json`.
+
+The replacement protocol trains recurrent and pooled models for 5,000 steps
+on the same 512 non-sealed training cases, using three new seeds per model:
+30,000 optimiser steps in total. H100 was preferred but unavailable to the
+account; the registered A100 fallback was allocated and passed a real CUDA
+preflight on an NVIDIA A100-SXM4-40GB. The preflight records driver 580.82.07,
+CUDA 12.8, PyTorch 2.11.0+cu128, compute capability 8.0, and BF16 support. The
+frozen runs remain FP32 for direct comparability.
+
+These replications cannot alter the selected model, evidence threshold, or
+sealed interpretation. Their exact protocol is
+`artifacts/spider_v0_1/COLAB_5K_PROTOCOL.json`; allocation evidence is
+`artifacts/spider_v0_1/COLAB_5K_ALLOCATION.json`. No sealed access is allowed
+from the remote job.
