@@ -292,3 +292,39 @@ audit](docs/spider_v0_1/FAILURE_AUDIT.md), [training
 protocol](docs/spider_v0_1/TRAINING.md), and [v0.2 dataset
 card](docs/spider_v0_1/DATASET_CARD.md). Spider v0 remains immutable historical
 evidence; v0.1 does not reinterpret its sealed result.
+
+## Spider v0.2 recurrence-utility diagnostic
+
+Generate the non-sealed, matched recurrence-necessity splits:
+
+```bash
+.venv/bin/python scripts/generate_spider_recurrence_dataset.py
+```
+
+Run a short fixed-horizon smoke test. Learned stopping is suppressed, while
+frontier and evidence actions remain learned:
+
+```bash
+.venv/bin/python scripts/train_spider_recurrence.py \
+  --config configs/spider_v0_2/recurrent_recurrence.json \
+  --experiment-id smoke-recurrent \
+  --output-dir /tmp/spider-v02-smoke \
+  --steps 2 --train-cases 4 --eval-cases 4
+```
+
+The registered comparison is exactly three paired 6,000-step recurrent and
+pooled runs. After every run archive and all 36 checkpoints are independently
+verified and backed up, build the fail-closed aggregate and figures:
+
+```bash
+.venv/bin/python scripts/aggregate_spider_v0_2_training.py
+.venv/bin/python scripts/render_spider_v0_2_training_plots.py
+```
+
+The aggregator requires all 42 registered Drive artifacts, the frozen source
+and split hashes, and zero sealed access. Checkpoints and archives are stored
+in the [Spider v0.2 Drive
+folder](https://drive.google.com/drive/folders/1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw).
+See the [frozen design](docs/spider_v0_2/DESIGN.md), [training
+protocol](docs/spider_v0_2/TRAINING.md), and [dataset
+card](docs/spider_v0_2/DATASET_CARD.md).
