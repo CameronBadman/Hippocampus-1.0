@@ -84,6 +84,19 @@
         "drive_url": "https://drive.google.com/file/d/1rAiTa6nHaGcGyB9bGINs5E6x3Xn9nCp3/view?usp=drivesdk",
         "sha256": "69ad90ed9616b8b2aedba7c51f7f6974f2c677c7daa49f16da7862d9233cd8a8"
       }
+    },
+    "REC-pooled-s1701-6k": {
+      "checkpoint_step_001000.pt": {
+        "bytes": 2365542,
+        "drive_created_time": "2026-07-26T15:46:05.811Z",
+        "drive_id": "1Ejxt7qHZea986kV8pix1aI4dfRn0HJL5",
+        "drive_mime_type": "application/x-zip",
+        "drive_parent_id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1Ejxt7qHZea986kV8pix1aI4dfRn0HJL5/view?usp=drivesdk",
+        "sha256": "3c267802a533544b22c7894cf3857d673bdf6e8e2f43fbb9b685e95aaff50822"
+      }
     }
   },
   "schema_version": 1
