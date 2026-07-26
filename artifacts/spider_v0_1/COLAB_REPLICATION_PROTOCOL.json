@@ -1,0 +1,51 @@
+{
+  "analysis_status": "post-sealed replication; cannot alter finalist selection",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "dataset_version": "spider-programs-v0.2",
+  "evaluation_splits": [
+    "validation_id",
+    "validation_graph_size_ood",
+    "validation_path_length_ood",
+    "validation_topology_ood",
+    "validation_cardinality_ood",
+    "validation_equivalent_view_ood",
+    "validation_composition_ood",
+    "development_rollout_stress"
+  ],
+  "evidence_calibration_split": "validation_id",
+  "experiment_ids": [
+    "C-E004-recurrent-s701-2k",
+    "C-E005-pooled-s701-2k",
+    "C-E004-recurrent-s802-2k",
+    "C-E005-pooled-s802-2k",
+    "C-E004-recurrent-s903-2k",
+    "C-E005-pooled-s903-2k"
+  ],
+  "frozen_at": "2026-07-26T04:14:00Z",
+  "hardware_request": {
+    "accepted": "T4",
+    "rejected": [
+      "A100",
+      "L4"
+    ],
+    "service": "Google Colab"
+  },
+  "models": [
+    "E004 hierarchical tied recurrent Spider",
+    "E005 matched hierarchical pooled control"
+  ],
+  "primary_metric": "complete non-sealed validation autonomous success",
+  "sealed_access_allowed": false,
+  "seeds": [
+    701,
+    802,
+    903
+  ],
+  "selection_effect": "none",
+  "source_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746",
+  "training": {
+    "cases": 512,
+    "dtype": "float32",
+    "optimizer_steps": 2000
+  }
+}
