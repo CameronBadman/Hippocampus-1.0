@@ -1,0 +1,27 @@
+{
+  "accelerator": "A100",
+  "allocated_at": "2026-07-26T05:27:24.217278Z",
+  "allocation_backend": "official Colab CLI 0.6.0",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "h100_attempt": {
+    "cleanup_succeeded": true,
+    "error": "quota or entitlement unavailable",
+    "state": "failed"
+  },
+  "preflight": {
+    "bf16_supported": true,
+    "compute_capability": [
+      8,
+      0
+    ],
+    "cuda_runtime": "12.8",
+    "device": "NVIDIA A100-SXM4-40GB",
+    "driver": "580.82.07",
+    "memory_mib": 40960,
+    "torch": "2.11.0+cu128"
+  },
+  "protocol": "artifacts/spider_v0_1/COLAB_5K_PROTOCOL.json",
+  "sealed_access_allowed": false,
+  "session_name": "hippocampus-spider-v01-5k-6b35ac08",
+  "state": "ready"
+}
