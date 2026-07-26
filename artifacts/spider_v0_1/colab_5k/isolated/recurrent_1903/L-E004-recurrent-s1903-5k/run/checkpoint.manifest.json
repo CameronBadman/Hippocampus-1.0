@@ -1,0 +1,7 @@
+{
+  "checkpoint_path": "/content/spider-v01-colab-5k-isolated/L-E004-recurrent-s1903-5k/run/checkpoint.pt",
+  "checkpoint_sha256": "3f603910e8107eb7b6406ec92373f5c12e9010cf7739d167e91c13c05c62a6fc",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "evidence_threshold": 0.860297441482544,
+  "source_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746"
+}

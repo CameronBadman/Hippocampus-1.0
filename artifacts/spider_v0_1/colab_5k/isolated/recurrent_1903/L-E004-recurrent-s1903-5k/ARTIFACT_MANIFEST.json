@@ -1,0 +1,49 @@
+{
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "experiment_id": "L-E004-recurrent-s1903-5k",
+  "file_count_excluding_manifest": 10,
+  "files": {
+    "ENVIRONMENT.json": {
+      "bytes": 248,
+      "sha256": "f74f1c7b1169a04f580773aa7dd3b6db85fc8d848d8647fa4145f64d8f7bab01"
+    },
+    "JOB_STATUS.json": {
+      "bytes": 202,
+      "sha256": "9b0ed5624c8fe4f368c1d9effa61bd3d5846a4a93b8dc2e000fa8e3d5e29b91a"
+    },
+    "config.json": {
+      "bytes": 2360,
+      "sha256": "3292bd3208ebcf98d97cdd74c15a65a0060be384ca8cd04f26a32c47386cd477"
+    },
+    "replication_record.json": {
+      "bytes": 558292,
+      "sha256": "1a4f40e175c761bb1f8061595e375497e23bb7050f5d2c7bd95296f184fbe1d1"
+    },
+    "run/checkpoint.manifest.json": {
+      "bytes": 400,
+      "sha256": "a63b1fe0ca9722228b2f1dadae798af328c9e4bd0f0f7ae60bbfb1c57da63e5d"
+    },
+    "run/checkpoint.pt": {
+      "bytes": 3898641,
+      "sha256": "3f603910e8107eb7b6406ec92373f5c12e9010cf7739d167e91c13c05c62a6fc"
+    },
+    "run/evidence_calibration.json": {
+      "bytes": 56750,
+      "sha256": "d0ef3deaf3157e8acf3ed217e72c3f60343c215dbe35ec2c07961cea3ca0f7cd"
+    },
+    "run/history.jsonl": {
+      "bytes": 2536,
+      "sha256": "692f7da1d33af03044d72380a4091006cece10efb16ef0cc256d35ff167ac23a"
+    },
+    "run/metrics.json": {
+      "bytes": 621664,
+      "sha256": "2f67e0d8c925229990cc39953ce9611443663e478b25f9d13ce2532f40b4cb3d"
+    },
+    "run/process.log": {
+      "bytes": 147,
+      "sha256": "6c7603b51c013f98f5d285e90734ed2c03ee7c0562e81eae59a48f9297af134c"
+    }
+  },
+  "sealed_access_count": 0,
+  "source_model_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746"
+}
