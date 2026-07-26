@@ -12,6 +12,7 @@ from .baselines import FlatTransformerScorer, PooledScorer
 from .config import SparseControllerConfig, SpiderModelConfig
 from .losses import SpiderLossConfig
 from .model import CandidateScorerBase, SpiderModel
+from .controller import ActionSchedule
 from .training import TrainingLoopConfig
 
 
@@ -81,6 +82,7 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         use_global_evidence=bool(model_data.get("use_global_evidence", True)),
         tied_recurrence=bool(model_data.get("tied_recurrence", True)),
         untied_rounds=int(model_data.get("untied_rounds", 8)),
+        termination_mode=str(model_data.get("termination_mode", "flat")),
     )
     controller_data = raw["controller"]
     controller_config = SparseControllerConfig(
@@ -90,8 +92,17 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         context_read_budget=int(controller_data["context_read_budget"]),
         search_budget=int(controller_data.get("search_budget", 4096)),
         max_depth=int(controller_data["max_depth"]),
+        expand_threshold=float(
+            controller_data.get("expand_threshold", 0.5)
+        ),
+        context_threshold=float(
+            controller_data.get("context_threshold", 0.5)
+        ),
         evidence_threshold=float(
             controller_data.get("evidence_threshold", 0.5)
+        ),
+        evidence_selection_budget=int(
+            controller_data.get("evidence_selection_budget", 32)
         ),
     )
     training_data = raw["training"]
@@ -110,10 +121,17 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
                 (1.0,),
             )
         ),
+        action_schedule=tuple(
+            ActionSchedule(
+                frontier=float(item["frontier"]),
+                context=float(item["context"]),
+                evidence=float(item["evidence"]),
+                termination=float(item["termination"]),
+            )
+            for item in training_data.get("action_schedule", ())
+        ),
     )
-    loss_config = SpiderLossConfig(
-        **{name: float(value) for name, value in raw["loss"].items()}
-    )
+    loss_config = SpiderLossConfig(**raw["loss"])
     device = _resolve_device(training_data.get("device"))
     dtype = _resolve_dtype(training_data.get("dtype"))
     pack_config = PackConfig(device=device, value_dtype=dtype)

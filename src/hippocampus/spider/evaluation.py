@@ -160,7 +160,11 @@ def evaluate_batches(
         torch.cuda.reset_peak_memory_stats(batches[0].device)
         torch.cuda.synchronize(batches[0].device)
     started = time.perf_counter()
-    oracle_loss, teacher = evaluate_oracle_batches(model, batches)
+    oracle_loss, teacher = evaluate_oracle_batches(
+        model,
+        batches,
+        controller_config=controller_config,
+    )
     controller = SparseWavefrontController(controller_config)
 
     termination_correct = 0

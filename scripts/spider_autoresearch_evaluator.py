@@ -152,6 +152,7 @@ def main() -> None:
         train_batches,
         loop_config=experiment.training_config,
         loss_config=experiment.loss_config,
+        controller_config=experiment.controller_config,
         checkpoint_path=checkpoint,
     )
 

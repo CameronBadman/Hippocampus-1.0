@@ -124,6 +124,7 @@ def main() -> None:
         batches,
         loop_config=loop,
         loss_config=experiment.loss_config,
+        controller_config=experiment.controller_config,
         checkpoint_path=checkpoint,
     )
     metrics = {

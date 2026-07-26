@@ -17,8 +17,7 @@ from ..programs import (
     SyntheticManifoldRenderer,
     pack_rendered_cases,
 )
-from ..programs.schema import CandidateTarget, TerminationDecision
-from .hypothesis import HypothesisBatch
+from ..programs.schema import TerminationDecision
 from .config import SparseControllerConfig
 from .controller import (
     ActionSchedule,
@@ -32,7 +31,7 @@ from .losses import (
     SpiderLossConfig,
     SpiderLossReport,
     candidate_loss_report,
-    termination_loss_term,
+    termination_loss_report,
 )
 from .model import CandidateScorerBase
 from .state_oracle import StateOracle
@@ -106,6 +105,8 @@ class OracleMetrics:
     evidence_true_positive: int
     evidence_false_positive: int
     evidence_false_negative: int
+    evidence_positive_labels: int
+    evidence_negative_labels: int
     termination_count: int
     termination_correct: int
 
@@ -215,6 +216,8 @@ class OracleMetrics:
             "evidence_precision": self.evidence_precision,
             "evidence_recall": self.evidence_recall,
             "evidence_f1": self.evidence_f1,
+            "evidence_positive_labels": self.evidence_positive_labels,
+            "evidence_negative_labels": self.evidence_negative_labels,
             "termination_accuracy": self.termination_accuracy,
             "joint_action_accuracy": self.joint_action_accuracy,
         }
@@ -272,192 +275,6 @@ class TrainingResult:
     initial_metrics: OracleMetrics
     final_metrics: OracleMetrics
     runtime_seconds: float
-
-
-def _target_map(
-    candidates: tuple[CandidateTarget, ...],
-) -> dict[tuple[int, int, int], CandidateTarget]:
-    return {
-        (
-            candidate.edge_id,
-            candidate.source_node,
-            candidate.destination_node,
-        ): candidate
-        for candidate in candidates
-    }
-
-
-def candidate_supervision(
-    batch: PackedProgramBatch,
-    round_index: int,
-    expansion,
-) -> CandidateSupervision:
-    if batch.graph_count != 1:
-        raise ValueError("oracle rollout currently consumes singleton packed cases")
-    case = batch.cases[0]
-    node_offset = int(batch.graph.topology.graph_node_ptr[0].item())
-    edge_offset = int(batch.graph.topology.graph_edge_ptr[0].item())
-    targets = _target_map(case.trace.rounds[round_index].candidates)
-    resolved: list[CandidateTarget] = []
-    for edge_id, source, destination in zip(
-        expansion.edge_ids.tolist(),
-        expansion.source_node_ids.tolist(),
-        expansion.destination_node_ids.tolist(),
-        strict=True,
-    ):
-        key = (
-            edge_id - edge_offset,
-            source - node_offset,
-            destination - node_offset,
-        )
-        try:
-            resolved.append(targets[key])
-        except KeyError as exc:
-            raise ValueError(
-                f"expanded candidate {key} is absent from oracle round {round_index}"
-            ) from exc
-    device = batch.device
-    return CandidateSupervision(
-        acceptable=torch.tensor(
-            [target.acceptable for target in resolved],
-            dtype=torch.bool,
-            device=device,
-        ),
-        context_has_value=torch.tensor(
-            [target.context_has_value for target in resolved],
-            dtype=torch.bool,
-            device=device,
-        ),
-        include_as_evidence=torch.tensor(
-            [target.include_as_evidence for target in resolved],
-            dtype=torch.bool,
-            device=device,
-        ),
-        remaining_cost=torch.tensor(
-            [target.remaining_cost for target in resolved],
-            dtype=torch.float32,
-            device=device,
-        ),
-        support=torch.tensor(
-            [target.support for target in resolved],
-            dtype=torch.float32,
-            device=device,
-        ),
-        conflict=torch.tensor(
-            [target.conflict for target in resolved],
-            dtype=torch.float32,
-            device=device,
-        ),
-    )
-
-
-def _encountered_supervision(
-    batch: PackedProgramBatch,
-    expansion,
-) -> CandidateSupervision:
-    case = batch.cases[0]
-    node_offset = int(batch.graph.topology.graph_node_ptr[0].item())
-    edge_offset = int(batch.graph.topology.graph_edge_ptr[0].item())
-    targets = {
-        (
-            candidate.edge_id,
-            candidate.source_node,
-            candidate.destination_node,
-        ): candidate
-        for round_ in case.trace.rounds
-        for candidate in round_.candidates
-    }
-    resolved: list[CandidateTarget] = []
-    for edge_id, source, destination in zip(
-        expansion.edge_ids.tolist(),
-        expansion.source_node_ids.tolist(),
-        expansion.destination_node_ids.tolist(),
-        strict=True,
-    ):
-        key = (
-            edge_id - edge_offset,
-            source - node_offset,
-            destination - node_offset,
-        )
-        resolved.append(
-            targets.get(
-                key,
-                CandidateTarget(
-                    edge_id=key[0],
-                    source_node=key[1],
-                    destination_node=key[2],
-                    acceptable=False,
-                    priority_tier=1,
-                    remaining_cost=0.0,
-                ),
-            )
-        )
-    device = batch.device
-    return CandidateSupervision(
-        acceptable=torch.tensor(
-            [target.acceptable for target in resolved],
-            dtype=torch.bool,
-            device=device,
-        ),
-        context_has_value=torch.tensor(
-            [target.context_has_value for target in resolved],
-            dtype=torch.bool,
-            device=device,
-        ),
-        include_as_evidence=torch.tensor(
-            [target.include_as_evidence for target in resolved],
-            dtype=torch.bool,
-            device=device,
-        ),
-        remaining_cost=torch.tensor(
-            [target.remaining_cost for target in resolved],
-            dtype=torch.float32,
-            device=device,
-        ),
-        support=torch.tensor(
-            [target.support for target in resolved],
-            dtype=torch.float32,
-            device=device,
-        ),
-        conflict=torch.tensor(
-            [target.conflict for target in resolved],
-            dtype=torch.float32,
-            device=device,
-        ),
-    )
-
-
-def _next_oracle_hypotheses(
-    model: CandidateScorerBase,
-    hypotheses: HypothesisBatch,
-    expansion,
-    outputs: CandidateOutputs,
-    acceptable: torch.Tensor,
-) -> HypothesisBatch:
-    selected = torch.nonzero(acceptable, as_tuple=False).flatten()
-    if selected.numel() == 0:
-        return model.empty_hypotheses(hypotheses.device)
-    parents = expansion.frontier_positions[selected].to(torch.int64)
-    return HypothesisBatch(
-        node_ids=expansion.destination_node_ids[selected],
-        graph_ids=hypotheses.graph_ids[parents],
-        path_state=outputs.next_path_state[selected],
-        scores=hypotheses.scores[parents] + outputs.priority_logits[selected],
-        depths=hypotheses.depths[parents] + 1,
-        parent_trace_ids=torch.full(
-            (selected.numel(),),
-            -1,
-            dtype=torch.int64,
-            device=hypotheses.device,
-        ),
-        incoming_arc_ids=expansion.arc_ids[selected],
-        incoming_edge_ids=expansion.edge_ids[selected],
-        context_read=torch.zeros(
-            selected.numel(),
-            dtype=torch.bool,
-            device=hypotheses.device,
-        ),
-    ).validate()
 
 
 def _round_metrics(
@@ -580,6 +397,12 @@ def _round_metrics(
                 ~evidence_predictions & supervision.include_as_evidence
             ).sum().item()
         ),
+        evidence_positive_labels=int(
+            supervision.include_as_evidence.sum().item()
+        ),
+        evidence_negative_labels=int(
+            (~supervision.include_as_evidence).sum().item()
+        ),
         termination_count=1,
         termination_correct=int(termination_prediction == termination_target),
     )
@@ -665,12 +488,13 @@ def controller_rollout(
         )
         termination_target = oracle.termination_target(transition)
         target_index = TERMINATION_TO_INDEX[termination_target.decision]
-        termination_logits = model.termination_logits(
+        termination_output = model.termination_output(
             batch,
             transition.next_hypotheses,
             transition.next_evidence,
             transition.termination_control,
         )
+        termination_logits = termination_output.logits
         candidate_report = candidate_loss_report(
             transition.refined_outputs,
             supervision.candidates,
@@ -679,8 +503,8 @@ def controller_rollout(
             config=config,
             context_logits=proposal.candidate_outputs.context_logits,
         )
-        termination = termination_loss_term(
-            termination_logits,
+        termination_report = termination_loss_report(
+            termination_output,
             torch.tensor(
                 [target_index],
                 dtype=torch.int64,
@@ -692,7 +516,7 @@ def controller_rollout(
             SpiderLossReport(
                 terms={
                     **candidate_report.terms,
-                    "termination": termination,
+                    **termination_report.terms,
                 }
             )
         )
@@ -711,19 +535,15 @@ def controller_rollout(
         evidence_labels.append(
             supervision.candidates.include_as_evidence.detach()
         )
-        model_decision = _TERMINATION_FROM_INDEX[
-            int(termination_logits.argmax(dim=-1)[0].item())
-        ]
+        model_decision = controller.execute_termination(
+            termination_logits,
+            transition,
+        )[0]
         executed = (
             termination_target.decision
             if actions.termination_source is ActionSource.ORACLE
             else model_decision
         )
-        if (
-            executed is TerminationDecision.CONTINUE
-            and transition.next_hypotheses.count == 0
-        ):
-            executed = TerminationDecision.UNKNOWN_INCOMPLETE
         diagnostics.append(
             RolloutRoundDiagnostic(
                 round_index=state.round_index,
@@ -771,12 +591,6 @@ def controller_rollout(
             else torch.empty(0, dtype=torch.bool, device=batch.device)
         ),
     )
-
-
-_TERMINATION_FROM_INDEX = {
-    index: decision
-    for decision, index in TERMINATION_TO_INDEX.items()
-}
 
 
 def _default_controller_config(

@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from typing import Literal
 
 import torch
 from torch.nn import functional as F
 
 from ..segmented import segment_logsumexp, segment_sum
 from .types import CandidateOutputs
+from .terminator import TerminationOutput
+
+
+EvidenceLossMode = Literal["plain", "balanced", "focal"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,11 +26,19 @@ class SpiderLossConfig:
     consistency: float = 0.0
     search_cost: float = 0.0
     context_cost: float = 0.0
+    evidence_set: float = 0.0
+    evidence_mode: EvidenceLossMode = "plain"
+    evidence_positive_weight: float | None = None
+    evidence_focal_gamma: float = 2.0
+    evidence_false_positive_penalty: float = 0.1
 
     def __post_init__(self) -> None:
         for field in fields(self):
-            if getattr(self, field.name) < 0:
-                raise ValueError(f"{field.name} loss weight must be non-negative")
+            value = getattr(self, field.name)
+            if isinstance(value, (int, float)) and value < 0:
+                raise ValueError(f"{field.name} loss setting must be non-negative")
+        if self.evidence_mode not in {"plain", "balanced", "focal"}:
+            raise ValueError("evidence_mode must be plain, balanced, or focal")
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,9 +175,72 @@ def candidate_loss_report(
             context_source.float(),
             supervision.context_has_value.float(),
         )
-        evidence = F.binary_cross_entropy_with_logits(
-            outputs.evidence_logits.float(),
-            supervision.include_as_evidence.float(),
+        evidence_targets = supervision.include_as_evidence.float()
+        evidence_logits = outputs.evidence_logits.float()
+        positive_count = int(
+            supervision.include_as_evidence.sum().item()
+        )
+        negative_count = count - positive_count
+        if config.evidence_mode == "plain":
+            evidence = F.binary_cross_entropy_with_logits(
+                evidence_logits,
+                evidence_targets,
+            )
+        elif config.evidence_mode == "balanced":
+            positive_weight = (
+                config.evidence_positive_weight
+                if config.evidence_positive_weight is not None
+                else negative_count / max(1, positive_count)
+            )
+            evidence = F.binary_cross_entropy_with_logits(
+                evidence_logits,
+                evidence_targets,
+                pos_weight=evidence_logits.new_tensor(
+                    max(1.0, positive_weight)
+                ),
+            )
+        else:
+            elementwise = F.binary_cross_entropy_with_logits(
+                evidence_logits,
+                evidence_targets,
+                reduction="none",
+            )
+            probabilities = torch.sigmoid(evidence_logits)
+            target_probability = torch.where(
+                supervision.include_as_evidence,
+                probabilities,
+                1.0 - probabilities,
+            )
+            evidence = (
+                (1.0 - target_probability).pow(
+                    config.evidence_focal_gamma
+                )
+                * elementwise
+            ).mean()
+        probabilities = torch.sigmoid(evidence_logits)
+        if positive_count:
+            positive_logits = evidence_logits[
+                supervision.include_as_evidence
+            ]
+            positive_mass = (
+                torch.logsumexp(evidence_logits, dim=0)
+                - torch.logsumexp(positive_logits, dim=0)
+            )
+            soft_recall = 1.0 - probabilities[
+                supervision.include_as_evidence
+            ].mean()
+        else:
+            positive_mass = _zero(evidence_logits)
+            soft_recall = _zero(evidence_logits)
+        false_positive = (
+            probabilities[~supervision.include_as_evidence].mean()
+            if negative_count
+            else _zero(evidence_logits)
+        )
+        evidence_set = (
+            0.5 * positive_mass
+            + 0.5 * soft_recall
+            + config.evidence_false_positive_penalty * false_positive
         )
         support = F.binary_cross_entropy_with_logits(
             outputs.support_logits.float(),
@@ -185,6 +261,7 @@ def candidate_loss_report(
         expand = _zero(outputs.expand_logits)
         context = _zero(outputs.context_logits)
         evidence = _zero(outputs.evidence_logits)
+        evidence_set = _zero(outputs.evidence_logits)
         support_conflict = _zero(outputs.support_logits)
         remaining = _zero(outputs.remaining_cost)
         search_cost = _zero(outputs.expand_logits)
@@ -202,6 +279,15 @@ def candidate_loss_report(
                 evidence,
                 weight=config.evidence,
                 target_count=count,
+            ),
+            "evidence_set": _term(
+                evidence_set,
+                weight=config.evidence_set,
+                target_count=(
+                    int(supervision.include_as_evidence.sum().item())
+                    if count
+                    else 0
+                ),
             ),
             "support_conflict": _term(
                 support_conflict,
@@ -241,6 +327,77 @@ def termination_loss_term(
         raw,
         weight=config.termination,
         target_count=int(targets.numel()),
+    )
+
+
+def termination_loss_report(
+    output: TerminationOutput,
+    targets: torch.Tensor,
+    *,
+    config: SpiderLossConfig,
+) -> SpiderLossReport:
+    """Return flat or masked hierarchical termination objectives."""
+
+    resolved = targets.to(device=output.logits.device, dtype=torch.int64)
+    if output.stop_logits is None:
+        return SpiderLossReport(
+            {
+                "termination": termination_loss_term(
+                    output.logits,
+                    resolved,
+                    config=config,
+                )
+            }
+        )
+    if (
+        output.answer_logits is None
+        or output.unknown_logits is None
+    ):
+        raise ValueError("hierarchical termination output is incomplete")
+    stop_targets = resolved != 0
+    stop_raw = F.binary_cross_entropy_with_logits(
+        output.stop_logits.float(),
+        stop_targets.float(),
+    )
+    stop_term = _term(
+        stop_raw,
+        weight=config.termination,
+        target_count=int(resolved.numel()),
+    )
+    if bool(stop_targets.any().item()):
+        answer_targets = resolved[stop_targets] == 1
+        answer_raw = F.binary_cross_entropy_with_logits(
+            output.answer_logits[stop_targets].float(),
+            answer_targets.float(),
+        )
+        answer_count = int(stop_targets.sum().item())
+    else:
+        answer_raw = _zero(output.answer_logits)
+        answer_count = 0
+    unknown_mask = resolved >= 2
+    if bool(unknown_mask.any().item()):
+        unknown_raw = F.cross_entropy(
+            output.unknown_logits[unknown_mask].float(),
+            resolved[unknown_mask] - 2,
+        )
+        unknown_count = int(unknown_mask.sum().item())
+    else:
+        unknown_raw = _zero(output.unknown_logits)
+        unknown_count = 0
+    return SpiderLossReport(
+        {
+            "termination_stop": stop_term,
+            "termination_answer": _term(
+                answer_raw,
+                weight=config.termination,
+                target_count=answer_count,
+            ),
+            "termination_unknown": _term(
+                unknown_raw,
+                weight=config.termination,
+                target_count=unknown_count,
+            ),
+        }
     )
 
 

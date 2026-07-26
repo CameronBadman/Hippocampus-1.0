@@ -21,7 +21,11 @@ from .set_attention import (
     padded_family_gather,
     project_padded_set,
 )
-from .terminator import TerminationHead
+from .terminator import (
+    HierarchicalTerminationHead,
+    TerminationHead,
+    TerminationOutput,
+)
 from .types import CandidateOutputs, PaddedSet
 
 
@@ -64,9 +68,13 @@ class CandidateScorerBase(nn.Module, ABC):
             config.num_heads,
             config.dropout,
         )
-        self.termination_head = TerminationHead(
-            config.d_model,
-            config.control_width,
+        self.termination_head = (
+            TerminationHead(config.d_model, config.control_width)
+            if config.termination_mode == "flat"
+            else HierarchicalTerminationHead(
+                config.d_model,
+                config.control_width,
+            )
         )
 
     def _validate_batch_widths(self, batch: PackedProgramBatch) -> None:
@@ -282,13 +290,13 @@ class CandidateScorerBase(nn.Module, ABC):
             return evidence
         return self.evidence_updater(evidence, messages, graph_ids)
 
-    def termination_logits(
+    def termination_output(
         self,
         batch: PackedProgramBatch,
         hypotheses: HypothesisBatch,
         evidence: torch.Tensor,
         controller_features: torch.Tensor | None = None,
-    ) -> torch.Tensor:
+    ) -> TerminationOutput:
         graph_count = batch.graph_count
         graph_ids = torch.arange(
             graph_count,
@@ -317,7 +325,31 @@ class CandidateScorerBase(nn.Module, ABC):
             if controller_features is None
             else controller_features
         )
-        return self.termination_head(query, evidence_pool, frontier, control)
+        output = self.termination_head(
+            query,
+            evidence_pool,
+            frontier,
+            control,
+        )
+        return (
+            TerminationOutput(logits=output)
+            if isinstance(output, torch.Tensor)
+            else output
+        )
+
+    def termination_logits(
+        self,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        controller_features: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        return self.termination_output(
+            batch,
+            hypotheses,
+            evidence,
+            controller_features,
+        ).logits
 
 
 class SpiderModel(CandidateScorerBase):

@@ -1083,6 +1083,26 @@ class SparseWavefrontController:
             return TerminationDecision.UNKNOWN_INCOMPLETE
         return TerminationDecision.UNKNOWN_ABSENT
 
+    def execute_termination(
+        self,
+        logits: torch.Tensor,
+        transition: ControllerTransition,
+    ) -> tuple[TerminationDecision, ...]:
+        """Execute model termination with the canonical empty-state fallback."""
+
+        decisions = tuple(
+            _TERMINATION_CLASSES[index]
+            for index in logits.argmax(dim=-1).tolist()
+        )
+        if transition.next_hypotheses.count == 0:
+            decisions = tuple(
+                self._empty_fallback(transition.next_controller_state)
+                if decision is TerminationDecision.CONTINUE
+                else decision
+                for decision in decisions
+            )
+        return decisions
+
     def run(
         self,
         model: CandidateScorerBase,
@@ -1132,17 +1152,10 @@ class SparseWavefrontController:
                 evidence,
                 transition.termination_control,
             )
-            termination = tuple(
-                _TERMINATION_CLASSES[index]
-                for index in final_logits.argmax(dim=-1).tolist()
+            termination = self.execute_termination(
+                final_logits,
+                transition,
             )
-            if hypotheses.count == 0:
-                termination = tuple(
-                    self._empty_fallback(state)
-                    if decision is TerminationDecision.CONTINUE
-                    else decision
-                    for decision in termination
-                )
             diagnostics.append(
                 ActionDiagnostic(
                     round_index=state.round_index - 1,

@@ -1,6 +1,13 @@
 """Trainable recurrent manifold graph interpreter and deterministic controller."""
 
 from .baselines import FlatTransformerScorer, PooledScorer
+from .calibration import (
+    EvidenceCalibration,
+    PrecisionRecallPoint,
+    binary_average_precision,
+    calibrate_evidence_threshold,
+    precision_recall_curve,
+)
 from .config import SparseControllerConfig, SpiderModelConfig
 from .controller import (
     ActionDiagnostic,
@@ -28,6 +35,11 @@ from .experiment import (
     parameter_count,
 )
 from .evaluation import EvaluationReport, evaluate_batches
+from .evaluation_v0_1 import (
+    ClosedLoopEvaluationReport,
+    calibrate_on_development_batches,
+    evaluate_closed_loop_batches,
+)
 from .losses import (
     CandidateSupervision,
     LossTerm,
@@ -36,6 +48,7 @@ from .losses import (
     behavioural_consistency_loss,
     candidate_loss_report,
     multi_positive_priority_loss,
+    termination_loss_report,
 )
 from .model import CandidateScorerBase, SpiderModel
 from .state_oracle import StateOracle, StateSupervision
@@ -69,6 +82,7 @@ __all__ = [
     "CandidateOutputs",
     "CandidateScorerBase",
     "CandidateSupervision",
+    "ClosedLoopEvaluationReport",
     "ContextLedgerEntry",
     "ControllerActions",
     "ControllerProposal",
@@ -76,6 +90,7 @@ __all__ = [
     "ControllerState",
     "ControllerStep",
     "ControllerTransition",
+    "EvidenceCalibration",
     "EvidenceLedgerEntry",
     "EvaluationReport",
     "FlatTransformerScorer",
@@ -86,6 +101,7 @@ __all__ = [
     "PaddedSet",
     "PooledScorer",
     "PositionFreeCrossAttention",
+    "PrecisionRecallPoint",
     "ResolvedExperiment",
     "RolloutRoundDiagnostic",
     "SparseControllerConfig",
@@ -102,12 +118,16 @@ __all__ = [
     "TrainingResult",
     "attention_backend_status",
     "behavioural_consistency_loss",
+    "binary_average_precision",
     "build_model",
+    "calibrate_evidence_threshold",
+    "calibrate_on_development_batches",
     "candidate_control_features",
     "candidate_loss_report",
     "controller_rollout",
     "evaluate_oracle_batches",
     "evaluate_batches",
+    "evaluate_closed_loop_batches",
     "make_tiny_cases",
     "multi_positive_priority_loss",
     "mixed_rollout",
@@ -115,7 +135,9 @@ __all__ = [
     "oracle_rollout",
     "parameter_count",
     "padded_family_gather",
+    "precision_recall_curve",
     "stable_candidate_selection",
     "termination_control_features",
+    "termination_loss_report",
     "train_oracle_batches",
 ]
