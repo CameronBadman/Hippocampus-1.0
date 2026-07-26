@@ -101,6 +101,17 @@ requires the exact six-run matrix, all 42 Drive artifacts, zero sealed access,
 zero replay mismatches, zero row-permutation decision mismatches, and the
 frozen dataset/source identities before it computes a paired result.
 
+After the aggregate passes, render the figures directly from the certified
+summary and per-run histories:
+
+```bash
+.venv/bin/python scripts/render_spider_v0_2_training_plots.py
+```
+
+This emits dependency-free SVG learning curves and paired structural/state-use
+figures below `artifacts/spider_v0_2/plots/`. The renderer does not read either
+the historical Spider v0 sealed data or a new sealed split.
+
 ## Commands
 
 Smoke:
