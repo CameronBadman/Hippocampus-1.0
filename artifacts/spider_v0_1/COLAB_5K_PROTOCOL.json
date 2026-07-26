@@ -1,0 +1,55 @@
+{
+  "accelerator_policy": {
+    "fallback": "A100",
+    "forbidden_fallbacks": [
+      "G4",
+      "L4",
+      "T4",
+      "CPU"
+    ],
+    "preferred": "H100"
+  },
+  "analysis_status": "post-sealed replication; cannot alter finalist selection",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "dataset_version": "spider-programs-v0.2",
+  "evaluation_splits": [
+    "validation_id",
+    "validation_graph_size_ood",
+    "validation_path_length_ood",
+    "validation_topology_ood",
+    "validation_cardinality_ood",
+    "validation_equivalent_view_ood",
+    "validation_composition_ood",
+    "development_rollout_stress"
+  ],
+  "evidence_calibration_split": "validation_id",
+  "experiment_ids": [
+    "L-E004-recurrent-s1701-5k",
+    "L-E005-pooled-s1701-5k",
+    "L-E004-recurrent-s1802-5k",
+    "L-E005-pooled-s1802-5k",
+    "L-E004-recurrent-s1903-5k",
+    "L-E005-pooled-s1903-5k"
+  ],
+  "frozen_at": "2026-07-26T05:10:00Z",
+  "maximum_job_runtime_seconds": 14400,
+  "models": [
+    "E004 hierarchical tied recurrent Spider",
+    "E005 matched hierarchical pooled control"
+  ],
+  "primary_metric": "complete non-sealed validation autonomous success",
+  "sealed_access_allowed": false,
+  "seeds": [
+    1701,
+    1802,
+    1903
+  ],
+  "selection_effect": "none",
+  "source_model_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746",
+  "training": {
+    "cases": 512,
+    "dtype": "float32",
+    "optimizer_steps_per_run": 5000,
+    "total_optimizer_steps": 30000
+  }
+}

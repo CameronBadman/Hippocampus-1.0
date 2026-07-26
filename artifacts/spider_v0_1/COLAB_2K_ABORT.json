@@ -1,0 +1,19 @@
+{
+  "accelerator": "T4",
+  "analysis_status": "aborted; excluded from every aggregate",
+  "cancelled_at": "2026-07-26T04:57:30.031738Z",
+  "cancellation_reason": "explicit user request while investigating the remote workflow",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "execution_id": "e6608789-a2ec-46f7-885d-4adbcec372d5",
+  "final_state": "unknown",
+  "idle_received": true,
+  "interruption": "KeyboardInterrupt",
+  "output_complete": false,
+  "results_accepted": 0,
+  "sealed_access_allowed": false,
+  "sealed_access_count": 0,
+  "session": "hippocampus-spider-v01",
+  "session_released": true,
+  "source_sha256": "d72ba2964299136baae6502226d520257f26ef1d831de1f1f5563e4756447718",
+  "started_at": "2026-07-26T04:16:12.975508Z"
+}
