@@ -43,6 +43,16 @@ def test_training_entrypoint_owns_creation_of_run_directory() -> None:
     assert 'str(run_output),' in source
 
 
+def test_worker_reuses_only_a_verified_clean_source_checkout() -> None:
+    source = Path(
+        "scripts/colab_spider_v0_2_recurrence_worker.py"
+    ).read_text()
+
+    assert '"git", "rev-parse", "HEAD"' in source
+    assert '"git", "status", "--porcelain", "--untracked-files=no"' in source
+    assert 'return "reused_verified_checkout"' in source
+
+
 def test_worker_streams_stable_periodic_checkpoints() -> None:
     source = Path(
         "scripts/colab_spider_v0_2_recurrence_worker.py"

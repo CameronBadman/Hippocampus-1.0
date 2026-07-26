@@ -118,9 +118,27 @@ def write_status(
     )
 
 
-def prepare_repository() -> None:
+def _verify_repository_checkout() -> None:
+    resolved = run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPOSITORY,
+        capture=True,
+    ).stdout.strip()
+    if resolved != SOURCE_COMMIT:
+        raise RuntimeError(f"source checkout drifted to {resolved}")
+    status = run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=REPOSITORY,
+        capture=True,
+    ).stdout.strip()
+    if status:
+        raise RuntimeError("source checkout contains tracked modifications")
+
+
+def prepare_repository() -> str:
     if REPOSITORY.exists():
-        raise FileExistsError(f"refusing to reuse {REPOSITORY}")
+        _verify_repository_checkout()
+        return "reused_verified_checkout"
     run(
         [
             "git",
@@ -132,21 +150,20 @@ def prepare_repository() -> None:
         timeout=300,
     )
     run(["git", "checkout", "--detach", SOURCE_COMMIT], cwd=REPOSITORY)
-    resolved = run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPOSITORY,
-        capture=True,
-    ).stdout.strip()
-    if resolved != SOURCE_COMMIT:
-        raise RuntimeError(f"source checkout drifted to {resolved}")
+    _verify_repository_checkout()
     run(
         [sys.executable, "-m", "pip", "install", "--quiet", "-e", ".[test]"],
         cwd=REPOSITORY,
         timeout=900,
     )
+    return "fresh_clone_and_install"
 
 
-def verify_environment(output: Path) -> dict[str, object]:
+def verify_environment(
+    output: Path,
+    *,
+    repository_preparation: str,
+) -> dict[str, object]:
     import torch
 
     if not torch.cuda.is_available():
@@ -193,6 +210,7 @@ def verify_environment(output: Path) -> dict[str, object]:
         "cudnn": torch.backends.cudnn.version(),
         "driver_and_memory": driver,
         "python": sys.version,
+        "repository_preparation": repository_preparation,
         "torch": torch.__version__,
         "tests": tests.stdout.strip().splitlines()[-1],
     }
@@ -452,8 +470,11 @@ def main() -> None:
     record: dict[str, object]
     error: str | None = None
     try:
-        prepare_repository()
-        environment = verify_environment(output)
+        repository_preparation = prepare_repository()
+        environment = verify_environment(
+            output,
+            repository_preparation=repository_preparation,
+        )
         write_status(
             output,
             spec,
