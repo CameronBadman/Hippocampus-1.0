@@ -94,6 +94,35 @@ gpu_status = command_output(
 process_status = command_output(
     ["ps", "-o", "etimes=,pcpu=,pmem=,rss=,cmd=", "-p", str(pid)]
 )
+process_table = command_output(
+    ["ps", "-eo", "pid=,ppid=,etimes=,pcpu=,pmem=,rss=,cmd="]
+)
+descendant_rows: list[str] = []
+if process_table is not None:
+    rows = [row.strip() for row in process_table.splitlines() if row.strip()]
+    parsed_rows: list[tuple[int, int, str]] = []
+    for row in rows:
+        fields = row.split(maxsplit=2)
+        if len(fields) < 3:
+            continue
+        try:
+            row_pid, parent_pid = int(fields[0]), int(fields[1])
+        except ValueError:
+            continue
+        parsed_rows.append((row_pid, parent_pid, row))
+    descendant_ids = {pid}
+    changed = True
+    while changed:
+        changed = False
+        for row_pid, parent_pid, _ in parsed_rows:
+            if parent_pid in descendant_ids and row_pid not in descendant_ids:
+                descendant_ids.add(row_pid)
+                changed = True
+    descendant_rows = [
+        row
+        for row_pid, _, row in parsed_rows
+        if row_pid in descendant_ids
+    ]
 print(
     json.dumps(
         {
@@ -106,6 +135,7 @@ print(
             "pid": pid,
             "process_alive": process_alive,
             "process_status": process_status,
+            "process_tree": descendant_rows,
         },
         sort_keys=True,
     )
