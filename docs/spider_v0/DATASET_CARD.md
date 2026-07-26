@@ -148,6 +148,20 @@ answerability or reveals a fixed answer/edge position.
 The diagnostic is a guard against obvious leakage, not proof that the
 benchmark has no shortcuts.
 
+The generated manifest diagnostic used 128 balanced cases:
+
+- majority answerability accuracy: 0.5000;
+- best metadata decision-stump accuracy: 0.4844;
+- measured answerability advantage: 0.0000;
+- most-common answer position rate: 0.1094;
+- most-common decisive-edge position rate: 0.1076;
+- oracle verification errors: 0.
+
+The aggregate split-manifest SHA-256 is
+`3f93841b41f025e72e176be4b0934b18a9ab1b8c37e5449cc971abb9684c8404`.
+Exact per-split digests are stored in
+`artifacts/spider_v0/splits/MANIFEST_INDEX.json`.
+
 ## Sealed-test policy
 
 The sealed manifest is generated and hashed with the other splits but its
@@ -164,3 +178,8 @@ experiment ledger.
 - The four task families do not establish a general-purpose interpreter.
 - Metadata diagnostics cannot detect every neural shortcut.
 - Successful size/path extrapolation would be benchmark evidence only.
+- The initial AutoResearch source commit predates the added explicit
+  incomplete/unsupported negative variants. Its source commit and split digest
+  are retained in every experiment record; the variants are covered by the
+  final generator/tests and tiny-overfit gate rather than retroactively folded
+  into those experiment results.

@@ -1,10 +1,10 @@
 # Hippocampus Graph
 
-Hippocampus Graph is a PyTorch-native data layer for graph topology and
-variable-length manifolds. It keeps reusable CSR topology separate from each
-differentiable value snapshot, supports CPU and CUDA storage without implicit
-precision changes, and prepares attention-ready layouts without invoking an
-attention implementation.
+Hippocampus Graph is a PyTorch-native packed graph layer plus Spider v0, a
+small recurrent interpreter for exact synthetic graph programs. The data layer
+keeps reusable CSR topology separate from each differentiable value snapshot,
+supports CPU and CUDA storage without implicit precision changes, and prepares
+attention-ready manifold layouts.
 
 The milestone includes:
 
@@ -15,20 +15,22 @@ The milestone includes:
 - occurrence-preserving frontier expansion; and
 - stable segmented reductions and row-preserving transforms.
 
-Attention execution, cross-attention pairing, serialization, neural-output
-caching across optimizer steps, custom kernels, CUDA Graph capture, and
-multi-GPU sharding are intentionally outside this package.
+Spider v0 adds an exact four-family benchmark, frozen exchangeable renderer,
+pooled/flat/recurrent models, position-free padded SDPA, a deterministic sparse
+controller, staged training, and ID/OOD evaluation. Natural-language writers,
+custom kernels, reinforcement learning, persistence, and multi-GPU sharding
+remain out of scope.
 
 ## Install
 
 Python 3.10 or newer and PyTorch 2.2 or newer are required.
 
 ```bash
-python -m venv .venv
-. .venv/bin/activate
-pip install -e ".[test]"
-pytest
+uv sync --extra test
+.venv/bin/pytest -q
 ```
+
+An ordinary editable `pip install -e ".[test]"` is also supported.
 
 For CUDA, install the PyTorch build appropriate for the host driver before
 installing this package.
@@ -196,3 +198,42 @@ their tensors remain externally mutable and aliased by design.
 See [architecture.md](docs/architecture.md) for the detailed contracts and
 [cached-lengths.md](docs/cached-lengths.md) for the CUDA benchmark decision.
 
+## Spider v0
+
+Generate the deterministic split manifests and leakage diagnostic:
+
+```bash
+.venv/bin/python scripts/generate_spider_dataset.py
+```
+
+Run the CPU/CUDA-capable tiny-overfit configuration:
+
+```bash
+.venv/bin/python scripts/train_spider_v0.py \
+  --config configs/spider_v0/tiny_overfit.json \
+  --device cuda --dtype float32
+```
+
+Run the pre-registered experiment matrix:
+
+```bash
+.venv/bin/python scripts/run_spider_autoresearch.py \
+  --steps 60 --train-cases 48 --eval-cases 8 \
+  --device cuda --dtype float32
+```
+
+Evaluate a non-sealed split:
+
+```bash
+.venv/bin/python scripts/evaluate_spider_v0.py \
+  --config artifacts/spider_v0/autoresearch/configs/E003-recurrent-standard.json \
+  --checkpoint artifacts/spider_v0/autoresearch/runs/E003-recurrent-standard/checkpoint.pt \
+  --split validation_path_length_ood --cases 32
+```
+
+The binary checkpoints are reproducible local artifacts and are ignored by
+Git; their configs, hashes, histories, metrics, and selection manifest are
+tracked. Start with the [Spider final
+report](docs/spider_v0/FINAL_REPORT.md), then see
+[training](docs/spider_v0/TRAINING.md), [design](docs/spider_v0/DESIGN.md),
+and the [dataset card](docs/spider_v0/DATASET_CARD.md).

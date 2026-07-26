@@ -1,0 +1,62 @@
+{
+  "case_count": 32,
+  "changed_edge_manifold_fraction": 1.0,
+  "checkpoint": "artifacts/spider_v0/autoresearch/runs/E003-recurrent-standard/checkpoint.pt",
+  "cross_view_swap_without_swap_training": {
+    "candidate_top1_delta": -0.02941176470588236,
+    "metrics": {
+      "candidate_count": 129,
+      "candidate_expand_accuracy": 0.6821705426356589,
+      "candidate_mrr": 0.9558823529411765,
+      "candidate_top1": 0.9117647058823529,
+      "conflict_accuracy": 0.9689922480620154,
+      "context_read_accuracy": 0.9767441860465116,
+      "context_read_precision": 0.875,
+      "context_read_recall": 1.0,
+      "evidence_f1": 0.2285714285714286,
+      "evidence_inclusion_accuracy": 0.7906976744186046,
+      "evidence_precision": 0.8,
+      "evidence_recall": 0.13333333333333333,
+      "invalid_expansion_rate": 0.16666666666666666,
+      "joint_action_accuracy": 0.4864864864864865,
+      "support_accuracy": 0.7984496124031008,
+      "termination_accuracy": 0.4864864864864865,
+      "valid_frontier_recall_at_4": 1.0
+    },
+    "oracle_loss": 3.847861222922802,
+    "status": "evaluated",
+    "termination_accuracy_delta": 0.02702702702702703
+  },
+  "interpretation": "Functional swapping is an experimental ablation; this report does not treat coordinate equality as a target.",
+  "no_swap_training": {
+    "metrics": {
+      "candidate_count": 129,
+      "candidate_expand_accuracy": 0.6821705426356589,
+      "candidate_mrr": 0.9705882352941176,
+      "candidate_top1": 0.9411764705882353,
+      "conflict_accuracy": 0.9689922480620154,
+      "context_read_accuracy": 0.9767441860465116,
+      "context_read_precision": 0.875,
+      "context_read_recall": 1.0,
+      "evidence_f1": 0.2285714285714286,
+      "evidence_inclusion_accuracy": 0.7906976744186046,
+      "evidence_precision": 0.8,
+      "evidence_recall": 0.13333333333333333,
+      "invalid_expansion_rate": 0.16666666666666666,
+      "joint_action_accuracy": 0.4594594594594595,
+      "support_accuracy": 0.7984496124031008,
+      "termination_accuracy": 0.4594594594594595,
+      "valid_frontier_recall_at_4": 1.0
+    },
+    "oracle_loss": 3.808681383728981,
+    "status": "evaluated"
+  },
+  "swap_augmentation": {
+    "reason": "outside the frozen 12-accepted-experiment budget",
+    "status": "not_run"
+  },
+  "swap_consistency_loss": {
+    "reason": "outside the frozen 12-accepted-experiment budget",
+    "status": "implemented_not_trained"
+  }
+}

@@ -166,5 +166,54 @@ version, dtype, and peak allocated memory.
 
 ## Experiment history
 
-No experiments have run yet. The runner appends a generated table here and to
+The frozen 12-accepted-run budget completed on 2026-07-26. All runs used the
+same source commit (`ca8fa86`), split digest
+`3f93841b41f025e72e176be4b0934b18a9ab1b8c37e5449cc971abb9684c8404`,
+60 update steps, 48 training cases, eight cases per validation split, and
+FP32 CUDA on an RTX 5070 Ti.
+
+| Experiment | Seed | Primary score | Outcome |
+|---|---:|---:|---|
+| pooled | 101 | 0.4597 | accepted |
+| flat Transformer | 101 | 0.4247 | accepted |
+| recurrent standard | 101 | 0.5046 | accepted |
+| recurrent compositional | 101 | 0.4796 | accepted |
+| untied recurrence | 101 | 0.4738 | accepted |
+| one hypothesis per node | 101 | 0.5046 | accepted |
+| no global evidence | 101 | 0.4713 | accepted |
+| no context VOI/read budget | 101 | 0.4792 | accepted |
+| recurrent standard replicate | 202 | 0.4129 | accepted |
+| recurrent standard replicate | 303 | 0.4863 | accepted |
+| one-hypothesis replicate | 202 | 0.4129 | accepted |
+| one-hypothesis replicate | 303 | 0.4863 | accepted |
+
+There were no crashes, invalid runs, deterministic replay mismatches, row
+permutation decision mismatches, non-finite values, or sealed-test accesses
+during search. The complete immutable records are in
+`artifacts/spider_v0/experiments.jsonl`; the generated table is in
 `artifacts/spider_v0/EXPERIMENT_SUMMARY.md`.
+
+## AutoResearch conclusion
+
+The standard tied recurrent model was the primary-seed winner. Its three-seed
+mean score was 0.4679 with population standard deviation 0.0396. The pooled
+control scored 0.4597 at its exploration seed, so the experiment does **not**
+establish a reliable recurrent OOD advantage. One- and two-hypothesis
+controllers were identical at this small evaluation scale. Compositional
+attention trailed standard attention by 0.0250 on the primary seed. Untying
+rounds, removing global evidence, and removing the context-read objective each
+reduced the primary score.
+
+The frozen standard checkpoint was therefore selected as the least-complex
+finalist, not as a proven winner. Its single sealed-test run produced:
+
+- teacher-forced candidate Top-1 0.9481 and MRR 0.9741;
+- autonomous termination accuracy 0.4609;
+- autonomous exact valid-path rate 0.7656;
+- risk among answered cases 0.5284;
+- evidence F1 0.0232;
+- zero deterministic and row-permutation decision mismatches.
+
+This is a clear oracle-to-rollout gap. The next experiment should improve
+mixed-rollout termination/evidence learning and enlarge validation samples,
+not add a more expressive edge mechanism.

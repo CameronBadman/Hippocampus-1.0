@@ -464,3 +464,21 @@ This document changes only if:
 - a controlled experiment provides concrete evidence for a revision.
 
 Every revision must record the motivating test or experiment ID.
+
+## Recorded post-freeze correctness revisions
+
+Two correctness issues were found during implementation:
+
+1. The first recurrent arc processor passed the global evidence manifold to
+   common plumbing but did not perform an explicit evidence read. Commit
+   `ca8fa86` adds the missing position-free cross-set read before source
+   summary processing. Experiment E007 then exercises its no-evidence
+   ablation.
+2. The first generated negatives covered absent/conflict outcomes but not
+   exact search-incomplete, context-budget-incomplete, or unsupported
+   outcomes. The post-research correctness extension adds these cases and
+   passes their exact budget flags to the terminator. It does not change the
+   frozen AutoResearch records, which remain reproducible through their source
+   commit and split digest.
+
+Neither revision redesigns the packed graph substrate.
