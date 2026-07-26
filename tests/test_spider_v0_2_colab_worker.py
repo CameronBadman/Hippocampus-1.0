@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 
 
@@ -90,3 +91,26 @@ def test_launch_specs_cover_the_frozen_six_run_matrix() -> None:
     assert "33b7e63ac3a5082b69a07e4a262c17cebef5164a" in next(
         iter(worker_urls)
     )
+
+
+def test_recurrent_and_pooled_configs_share_the_training_protocol() -> None:
+    recurrent = json.loads(
+        Path("configs/spider_v0_2/recurrent_recurrence.json").read_text()
+    )
+    pooled = json.loads(
+        Path("configs/spider_v0_2/pooled_recurrence.json").read_text()
+    )
+
+    for section in ("schema", "dataset", "controller", "training", "loss"):
+        assert recurrent[section] == pooled[section]
+    recurrent_model = {
+        key: value
+        for key, value in recurrent["model"].items()
+        if key not in {"kind", "num_blocks"}
+    }
+    pooled_model = {
+        key: value
+        for key, value in pooled["model"].items()
+        if key not in {"kind", "num_blocks"}
+    }
+    assert recurrent_model == pooled_model
