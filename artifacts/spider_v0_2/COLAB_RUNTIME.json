@@ -1,0 +1,27 @@
+{
+  "accelerator_requirement": [
+    "A100",
+    "H100"
+  ],
+  "controller_database": {
+    "integrity_check": "ok",
+    "journal_mode": "delete"
+  },
+  "durability_patch": {
+    "reason": "The pre-existing keep-alive and controller processes opened short-lived SQLite connections that reset WAL mode and stranded other open connections on deleted WAL/SHM generations.",
+    "storage_py_sha256": "baa4ab357fd247f0bcd899e0d1a3e5fbc4a978659be95c9c29cb9b50d8634c77",
+    "test_result": "29 passed",
+    "test_scope": [
+      "tests/test_storage.py",
+      "tests/test_controller.py"
+    ],
+    "treatment": "Use SQLite's default rollback journal and never mutate journal_mode during per-connection setup; restart both controller and detached keep-alive on the patched build."
+  },
+  "google_drive_folder": {
+    "id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+    "url": "https://drive.google.com/drive/folders/1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw"
+  },
+  "installed_better_colab_version": "0.1.dev86+g9cc61d15a.d20260726",
+  "keep_alive_py_sha256": "8a72df81bdee0fe955a1470aa1933589491a06935af76aeef9eba043ef031363",
+  "schema_version": 1
+}

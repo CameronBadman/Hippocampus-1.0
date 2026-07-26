@@ -101,14 +101,25 @@ to earn its extra complexity only if its mean structural success exceeds the
 pooled control by at least 0.02 and it wins at least two of three paired seeds.
 All other outcomes are reported as inconclusive or negative.
 
-## Deferred controller changes
+## Post-frozen controller follow-ups
 
-After the fixed-horizon diagnostic is recorded, two configuration-gated
-follow-ups may be implemented without changing the frozen comparison:
+The following mechanisms are implemented behind explicit configuration and
+are excluded from the fixed-horizon recurrent-versus-pooled comparison:
 
-- a factorised terminator with `evidence_sufficient`,
-  `useful_work_remaining`, `answer_supported`, and `unknown_reason` heads;
-- an explicit null-expansion action, distinct from global termination.
+- `termination_mode="factorized"` predicts `evidence_sufficient`,
+  `useful_work_remaining`, `answer_supported`, and `unknown_reason`.
+  The controller permits STOP only when evidence is sufficient, the model
+  predicts no useful work, the frontier is empty, or an exact execution budget
+  is exhausted. ANSWER additionally requires both evidence sufficiency and
+  answer support.
+- `expansion_policy="learned_null"` adds a per-graph null-expansion logit.
+  Selecting it suppresses all next-frontier candidates for that graph without
+  itself executing global termination. Candidate expansion, evidence
+  inclusion, and termination remain separate actions.
 
-Neither mechanism is used to rewrite the fixed-horizon result.
+The factorised heads receive their own masked objectives. The null action is
+supervised positive only when no depth-eligible candidate preserves a valid
+completion. Existing flat/hierarchical terminators and threshold expansion
+remain the defaults, so historical checkpoints load without new parameters.
 
+Neither mechanism is used to rewrite or select the frozen fixed-horizon result.
