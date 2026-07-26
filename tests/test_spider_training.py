@@ -183,6 +183,7 @@ def test_tiny_training_decreases_loss_and_saves_checkpoint(tmp_path) -> None:
             log_every=20,
         ),
         checkpoint_path=checkpoint,
+        checkpoint_every=40,
     )
 
     assert result.records[-1].loss < result.records[0].loss
@@ -190,6 +191,7 @@ def test_tiny_training_decreases_loss_and_saves_checkpoint(tmp_path) -> None:
     assert result.final_metrics.evidence_accuracy >= 0.80
     assert result.final_metrics.termination_accuracy >= 0.75
     assert checkpoint.exists()
+    assert (tmp_path / "tiny_step_000040.pt").exists()
     saved = torch.load(checkpoint, weights_only=False)
     assert saved["final_metrics"]["candidate_expand_accuracy"] >= 0.80
 

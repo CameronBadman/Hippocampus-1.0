@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import random
 
 import torch
 
@@ -13,6 +14,7 @@ from hippocampus.programs import (
     pack_rendered_cases,
 )
 from hippocampus.spider import (
+    ActionSchedule,
     ControllerExecutionPolicy,
     PathStateIntervention,
     SparseControllerConfig,
@@ -20,6 +22,7 @@ from hippocampus.spider import (
     SpiderModel,
     SpiderModelConfig,
     apply_path_state_intervention,
+    controller_rollout,
     evaluate_closed_loop_batches,
 )
 from hippocampus.spider.hypothesis import HypothesisBatch
@@ -268,3 +271,36 @@ def test_fixed_horizon_evaluation_reports_structural_metric_separately() -> None
     }
     assert report.efficiency["mean_rounds"] == 4
     assert 0.0 <= report.fixed_horizon_structural_success <= 1.0
+
+
+def test_training_rollout_uses_the_same_fixed_horizon_semantics() -> None:
+    _, batch, model_config, controller = _fixture()
+    model = _AlwaysAnswerSpider(model_config)
+    schedule = ActionSchedule(
+        frontier=1.0,
+        context=1.0,
+        evidence=1.0,
+        termination=0.0,
+    )
+    learned = controller_rollout(
+        model,
+        batch,
+        controller_config=controller.config,
+        action_schedule=schedule,
+        randomizer=random.Random(1),
+    )
+    fixed = controller_rollout(
+        model,
+        batch,
+        controller_config=controller.config,
+        action_schedule=schedule,
+        randomizer=random.Random(1),
+        execution_policy=ControllerExecutionPolicy.fixed(4),
+    )
+
+    assert learned.rounds == 1
+    assert fixed.rounds == 4
+    assert all(
+        diagnostic.executed_termination.value == "continue"
+        for diagnostic in fixed.diagnostics[:-1]
+    )

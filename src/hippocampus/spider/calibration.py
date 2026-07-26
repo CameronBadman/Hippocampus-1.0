@@ -102,7 +102,7 @@ def calibrate_evidence_threshold(
     split_name: str,
     dataset_version: str,
 ) -> EvidenceCalibration:
-    """Choose a deterministic evidence-F1 operating point on v0.2 dev data."""
+    """Choose a deterministic evidence-F1 operating point on allowed dev data."""
 
     validate_calibration_source(
         split_name=split_name,
@@ -150,5 +150,12 @@ def validate_calibration_source(
     normalized = split_name.lower()
     if "sealed" in normalized or normalized.startswith("test"):
         raise ValueError("sealed/test data may not be used for calibration")
-    if dataset_version != "spider-programs-v0.2":
-        raise ValueError("Spider v0.1 calibration requires spider-programs-v0.2")
+    allowed_versions = {
+        "spider-programs-v0.2",
+        "spider-programs-v0.3-recurrence-dev",
+    }
+    if dataset_version not in allowed_versions:
+        raise ValueError(
+            "calibration requires spider-programs-v0.2 or the registered "
+            "recurrence development dataset"
+        )

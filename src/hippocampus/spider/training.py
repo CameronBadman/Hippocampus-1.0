@@ -25,6 +25,11 @@ from .controller import (
     ControllerState,
     SparseWavefrontController,
 )
+from .execution import (
+    ControllerExecutionPolicy,
+    HorizonMode,
+    apply_path_state_intervention,
+)
 from .losses import (
     CandidateSupervision,
     LossTerm,
@@ -446,6 +451,7 @@ def controller_rollout(
     randomizer: random.Random,
     loss_config: SpiderLossConfig | None = None,
     max_rounds: int | None = None,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> OracleRollout:
     """Train on the exact state machine used by autonomous execution."""
 
@@ -453,6 +459,7 @@ def controller_rollout(
         raise ValueError("closed-loop rollout currently requires singleton batches")
     config = loss_config or SpiderLossConfig()
     controller = SparseWavefrontController(controller_config)
+    policy = execution_policy or ControllerExecutionPolicy.learned()
     oracle = StateOracle(batch.cases[0], batch, controller_config)
     hypotheses = model.initial_hypotheses(batch)
     evidence = model.initial_evidence(batch)
@@ -462,9 +469,21 @@ def controller_rollout(
     diagnostics: list[RolloutRoundDiagnostic] = []
     evidence_scores: list[torch.Tensor] = []
     evidence_labels: list[torch.Tensor] = []
-    round_limit = max_rounds or controller_config.max_rounds
+    configured_round_limit = max_rounds or controller_config.max_rounds
+    round_limit = policy.resolve_round_limit(
+        batch,
+        configured_max_rounds=configured_round_limit,
+    )
 
-    for _ in range(round_limit):
+    for round_offset in range(round_limit):
+        hypotheses = apply_path_state_intervention(
+            model,
+            batch,
+            hypotheses,
+            intervention=policy.path_state_intervention,
+            round_index=state.round_index,
+            seed=policy.intervention_seed,
+        )
         proposal = controller.propose(
             model,
             batch,
@@ -542,11 +561,17 @@ def controller_rollout(
             termination_logits,
             transition,
         )[0]
-        executed = (
-            termination_target.decision
-            if actions.termination_source is ActionSource.ORACLE
-            else model_decision
-        )
+        if (
+            policy.horizon_mode is not HorizonMode.LEARNED
+            and round_offset < round_limit - 1
+        ):
+            executed = TerminationDecision.CONTINUE
+        else:
+            executed = (
+                termination_target.decision
+                if actions.termination_source is ActionSource.ORACLE
+                else model_decision
+            )
         diagnostics.append(
             RolloutRoundDiagnostic(
                 round_index=state.round_index,
@@ -573,7 +598,10 @@ def controller_rollout(
         hypotheses = transition.next_hypotheses
         evidence = transition.next_evidence
         state = transition.next_controller_state
-        if executed is not TerminationDecision.CONTINUE:
+        if (
+            policy.horizon_mode is HorizonMode.LEARNED
+            and executed is not TerminationDecision.CONTINUE
+        ):
             break
 
     report = _aggregate_reports(reports, reference=model.path_seed)
@@ -619,6 +647,7 @@ def oracle_rollout(
     *,
     loss_config: SpiderLossConfig | None = None,
     controller_config: SparseControllerConfig | None = None,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> OracleRollout:
     return controller_rollout(
         model,
@@ -629,6 +658,7 @@ def oracle_rollout(
         action_schedule=ActionSchedule.oracle_only(),
         randomizer=random.Random(0),
         loss_config=loss_config,
+        execution_policy=execution_policy,
     )
 
 
@@ -642,6 +672,7 @@ def mixed_rollout(
     loss_config: SpiderLossConfig | None = None,
     max_rounds: int | None = None,
     controller_config: SparseControllerConfig | None = None,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> OracleRollout:
     """Scheduled execution using the same proposal and transition as runtime."""
 
@@ -668,6 +699,7 @@ def mixed_rollout(
         randomizer=randomizer,
         loss_config=loss_config,
         max_rounds=max_rounds,
+        execution_policy=execution_policy,
     )
 
 
@@ -724,6 +756,7 @@ def evaluate_oracle_batches(
     *,
     loss_config: SpiderLossConfig | None = None,
     controller_config: SparseControllerConfig | None = None,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> tuple[float, OracleMetrics]:
     was_training = model.training
     model.eval()
@@ -736,6 +769,7 @@ def evaluate_oracle_batches(
                 batch,
                 loss_config=loss_config,
                 controller_config=controller_config,
+                execution_policy=execution_policy,
             )
             total_loss += float(result.loss.item())
             metrics = metrics + result.metrics
@@ -751,9 +785,13 @@ def train_oracle_batches(
     loss_config: SpiderLossConfig | None = None,
     controller_config: SparseControllerConfig | None = None,
     checkpoint_path: Path | None = None,
+    checkpoint_every: int | None = None,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> TrainingResult:
     if not batches:
         raise ValueError("training requires at least one packed batch")
+    if checkpoint_every is not None and checkpoint_every <= 0:
+        raise ValueError("checkpoint_every must be positive")
     loss_settings = loss_config or SpiderLossConfig()
     randomizer = random.Random(loop_config.seed)
     optimizer = torch.optim.AdamW(
@@ -766,6 +804,7 @@ def train_oracle_batches(
         batches,
         loss_config=loss_settings,
         controller_config=controller_config,
+        execution_policy=execution_policy,
     )
     records = [
         TrainingRecord(
@@ -787,6 +826,37 @@ def train_oracle_batches(
         for action in ("frontier", "context", "evidence", "termination")
         for source in ActionSource
     }
+
+    def checkpoint_payload(
+        *,
+        step: int,
+        final_metrics: OracleMetrics | None,
+    ) -> dict[str, object]:
+        return {
+            "step": step,
+            "model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "model_config": asdict(model.config),
+            "loop_config": asdict(loop_config),
+            "loss_config": asdict(loss_settings),
+            "controller_config": (
+                asdict(controller_config)
+                if controller_config is not None
+                else None
+            ),
+            "execution_policy": asdict(
+                execution_policy
+                or ControllerExecutionPolicy.learned()
+            ),
+            "final_metrics": (
+                final_metrics.as_dict()
+                if final_metrics is not None
+                else None
+            ),
+            "action_source_counts": action_source_counts,
+            "unique_cases_seen": len(seen_case_ids),
+            "training_examples": training_examples,
+        }
 
     def draw_batch() -> PackedProgramBatch:
         nonlocal epoch_cursor
@@ -822,6 +892,7 @@ def train_oracle_batches(
                 action_schedule=action_schedule,
                 randomizer=randomizer,
                 loss_config=loss_settings,
+                execution_policy=execution_policy,
             )
             for batch in selected
         ]
@@ -850,6 +921,21 @@ def train_oracle_batches(
             loop_config.max_grad_norm,
         )
         optimizer.step()
+        if (
+            checkpoint_path is not None
+            and checkpoint_every is not None
+            and step % checkpoint_every == 0
+            and step < loop_config.steps
+        ):
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            intermediate = checkpoint_path.with_name(
+                f"{checkpoint_path.stem}_step_{step:06d}"
+                f"{checkpoint_path.suffix}"
+            )
+            torch.save(
+                checkpoint_payload(step=step, final_metrics=None),
+                intermediate,
+            )
         if step % loop_config.log_every == 0 or step == loop_config.steps:
             records.append(
                 TrainingRecord(
@@ -865,6 +951,7 @@ def train_oracle_batches(
         batches,
         loss_config=loss_settings,
         controller_config=controller_config,
+        execution_policy=execution_policy,
     )
     records.append(
         TrainingRecord(
@@ -877,22 +964,10 @@ def train_oracle_batches(
     if checkpoint_path is not None:
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(
-            {
-                "model": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "model_config": asdict(model.config),
-                "loop_config": asdict(loop_config),
-                "loss_config": asdict(loss_settings),
-                "controller_config": (
-                    asdict(controller_config)
-                    if controller_config is not None
-                    else None
-                ),
-                "final_metrics": final_metrics.as_dict(),
-                "action_source_counts": action_source_counts,
-                "unique_cases_seen": len(seen_case_ids),
-                "training_examples": training_examples,
-            },
+            checkpoint_payload(
+                step=loop_config.steps,
+                final_metrics=final_metrics,
+            ),
             checkpoint_path,
         )
     return TrainingResult(
