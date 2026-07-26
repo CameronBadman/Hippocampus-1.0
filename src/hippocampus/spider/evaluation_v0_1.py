@@ -26,6 +26,11 @@ from .controller import (
     EvidenceLedgerEntry,
     SparseWavefrontController,
 )
+from .execution import (
+    ControllerExecutionPolicy,
+    HorizonMode,
+    apply_path_state_intervention,
+)
 from .hypothesis import HypothesisBatch
 from .model import CandidateScorerBase
 from .state_oracle import StateOracle
@@ -69,6 +74,8 @@ class ClosedLoopEvaluationReport:
     case_count: int
     evidence_threshold: float
     primary_autonomous_success: float
+    fixed_horizon_structural_success: float
+    execution: dict[str, object]
     teacher_forced: dict[str, float | int]
     rollout: dict[str, object]
     evidence: dict[str, object]
@@ -87,10 +94,16 @@ def _execute_case(
     model: CandidateScorerBase,
     batch: PackedProgramBatch,
     controller_config: SparseControllerConfig,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> ClosedLoopCaseExecution:
     if batch.graph_count != 1:
         raise ValueError("closed-loop evaluation requires singleton batches")
     controller = SparseWavefrontController(controller_config)
+    policy = execution_policy or ControllerExecutionPolicy.learned()
+    round_limit = policy.resolve_round_limit(
+        batch,
+        configured_max_rounds=controller_config.max_rounds,
+    )
     oracle = StateOracle(batch.cases[0], batch, controller_config)
     hypotheses = model.initial_hypotheses(batch)
     evidence = model.initial_evidence(batch)
@@ -104,7 +117,15 @@ def _execute_case(
     final_logits = evidence.new_zeros((1, len(_DECISIONS)))
     prediction = TerminationDecision.CONTINUE
 
-    for _ in range(controller_config.max_rounds):
+    for round_offset in range(round_limit):
+        hypotheses = apply_path_state_intervention(
+            model,
+            batch,
+            hypotheses,
+            intervention=policy.path_state_intervention,
+            round_index=state.round_index,
+            seed=policy.intervention_seed,
+        )
         proposal = controller.propose(
             model,
             batch,
@@ -130,23 +151,28 @@ def _execute_case(
             actions,
         )
         termination_target = oracle.termination_target(transition).decision
-        final_logits = model.termination_logits(
-            batch,
-            transition.next_hypotheses,
-            transition.next_evidence,
-            transition.termination_control,
+        evaluate_termination = (
+            policy.horizon_mode is HorizonMode.LEARNED
+            or round_offset == round_limit - 1
         )
-        prediction = controller.execute_termination(
-            final_logits,
-            transition,
-        )[0]
-        round_observations.append(
-            RoundTerminationObservation(
-                round_index=state.round_index,
-                target=termination_target,
-                prediction=prediction,
+        if evaluate_termination:
+            final_logits = model.termination_logits(
+                batch,
+                transition.next_hypotheses,
+                transition.next_evidence,
+                transition.termination_control,
             )
-        )
+            prediction = controller.execute_termination(
+                final_logits,
+                transition,
+            )[0]
+            round_observations.append(
+                RoundTerminationObservation(
+                    round_index=state.round_index,
+                    target=termination_target,
+                    prediction=prediction,
+                )
+            )
         evidence_logits.append(
             transition.refined_outputs.evidence_logits.detach()
         )
@@ -170,9 +196,12 @@ def _execute_case(
         hypotheses = transition.next_hypotheses
         evidence = transition.next_evidence
         state = transition.next_controller_state
-        if prediction is not TerminationDecision.CONTINUE:
+        if (
+            policy.horizon_mode is HorizonMode.LEARNED
+            and prediction is not TerminationDecision.CONTINUE
+        ):
             break
-    else:
+    if prediction is TerminationDecision.CONTINUE:
         prediction = TerminationDecision.UNKNOWN_INCOMPLETE
 
     return ClosedLoopCaseExecution(
@@ -207,6 +236,7 @@ def calibrate_on_development_batches(
     controller_config: SparseControllerConfig,
     split_name: str = "validation_id",
     dataset_version: str = "spider-programs-v0.2",
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> EvidenceCalibration:
     validate_calibration_source(
         split_name=split_name,
@@ -220,7 +250,12 @@ def calibrate_on_development_batches(
     model.eval()
     with torch.no_grad():
         for batch in batches:
-            execution = _execute_case(model, batch, controller_config)
+            execution = _execute_case(
+                model,
+                batch,
+                controller_config,
+                execution_policy,
+            )
             scores.append(execution.candidate_evidence_logits)
             labels.append(execution.candidate_evidence_labels)
     model.train(was_training)
@@ -482,6 +517,7 @@ def _invariance(
     controller_config: SparseControllerConfig,
     *,
     sample_limit: int,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> dict[str, float | int]:
     controller = SparseWavefrontController(controller_config)
     samples = min(sample_limit, len(batches))
@@ -490,8 +526,16 @@ def _invariance(
     max_delta = 0.0
     with torch.no_grad():
         for index in range(samples):
-            first = controller.run(model, batches[index])
-            repeated = controller.run(model, batches[index])
+            first = controller.run(
+                model,
+                batches[index],
+                execution_policy=execution_policy,
+            )
+            repeated = controller.run(
+                model,
+                batches[index],
+                execution_policy=execution_policy,
+            )
             replay_mismatches += int(
                 first.selected_arc_trace != repeated.selected_arc_trace
                 or first.termination != repeated.termination
@@ -502,7 +546,11 @@ def _invariance(
             )
             if permuted is None:
                 continue
-            other = controller.run(model, permuted[index])
+            other = controller.run(
+                model,
+                permuted[index],
+                execution_policy=execution_policy,
+            )
             if first.final_termination_logits.numel():
                 max_delta = max(
                     max_delta,
@@ -539,6 +587,7 @@ def evaluate_closed_loop_batches(
     evidence_threshold: float | None = None,
     permuted_batches: Sequence[PackedProgramBatch] | None = None,
     invariance_sample_limit: int = 8,
+    execution_policy: ControllerExecutionPolicy | None = None,
 ) -> ClosedLoopEvaluationReport:
     if not batches:
         raise ValueError("evaluation requires at least one batch")
@@ -555,6 +604,7 @@ def evaluate_closed_loop_batches(
         controller_config,
         evidence_threshold=threshold,
     )
+    policy = execution_policy or ControllerExecutionPolicy.learned()
     was_training = model.training
     model.eval()
     device = batches[0].device
@@ -576,6 +626,7 @@ def evaluate_closed_loop_batches(
     false_answers = 0
     false_unknowns = 0
     autonomous_success = 0
+    structural_success = 0
     valid_paths = 0
     answerable_count = 0
     trace_valid = 0
@@ -616,6 +667,7 @@ def evaluate_closed_loop_batches(
                 model,
                 batch,
                 resolved_controller,
+                policy,
             )
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
@@ -656,14 +708,26 @@ def evaluate_closed_loop_batches(
                 entry.node_id - node_offset
                 for entry in execution.evidence_ledger
             }
+            edge_offset = int(
+                batch.graph.topology.graph_edge_ptr[0].item()
+            )
+            predicted_evidence_edges = {
+                entry.edge_id - edge_offset
+                for entry in execution.evidence_ledger
+            }
             expected_evidence = set(case.evidence_nodes)
+            exact_evidence_match = (
+                predicted_evidence_edges == set(case.evidence_edge_ids)
+                if case.evidence_edge_ids
+                else predicted_evidence == expected_evidence
+            )
             tp = len(predicted_evidence & expected_evidence)
             fp = len(predicted_evidence - expected_evidence)
             fn = len(expected_evidence - predicted_evidence)
             evidence_tp += tp
             evidence_fp += fp
             evidence_fn += fn
-            evidence_exact += int(predicted_evidence == expected_evidence)
+            evidence_exact += int(exact_evidence_match)
             evidence_required += len(expected_evidence)
             evidence_scored_recovered += len(
                 set(execution.scored_positive_nodes) & expected_evidence
@@ -693,9 +757,6 @@ def evaluate_closed_loop_batches(
                 answerable_count += 1
                 valid_paths += int(valid_path)
             trace_is_valid = True
-            edge_offset = int(
-                batch.graph.topology.graph_edge_ptr[0].item()
-            )
             for entry in execution.trace_ledger:
                 selected_arcs += 1
                 local_edge = entry.edge_id - edge_offset
@@ -704,6 +765,11 @@ def evaluate_closed_loop_batches(
                     continue
                 semantic_invalid += int(not case.edges[local_edge].valid)
             trace_valid += int(trace_is_valid)
+            structural_success += int(
+                trace_is_valid
+                and exact_evidence_match
+                and (valid_path if case.answerable else True)
+            )
 
             case_success = (
                 prediction is TerminationDecision.ANSWER
@@ -875,6 +941,7 @@ def evaluate_closed_loop_batches(
         permuted_batches,
         resolved_controller,
         sample_limit=invariance_sample_limit,
+        execution_policy=policy,
     )
     if device.type == "cuda":
         torch.cuda.synchronize(device)
@@ -889,6 +956,20 @@ def evaluate_closed_loop_batches(
         case_count=len(batches),
         evidence_threshold=threshold,
         primary_autonomous_success=autonomous_success / len(batches),
+        fixed_horizon_structural_success=(
+            structural_success / len(batches)
+        ),
+        execution={
+            "horizon_mode": policy.horizon_mode.value,
+            "fixed_rounds": policy.fixed_rounds,
+            "path_state_intervention": (
+                policy.path_state_intervention.value
+            ),
+            "intervention_seed": policy.intervention_seed,
+            "intermediate_termination_suppressed": (
+                policy.suppresses_intermediate_termination
+            ),
+        },
         teacher_forced={
             "oracle_loss": oracle_loss,
             **teacher.as_dict(),

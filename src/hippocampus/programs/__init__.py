@@ -7,6 +7,17 @@ from .generator import GeneratorConfig, GraphProgramGenerator
 from .leakage import MetadataLeakageReport, metadata_leakage_report
 from .oracle import VerificationReport, verify_case
 from .renderer import RenderedCase, SyntheticManifoldRenderer
+from .recurrence import (
+    RECURRENCE_DATASET_VERSION,
+    RecurrenceLeakageReport,
+    RecurrenceNecessityManifest,
+    RecurrenceNecessitySpec,
+    build_recurrence_necessity_manifest,
+    default_recurrence_necessity_specs,
+    generate_recurrence_necessity_cases,
+    generate_recurrence_necessity_pair,
+    recurrence_metadata_leakage_report,
+)
 from .schema import (
     CandidateTarget,
     CounterfactualKind,
@@ -54,6 +65,10 @@ __all__ = [
     "ProgramEdge",
     "ProgramFamily",
     "ProgramNode",
+    "RECURRENCE_DATASET_VERSION",
+    "RecurrenceLeakageReport",
+    "RecurrenceNecessityManifest",
+    "RecurrenceNecessitySpec",
     "RenderedCase",
     "RolloutStressExample",
     "RolloutStressKind",
@@ -66,14 +81,19 @@ __all__ = [
     "VerificationReport",
     "build_split_manifest",
     "build_rollout_stress_manifest",
+    "build_recurrence_necessity_manifest",
     "default_split_specs",
     "default_split_specs_v0_2",
+    "default_recurrence_necessity_specs",
+    "generate_recurrence_necessity_cases",
+    "generate_recurrence_necessity_pair",
     "generate_rollout_stress_examples",
     "generate_split_cases",
     "make_counterfactual",
     "make_equivalent_view",
     "metadata_leakage_report",
     "pack_rendered_cases",
+    "recurrence_metadata_leakage_report",
     "swap_aligned_edge_manifolds",
     "verify_case",
 ]

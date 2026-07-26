@@ -121,9 +121,14 @@ class StateOracle:
         self,
         state: ControllerState,
     ) -> set[int]:
+        required_edges = set(self.case.evidence_edge_ids)
         return {
             self._local_node(entry.node_id)
             for entry in state.evidence_ledger
+            if (
+                not required_edges
+                or entry.edge_id - self.edge_offset in required_edges
+            )
         }
 
     def _read_contexts(self, state: ControllerState) -> set[int]:

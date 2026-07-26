@@ -64,6 +64,13 @@ def verify_case(case: GraphProgramCase) -> VerificationReport:
     )
     if any(node_id < 0 or node_id >= node_count for node_id in node_ids):
         errors.append("start, answer, or evidence node is out of range")
+    for edge_id in case.evidence_edge_ids:
+        if not 0 <= edge_id < len(case.edges):
+            errors.append("exact evidence edge is out of range")
+        elif case.edges[edge_id].destination_node not in case.evidence_nodes:
+            errors.append(
+                "exact evidence edge must terminate at an evidence node"
+            )
 
     latent_nodes = [node.latent_id for node in case.nodes]
     latent_edges = [edge.latent_id for edge in case.edges]
@@ -113,6 +120,26 @@ def verify_case(case: GraphProgramCase) -> VerificationReport:
                 errors.append(
                     f"{prefix} includes a node outside the exact evidence set"
                 )
+            if (
+                candidate.include_as_evidence
+                and case.evidence_edge_ids
+                and candidate.edge_id not in case.evidence_edge_ids
+            ):
+                errors.append(
+                    f"{prefix} includes an edge outside the exact evidence set"
+                )
+
+    if case.evidence_edge_ids:
+        labelled_evidence_edges = {
+            candidate.edge_id
+            for round_ in case.trace.rounds
+            for candidate in round_.candidates
+            if candidate.include_as_evidence
+        }
+        if labelled_evidence_edges != set(case.evidence_edge_ids):
+            errors.append(
+                "exact evidence edge set disagrees with candidate labels"
+            )
 
     for path_index, path in enumerate(case.trace.valid_paths):
         if len(path) < 2:

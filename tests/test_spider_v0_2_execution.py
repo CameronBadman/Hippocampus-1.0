@@ -20,6 +20,7 @@ from hippocampus.spider import (
     SpiderModel,
     SpiderModelConfig,
     apply_path_state_intervention,
+    evaluate_closed_loop_batches,
 )
 from hippocampus.spider.hypothesis import HypothesisBatch
 from hippocampus.spider.terminator import TerminationOutput
@@ -239,3 +240,31 @@ def test_intervention_keeps_all_hypothesis_metadata() -> None:
     for field in HypothesisBatch.__dataclass_fields__:
         if field != "path_state":
             assert torch.equal(getattr(intervened, field), getattr(initial, field))
+
+
+def test_fixed_horizon_evaluation_reports_structural_metric_separately() -> None:
+    _, batch, model_config, controller = _fixture()
+    model = SpiderModel(model_config).eval()
+    policy = ControllerExecutionPolicy.fixed(
+        4,
+        intervention=PathStateIntervention.RESET,
+        seed=12,
+    )
+    report = evaluate_closed_loop_batches(
+        model,
+        (batch,),
+        split="development_recurrence_necessity",
+        controller_config=controller.config,
+        execution_policy=policy,
+        invariance_sample_limit=1,
+    )
+
+    assert report.execution == {
+        "horizon_mode": "fixed",
+        "fixed_rounds": 4,
+        "path_state_intervention": "reset",
+        "intervention_seed": 12,
+        "intermediate_termination_suppressed": True,
+    }
+    assert report.efficiency["mean_rounds"] == 4
+    assert 0.0 <= report.fixed_horizon_structural_success <= 1.0

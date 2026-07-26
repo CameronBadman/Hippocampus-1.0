@@ -141,6 +141,7 @@ class GraphProgramCase:
     search_budget: int
     context_budget: int
     intervention: Intervention | None = None
+    evidence_edge_ids: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.nodes:
@@ -153,6 +154,13 @@ class GraphProgramCase:
             raise ValueError("case termination must match the final oracle round")
         if self.termination.answer_nodes != self.answer_nodes:
             raise ValueError("case answer nodes must match termination target")
+        if any(
+            edge_id < 0 or edge_id >= len(self.edges)
+            for edge_id in self.evidence_edge_ids
+        ):
+            raise ValueError("evidence edge ID is out of range")
+        if len(set(self.evidence_edge_ids)) != len(self.evidence_edge_ids):
+            raise ValueError("evidence edge IDs must be unique")
 
     @property
     def answerable(self) -> bool:
