@@ -12,6 +12,8 @@ from __future__ import annotations
 import argparse
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
+import hashlib
+import importlib.util
 import json
 import math
 from pathlib import Path
@@ -49,6 +51,29 @@ def _read_json(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise TypeError(f"{path} must contain a JSON object")
     return value
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _verify_run(run_directory: Path) -> dict[str, Any]:
+    path = Path(__file__).with_name(
+        "verify_spider_v0_2_recurrence_run.py"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "spider_v02_recurrence_verifier",
+        path,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load recurrence verifier from {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.verify_run(run_directory)
 
 
 def _numeric(value: object, *, field: str) -> float:
@@ -519,7 +544,13 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def load_enriched_records(run_root: Path) -> list[dict[str, Any]]:
+def load_enriched_records(
+    run_root: Path,
+) -> tuple[
+    list[dict[str, Any]],
+    dict[str, Path],
+    dict[str, dict[str, Any]],
+]:
     """Load compact worker records enriched with evaluator report fields."""
 
     run_directories = {
@@ -532,8 +563,10 @@ def load_enriched_records(run_root: Path) -> list[dict[str, Any]]:
             f"{sorted(run_directories)!r}"
         )
     records: list[dict[str, Any]] = []
+    verification: dict[str, dict[str, Any]] = {}
     for experiment_id in EXPECTED_RUN_IDS:
         run_directory = run_directories[experiment_id]
+        verification[experiment_id] = _verify_run(run_directory)
         record = _read_json(run_directory / "experiment_record.json")
         metrics = _read_json(run_directory / "run" / "metrics.json")
         enriched = {
@@ -544,7 +577,111 @@ def load_enriched_records(run_root: Path) -> list[dict[str, Any]]:
         }
         validate_record(enriched)
         records.append(enriched)
-    return records
+    return records, run_directories, verification
+
+
+def validate_drive_backup(
+    backup: Mapping[str, Any],
+    run_directories: Mapping[str, Path],
+    verification: Mapping[str, Mapping[str, Any]],
+) -> None:
+    """Cross-check every Drive ID against its local certified artifact."""
+
+    folder = _mapping(backup.get("folder"), field="drive.folder")
+    folder_id = folder.get("id")
+    if not isinstance(folder_id, str) or not folder_id:
+        raise RuntimeError("Drive backup folder ID is missing")
+    runs = _mapping(backup.get("runs"), field="drive.runs")
+    if set(runs) != set(EXPECTED_RUN_IDS):
+        raise RuntimeError("Drive backup does not contain the frozen run set")
+    drive_ids: set[str] = set()
+    expected_checkpoint_names = {
+        "checkpoint.pt",
+        *{
+            f"checkpoint_step_{step:06d}.pt"
+            for step in (1_000, 2_000, 3_000, 4_000, 5_000)
+        },
+    }
+    for experiment_id in EXPECTED_RUN_IDS:
+        artifacts = _mapping(
+            runs[experiment_id],
+            field=f"drive.runs.{experiment_id}",
+        )
+        expected_names = expected_checkpoint_names | {
+            f"{experiment_id}-result.zip"
+        }
+        if set(artifacts) != expected_names:
+            raise RuntimeError(
+                f"{experiment_id}: Drive artifact set is incomplete"
+            )
+        checkpoints = _mapping(
+            verification[experiment_id]["checkpoints"],
+            field=f"verification.{experiment_id}.checkpoints",
+        )
+        for name in expected_checkpoint_names:
+            remote = _mapping(
+                artifacts[name],
+                field=f"drive.{experiment_id}.{name}",
+            )
+            local = _mapping(
+                checkpoints[name],
+                field=f"verification.{experiment_id}.{name}",
+            )
+            _validate_drive_entry(
+                remote,
+                expected_bytes=int(local["bytes"]),
+                expected_sha256=str(local["sha256"]),
+                folder_id=folder_id,
+                drive_ids=drive_ids,
+                field=f"{experiment_id}.{name}",
+            )
+        archive_name = f"{experiment_id}-result.zip"
+        archive_path = (
+            run_directories[experiment_id].parent / archive_name
+        )
+        if not archive_path.is_file():
+            raise FileNotFoundError(archive_path)
+        _validate_drive_entry(
+            _mapping(
+                artifacts[archive_name],
+                field=f"drive.{experiment_id}.{archive_name}",
+            ),
+            expected_bytes=archive_path.stat().st_size,
+            expected_sha256=sha256(archive_path),
+            folder_id=folder_id,
+            drive_ids=drive_ids,
+            field=f"{experiment_id}.{archive_name}",
+        )
+
+
+def _validate_drive_entry(
+    entry: Mapping[str, Any],
+    *,
+    expected_bytes: int,
+    expected_sha256: str,
+    folder_id: str,
+    drive_ids: set[str],
+    field: str,
+) -> None:
+    if entry.get("bytes") != expected_bytes:
+        raise RuntimeError(f"{field}: Drive byte count mismatch")
+    if entry.get("sha256") != expected_sha256:
+        raise RuntimeError(f"{field}: Drive SHA-256 mismatch")
+    if entry.get("drive_parent_verified") is not True:
+        raise RuntimeError(f"{field}: Drive parent was not verified")
+    if entry.get("drive_parent_id") != folder_id:
+        raise RuntimeError(f"{field}: Drive parent folder mismatch")
+    if entry.get("drive_size_verified") is not True:
+        raise RuntimeError(f"{field}: Drive size was not verified")
+    drive_id = entry.get("drive_id")
+    if not isinstance(drive_id, str) or not drive_id:
+        raise RuntimeError(f"{field}: Drive file ID is missing")
+    if drive_id in drive_ids:
+        raise RuntimeError(f"{field}: duplicate Drive file ID")
+    drive_ids.add(drive_id)
+    url = entry.get("drive_url")
+    if not isinstance(url, str) or drive_id not in url:
+        raise RuntimeError(f"{field}: Drive URL/ID mismatch")
 
 
 def write_outputs(
@@ -579,9 +716,27 @@ def main() -> None:
         type=Path,
         default=Path("artifacts/spider_v0_2/training"),
     )
+    parser.add_argument(
+        "--drive-backup",
+        type=Path,
+        default=Path("artifacts/spider_v0_2/GOOGLE_DRIVE_BACKUP.json"),
+    )
     args = parser.parse_args()
-    records = load_enriched_records(args.run_root)
+    records, run_directories, verification = load_enriched_records(
+        args.run_root
+    )
+    drive_backup = _read_json(args.drive_backup)
+    validate_drive_backup(
+        drive_backup,
+        run_directories,
+        verification,
+    )
     summary = build_summary(records)
+    summary["drive_backup"] = {
+        "folder_id": drive_backup["folder"]["id"],
+        "folder_url": drive_backup["folder"]["url"],
+        "verified_artifact_count": 42,
+    }
     write_outputs(args.output_root, records, summary)
     print(
         json.dumps(

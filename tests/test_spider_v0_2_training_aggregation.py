@@ -232,3 +232,35 @@ def test_artifact_manifest_verification_detects_byte_tampering(
     payload.write_bytes(b"tampered")
     with pytest.raises(RuntimeError, match="SHA-256"):
         verifier.verify_artifact_manifest(run)
+
+
+def test_drive_entry_validation_rejects_duplicate_file_ids() -> None:
+    module = _module()
+    entry = {
+        "bytes": 12,
+        "sha256": "f" * 64,
+        "drive_parent_verified": True,
+        "drive_parent_id": "folder",
+        "drive_size_verified": True,
+        "drive_id": "drive-file-1",
+        "drive_url": "https://drive.google.com/file/d/drive-file-1/view",
+    }
+    drive_ids: set[str] = set()
+
+    module._validate_drive_entry(
+        entry,
+        expected_bytes=12,
+        expected_sha256="f" * 64,
+        folder_id="folder",
+        drive_ids=drive_ids,
+        field="first",
+    )
+    with pytest.raises(RuntimeError, match="duplicate"):
+        module._validate_drive_entry(
+            entry,
+            expected_bytes=12,
+            expected_sha256="f" * 64,
+            folder_id="folder",
+            drive_ids=drive_ids,
+            field="second",
+        )

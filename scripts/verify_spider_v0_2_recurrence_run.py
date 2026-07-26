@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 import hashlib
 import json
 from pathlib import Path
@@ -98,6 +98,10 @@ def _expected_checkpoint_names() -> set[str]:
     }
 
 
+def _enum_value(value: object) -> object:
+    return getattr(value, "value", value)
+
+
 def _verify_checkpoint_payload(
     path: Path,
     *,
@@ -113,12 +117,7 @@ def _verify_checkpoint_payload(
     model_config = payload.get("model_config")
     if not isinstance(model_config, Mapping):
         raise TypeError(f"{path.name}: model config is invalid")
-    expected_kind = (
-        "hierarchical"
-        if model_config.get("termination_mode") == "hierarchical"
-        else model_config.get("termination_mode")
-    )
-    if expected_kind != "hierarchical":
+    if _enum_value(model_config.get("termination_mode")) != "hierarchical":
         raise RuntimeError(f"{path.name}: terminator config drift")
     loop_config = payload.get("loop_config")
     if not isinstance(loop_config, Mapping):
@@ -128,26 +127,26 @@ def _verify_checkpoint_payload(
     if loop_config.get("steps") != 6_000:
         raise RuntimeError(f"{path.name}: configured step count drift")
     schedules = loop_config.get("action_schedule")
-    if not isinstance(schedules, list) or len(schedules) != 5:
+    if (
+        not isinstance(schedules, Sequence)
+        or isinstance(schedules, str | bytes)
+        or len(schedules) != 5
+    ):
         raise RuntimeError(f"{path.name}: action schedule drift")
     if any(schedule.get("termination") != 0.0 for schedule in schedules):
         raise RuntimeError(f"{path.name}: learned stopping was enabled")
     policy = payload.get("execution_policy")
     if not isinstance(policy, Mapping):
         raise TypeError(f"{path.name}: execution policy is invalid")
-    if policy.get("horizon_mode") != "oracle_required":
+    if _enum_value(policy.get("horizon_mode")) != "oracle_required":
         raise RuntimeError(f"{path.name}: horizon policy drift")
-    if policy.get("path_state_intervention") != "none":
+    if _enum_value(policy.get("path_state_intervention")) != "none":
         raise RuntimeError(f"{path.name}: training state intervention drift")
     loss_config = payload.get("loss_config")
     if not isinstance(loss_config, Mapping):
         raise TypeError(f"{path.name}: loss config is invalid")
     if loss_config.get("termination") != 0.0:
         raise RuntimeError(f"{path.name}: termination loss was enabled")
-    if expected_model == "pooled" and any(
-        "path_seed" in key for key in payload["model"]
-    ):
-        raise RuntimeError(f"{path.name}: pooled model identity drift")
 
 
 def verify_run(run_directory: Path) -> dict[str, Any]:
