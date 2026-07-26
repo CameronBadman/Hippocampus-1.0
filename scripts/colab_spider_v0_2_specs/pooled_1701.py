@@ -8,11 +8,11 @@ RUN_SPEC = {
 }
 WORKER_URL = (
     "https://raw.githubusercontent.com/CameronBadman/Hippocampus-1.0/"
-    "35c013299fca94a5675056f97bd7569554ff9c6e/"
+    "611dd9ab11b2a48cc69e9338f5321a73f24ac1d2/"
     "scripts/colab_spider_v0_2_recurrence_worker.py"
 )
 EXPECTED_SHA256 = (
-    "6e1a99a7eea44a0f1b8484ba3d13d08e76b57b1d0a91e681999e5b4ef4affdac"
+    "09a520066331553d8597b789f29838e16f56f7ef851787a92a7610e3b67cef60"
 )
 source = urllib.request.urlopen(WORKER_URL, timeout=60).read()
 if hashlib.sha256(source).hexdigest() != EXPECTED_SHA256:
