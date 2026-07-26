@@ -74,6 +74,6 @@ def test_launch_specs_cover_the_frozen_six_run_matrix() -> None:
     assert len(worker_hashes) == 1
     assert len(next(iter(worker_hashes))) == 64
     assert len(worker_urls) == 1
-    assert "44dc478bb582224268e4f94a19b99f4681579b86" in next(
+    assert "35c013299fca94a5675056f97bd7569554ff9c6e" in next(
         iter(worker_urls)
     )
