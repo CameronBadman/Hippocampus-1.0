@@ -27,7 +27,15 @@ from .splits import (
     SplitSpec,
     build_split_manifest,
     default_split_specs,
+    default_split_specs_v0_2,
     generate_split_cases,
+)
+from .stress import (
+    RolloutStressExample,
+    RolloutStressKind,
+    RolloutStressManifest,
+    build_rollout_stress_manifest,
+    generate_rollout_stress_examples,
 )
 
 __all__ = [
@@ -47,6 +55,9 @@ __all__ = [
     "ProgramFamily",
     "ProgramNode",
     "RenderedCase",
+    "RolloutStressExample",
+    "RolloutStressKind",
+    "RolloutStressManifest",
     "SplitManifest",
     "SplitSpec",
     "SyntheticManifoldRenderer",
@@ -54,7 +65,10 @@ __all__ = [
     "TerminationTarget",
     "VerificationReport",
     "build_split_manifest",
+    "build_rollout_stress_manifest",
     "default_split_specs",
+    "default_split_specs_v0_2",
+    "generate_rollout_stress_examples",
     "generate_split_cases",
     "make_counterfactual",
     "make_equivalent_view",

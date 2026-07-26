@@ -134,6 +134,132 @@ def default_split_specs(*, case_scale: float = 1.0) -> tuple[SplitSpec, ...]:
     )
 
 
+def default_split_specs_v0_2(
+    *,
+    case_scale: float = 1.0,
+) -> tuple[SplitSpec, ...]:
+    """Disjoint closed-loop follow-up splits.
+
+    The v0.1 specifications above are intentionally unchanged because their
+    hashes are historical evidence. v0.2 uses a separate seed namespace and
+    explicit generator version.
+    """
+
+    if case_scale <= 0:
+        raise ValueError("case_scale must be positive")
+    version = "spider-programs-v0.2"
+    return (
+        SplitSpec(
+            "train",
+            _scaled(512, case_scale),
+            210_000,
+            8,
+            32,
+            1,
+            4,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "validation_id",
+            _scaled(128, case_scale),
+            220_000,
+            8,
+            32,
+            1,
+            4,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "validation_graph_size_ood",
+            _scaled(96, case_scale),
+            230_000,
+            64,
+            128,
+            1,
+            8,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "validation_path_length_ood",
+            _scaled(96, case_scale),
+            240_000,
+            16,
+            64,
+            5,
+            8,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "validation_topology_ood",
+            _scaled(96, case_scale),
+            250_000,
+            16,
+            64,
+            2,
+            8,
+            held_out_topology=True,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "validation_cardinality_ood",
+            _scaled(96, case_scale),
+            260_000,
+            8,
+            32,
+            1,
+            4,
+            cardinality_scale=3.0,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "validation_equivalent_view_ood",
+            _scaled(96, case_scale),
+            270_000,
+            8,
+            32,
+            1,
+            4,
+            domain="held_out_v0_2",
+            generator_version=version,
+        ),
+        SplitSpec(
+            "validation_composition_ood",
+            _scaled(96, case_scale),
+            280_000,
+            16,
+            64,
+            2,
+            8,
+            held_out_composition=True,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "development_rollout_stress",
+            _scaled(128, case_scale),
+            285_000,
+            8,
+            32,
+            1,
+            4,
+            domain="development_v0_2",
+            held_out_topology=True,
+            generator_version=version,
+        ),
+        SplitSpec(
+            "test_sealed_v0_2",
+            _scaled(256, case_scale),
+            290_000,
+            8,
+            128,
+            1,
+            8,
+            domain="sealed_v0_2",
+            sealed=True,
+            generator_version=version,
+        ),
+    )
+
+
 def build_split_manifest(spec: SplitSpec) -> SplitManifest:
     case_ids = tuple(
         hashlib.sha256(
