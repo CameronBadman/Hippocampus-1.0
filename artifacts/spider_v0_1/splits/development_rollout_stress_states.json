@@ -1,0 +1,1765 @@
+{
+  "descriptors": [
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "lookup-view-39d7bcc8e8c5f3f5f12c",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        12,
+        1
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-575e0ee0979d421346a9",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        10
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-f31deb386200978d08ca",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        11
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-a95352c84a00ce355f3d",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        11
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-7c3f7d466849efed953b",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        12
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 31,
+      "case_id": "reachability-view-366dde4d8c816a3cccd4",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        23
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-e4e9fe8ff520ac6e9ebe",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        21,
+        21
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "corroboration-view-3b86bba53a38096f03f2",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        13,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-2cb80fc922e62b4e0eb8",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        7
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-1af3b6c50c3bc1987ac1",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        4
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-8c91d82b2bad068d47bb",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        16
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-c5bfc244f6c19620addb",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        23
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-bd7d77e3f4a674bc7e32",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        15
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-fb9862551be00c738101",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        6,
+        6
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "latest_valid-view-43a7cc73f2fa63e1ea41",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        9,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-173bf57edd134841e03d",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        7
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-5898a65778c00f74dae4",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        1
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 2,
+      "case_id": "reachability-view-346db7a83e5903d23642",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        16,
+        7
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 2
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-a43a3aa2e0782e4d07fd",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        1
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 25,
+      "case_id": "corroboration-view-a2e66b2f25e1c71315f0",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        24
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-a6491fba52547ffe142a",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        14,
+        14
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "reachability-view-881fb13c3285b87f0138",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        5,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-adc83a63d18ed79159ad",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        13
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-8fd8a9104e1e7335fc96",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        8
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-58c34a1a86fd15fe3b2c",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        1
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-20bc846f6ba29f542221",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        29
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 30,
+      "case_id": "latest_valid-view-48266ccb01c06f49265b",
+      "contexts_read": 2,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        0
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-9c4ca10e02561f099045",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        16,
+        16
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "lookup-view-23421543b4c1c4fbdf88",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        11,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-8a0ddc9983ed6aad7652",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        6
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-d5d88537883dc3542526",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        5
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-73a752d996006bce586b",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        9
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-f7655d4650f9f75182fb",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        5
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 41,
+      "case_id": "reachability-view-3586489b6a484a772339",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        18
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-994eb47f65089e9fb39e",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        15,
+        15
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "corroboration-view-85549e93b4972b93a8ef",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        19,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-bb8b0d9585f767c32427",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        24
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-caf259b2d4b44d67c727",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        14
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-c0fac742449a0650996a",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        17
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-d0043074e53b73d7f3fd",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        16
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 31,
+      "case_id": "lookup-view-59e5b1424b1bc98ea05e",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        16
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-fe088eb1a3bf8d98b8db",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        14,
+        14
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "latest_valid-view-097986ecc91f7d85e183",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        6,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [
+        0
+      ],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-756b53d700f02aca558f",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        21
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-409f0ec6a5f295e35f17",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        11
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-a650cac238008768b500",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        23
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-77ccf0df0711156562f0",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        15
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 15,
+      "case_id": "corroboration-view-a55fe1e0c5d28b3becf8",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        7
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-db186727ff0f59c8f355",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        7,
+        7
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "reachability-view-20d4fe76ae3e0eaa4baa",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        22,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 1
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-18c8fa4d6fea3bbd8169",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        10
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-55d4a49a5456705df027",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        1
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        2
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-496ef99f7e79e4e1ee35",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        3
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-33e707b9209c0bf73a4c",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        7
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 13,
+      "case_id": "latest_valid-view-40ceed6cbca7da3f4067",
+      "contexts_read": 2,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        11
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-f421b7a495d2470b1426",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        11,
+        11
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "lookup-view-0ceea973916e76d886b6",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        15,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-fd1a91c4ec51be8122d7",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        8
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-9f6f701fee54cc42b7f2",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        0
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-ee64f227ad4ebeeb7bdf",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        6
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-062ac80c05d86beb6b4c",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        12
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-f9566680640dc5cbe9be",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        0
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-fbce9a318c782aae1fd7",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        21,
+        21
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "corroboration-view-739a49fc825ad6b8204a",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        5,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-dde998b6cf2fefd01cb2",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        8
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-857b6267c0cf8dcdcddc",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        14
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-7f0853bdeeabc3890039",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        5
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-c3d5a62f03fdd1e831f8",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        0
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 28,
+      "case_id": "lookup-view-15a1030156d83ca4945a",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        25
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-20c8a78b4b874d294e8c",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        7,
+        7
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "latest_valid-view-a37325dfe98888bbc1b2",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        11,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-32cfafbb39652d018ae1",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        17
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-b1f13b69b527d200ac6e",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        1
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "reachability-view-a2743efe8335b55c1f02",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        23,
+        17
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 1
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-bfaa8f530fe34f9618a3",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        14
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 17,
+      "case_id": "corroboration-view-e2b1e7a966f60b65c183",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        11
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-574e36bca31508cd4b53",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        23,
+        23
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "reachability-view-a655424526a1ae7774f2",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        6,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [
+        6
+      ],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-21629af0abfbdefc6abf",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        1
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-097d584f3bbfb6b0d376",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        16
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-2831f4a1b84df0ab08ac",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        6
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-bc4a09edc40841151fa0",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        7
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 31,
+      "case_id": "latest_valid-view-26a6a43fe4fd77bf3009",
+      "contexts_read": 2,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        11
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-390748fcfb99106e1708",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        9,
+        9
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "lookup-view-9e31c955f702f69b1818",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        1,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-c2037a5711c45c0c16e0",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        6
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-7fd01432b396695eb722",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        2
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-a95b9cd8845ec0924d5b",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        20
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-844c8bbae7aeaa88180a",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        12
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 33,
+      "case_id": "reachability-view-ccfa039345027ee1d619",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        4
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-462bbe9903ff9daf7974",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        12,
+        12
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "corroboration-view-f10ede2f538ce48a9c40",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        6,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-62eb02bfc8180fbdc787",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        2
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-24720413a2ee4d3851c9",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        11
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-ebcd67d317e00e72c24b",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        0
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-b849da6141bf28d1a9fd",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        18
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 11,
+      "case_id": "lookup-view-9043697e1ce7398c1538",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        1
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-259593d07e9e2977f4af",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        9,
+        9
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "latest_valid-view-eae6a8c1a3feff20fe69",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        23,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [
+        7
+      ],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-1856a08a3f46a062738b",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        9
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-33272672f9aa0d136fdc",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        6
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-64d271f2df40674120bb",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        18
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-c7049fe485a5e0906b00",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        2
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 21,
+      "case_id": "corroboration-view-1aecf18b9e678ec803f9",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        7
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-d01be64b020e99611846",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        22,
+        22
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "reachability-view-74f25b4bd6dc3aaa0760",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        9,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 1
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-be9f81c5c2718c783a40",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        12
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-4d0215bb723dedd758f4",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        3
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-b2e6c18f93d7fcbb23ae",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        3
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-6c439d1dac1565d0823e",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        13
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 20,
+      "case_id": "latest_valid-view-8cb23d5bbdc3d066a4db",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        5
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-d4e3b8faa4e19a853a24",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        16,
+        16
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "lookup-view-0771b9869d22846f6ef6",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        11,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-0dd523c7dfff8f680feb",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        8
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-3710b97dde57598a6f52",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        1
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        10
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-299b7b284d8bc0e8954f",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        19
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-20688f93f3a4d9000975",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        8
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 29,
+      "case_id": "reachability-view-4fd6132f30a81ba57622",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        2
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-941704783a982c4c599c",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        8,
+        8
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "corroboration-view-49c5372d6dd30894d020",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        12,
+        0
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "lookup-view-ee27f46eb4064c6f275e",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        15
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-38651ef20a516533898c",
+      "contexts_read": 1,
+      "contexts_read_nodes": [
+        0
+      ],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        9
+      ],
+      "kind": "false_positive_context",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "latest_valid-view-e85f9c4c60da1d775bb9",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        5
+      ],
+      "kind": "missed_evidence_recovery",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-18506e2ae4f4aa95e34f",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        6
+      ],
+      "kind": "premature_stop",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 27,
+      "case_id": "lookup-view-5fd35f4fb6ef22aeed51",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        8
+      ],
+      "kind": "budget_boundary",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "reachability-view-1e9ea18a3d882a2f3b1f",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": false,
+      "frontier_nodes": [
+        5,
+        5
+      ],
+      "kind": "duplicate_converging",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 1,
+      "case_id": "latest_valid-view-03e372582f8ffe95d901",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        0,
+        1
+      ],
+      "kind": "recoverable_off_oracle",
+      "round_index": 0
+    },
+    {
+      "accumulated_evidence_nodes": [],
+      "arcs_scored": 0,
+      "case_id": "corroboration-view-61c311fc64704dc9ae5e",
+      "contexts_read": 0,
+      "contexts_read_nodes": [],
+      "expected_recoverable": true,
+      "frontier_nodes": [
+        1
+      ],
+      "kind": "partial_evidence",
+      "round_index": 0
+    }
+  ],
+  "sha256": "cb976ca932f94855dffc49b2a933d074408f6c20da1a5b32855f820f6fe7da92",
+  "spec": {
+    "cardinality_scale": 1.0,
+    "case_count": 128,
+    "domain": "development_v0_2",
+    "generator_version": "spider-programs-v0.2",
+    "held_out_composition": false,
+    "held_out_topology": true,
+    "max_nodes": 32,
+    "max_path_length": 4,
+    "min_nodes": 8,
+    "min_path_length": 1,
+    "name": "development_rollout_stress",
+    "sealed": false,
+    "seed_start": 285000
+  }
+}

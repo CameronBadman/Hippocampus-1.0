@@ -39,6 +39,7 @@ from .evaluation_v0_1 import (
     ClosedLoopEvaluationReport,
     calibrate_on_development_batches,
     evaluate_closed_loop_batches,
+    evaluate_rollout_stress_states,
 )
 from .losses import (
     CandidateSupervision,
@@ -51,6 +52,11 @@ from .losses import (
     termination_loss_report,
 )
 from .model import CandidateScorerBase, SpiderModel
+from .protocol_v0_1 import (
+    DATASET_VERSION_V0_2,
+    validate_v0_1_artifact_input,
+    validate_v0_1_split_access,
+)
 from .state_oracle import StateOracle, StateSupervision
 from .set_attention import (
     AttentionBackendStatus,
@@ -90,6 +96,7 @@ __all__ = [
     "ControllerState",
     "ControllerStep",
     "ControllerTransition",
+    "DATASET_VERSION_V0_2",
     "EvidenceCalibration",
     "EvidenceLedgerEntry",
     "EvaluationReport",
@@ -128,6 +135,7 @@ __all__ = [
     "evaluate_oracle_batches",
     "evaluate_batches",
     "evaluate_closed_loop_batches",
+    "evaluate_rollout_stress_states",
     "make_tiny_cases",
     "multi_positive_priority_loss",
     "mixed_rollout",
@@ -140,4 +148,6 @@ __all__ = [
     "termination_control_features",
     "termination_loss_report",
     "train_oracle_batches",
+    "validate_v0_1_artifact_input",
+    "validate_v0_1_split_access",
 ]

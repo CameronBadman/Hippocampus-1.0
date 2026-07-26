@@ -275,6 +275,9 @@ class TrainingResult:
     initial_metrics: OracleMetrics
     final_metrics: OracleMetrics
     runtime_seconds: float
+    action_source_counts: dict[str, int]
+    unique_cases_seen: int
+    training_examples: int
 
 
 def _round_metrics(
@@ -774,10 +777,30 @@ def train_oracle_batches(
     ]
     started = time.perf_counter()
     model.train()
+    epoch_order = list(range(len(batches)))
+    randomizer.shuffle(epoch_order)
+    epoch_cursor = 0
+    seen_case_ids: set[str] = set()
+    training_examples = 0
+    action_source_counts = {
+        f"{action}/{source.value}": 0
+        for action in ("frontier", "context", "evidence", "termination")
+        for source in ActionSource
+    }
+
+    def draw_batch() -> PackedProgramBatch:
+        nonlocal epoch_cursor
+        if epoch_cursor == len(epoch_order):
+            randomizer.shuffle(epoch_order)
+            epoch_cursor = 0
+        batch = batches[epoch_order[epoch_cursor]]
+        epoch_cursor += 1
+        return batch
+
     for step in range(1, loop_config.steps + 1):
         optimizer.zero_grad(set_to_none=True)
         selected = [
-            batches[randomizer.randrange(len(batches))]
+            draw_batch()
             for _ in range(loop_config.batch_size)
         ]
         schedules = loop_config.resolved_action_schedule
@@ -788,22 +811,37 @@ def train_oracle_batches(
             // loop_config.steps,
         )
         action_schedule = schedules[schedule_index]
-        loss = torch.stack(
-            [
-                controller_rollout(
-                    model,
-                    batch,
-                    controller_config=(
-                        controller_config
-                        or _default_controller_config(batch)
-                    ),
-                    action_schedule=action_schedule,
-                    randomizer=randomizer,
-                    loss_config=loss_settings,
-                ).loss
-                for batch in selected
-            ]
-        ).mean()
+        rollouts = [
+            controller_rollout(
+                model,
+                batch,
+                controller_config=(
+                    controller_config
+                    or _default_controller_config(batch)
+                ),
+                action_schedule=action_schedule,
+                randomizer=randomizer,
+                loss_config=loss_settings,
+            )
+            for batch in selected
+        ]
+        for batch, rollout in zip(selected, rollouts, strict=True):
+            seen_case_ids.add(batch.cases[0].case_id)
+            training_examples += 1
+            for diagnostic in rollout.diagnostics:
+                action_source_counts[
+                    f"frontier/{diagnostic.frontier_source.value}"
+                ] += 1
+                action_source_counts[
+                    f"context/{diagnostic.context_source.value}"
+                ] += 1
+                action_source_counts[
+                    f"evidence/{diagnostic.evidence_source.value}"
+                ] += 1
+                action_source_counts[
+                    f"termination/{diagnostic.termination_source.value}"
+                ] += 1
+        loss = torch.stack([rollout.loss for rollout in rollouts]).mean()
         if not bool(torch.isfinite(loss).item()):
             raise RuntimeError(f"non-finite training loss at step {step}")
         loss.backward()
@@ -851,6 +889,9 @@ def train_oracle_batches(
                     else None
                 ),
                 "final_metrics": final_metrics.as_dict(),
+                "action_source_counts": action_source_counts,
+                "unique_cases_seen": len(seen_case_ids),
+                "training_examples": training_examples,
             },
             checkpoint_path,
         )
@@ -859,4 +900,7 @@ def train_oracle_batches(
         initial_metrics=initial_metrics,
         final_metrics=final_metrics,
         runtime_seconds=runtime,
+        action_source_counts=action_source_counts,
+        unique_cases_seen=len(seen_case_ids),
+        training_examples=training_examples,
     )

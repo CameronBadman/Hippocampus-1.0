@@ -10,6 +10,7 @@ import torch
 
 from ..programs.batching import PackedProgramBatch
 from ..programs.schema import ProgramFamily, TerminationDecision
+from ..programs.stress import RolloutStressExample, RolloutStressKind
 from .calibration import (
     EvidenceCalibration,
     binary_average_precision,
@@ -20,9 +21,12 @@ from .calibration import (
 from .config import SparseControllerConfig
 from .controller import (
     ActionSchedule,
+    ContextLedgerEntry,
     ControllerState,
+    EvidenceLedgerEntry,
     SparseWavefrontController,
 )
+from .hypothesis import HypothesisBatch
 from .model import CandidateScorerBase
 from .state_oracle import StateOracle
 from .training import evaluate_oracle_batches
@@ -226,6 +230,197 @@ def calibrate_on_development_batches(
         split_name=split_name,
         dataset_version=dataset_version,
     )
+
+
+def _stress_hypotheses(
+    model: CandidateScorerBase,
+    batch: PackedProgramBatch,
+    example: RolloutStressExample,
+) -> HypothesisBatch:
+    template = model.initial_hypotheses(batch)
+    count = len(example.frontier_nodes)
+    device = batch.device
+    node_offset = int(batch.graph.topology.graph_node_ptr[0].item())
+    node_ids = torch.tensor(
+        [node_offset + node for node in example.frontier_nodes],
+        dtype=torch.int32,
+        device=device,
+    )
+    path = template.path_state[:1].expand(count, -1, -1)
+    return HypothesisBatch(
+        node_ids=node_ids,
+        graph_ids=torch.zeros(count, dtype=torch.int32, device=device),
+        path_state=path,
+        scores=path.new_zeros((count,)),
+        depths=torch.full(
+            (count,),
+            example.round_index,
+            dtype=torch.int32,
+            device=device,
+        ),
+        parent_trace_ids=torch.full(
+            (count,),
+            -1,
+            dtype=torch.int64,
+            device=device,
+        ),
+        incoming_arc_ids=torch.full(
+            (count,),
+            -1,
+            dtype=torch.int32,
+            device=device,
+        ),
+        incoming_edge_ids=torch.full(
+            (count,),
+            -1,
+            dtype=torch.int32,
+            device=device,
+        ),
+        context_read=torch.zeros(count, dtype=torch.bool, device=device),
+    ).validate()
+
+
+def evaluate_rollout_stress_states(
+    model: CandidateScorerBase,
+    examples: Sequence[RolloutStressExample],
+    batches: Sequence[PackedProgramBatch],
+    *,
+    controller_config: SparseControllerConfig,
+) -> dict[str, object]:
+    """Execute the shared transition from supervisor-defined dev states."""
+
+    if len(examples) != len(batches) or not examples:
+        raise ValueError("stress examples and singleton batches must align")
+    per_kind = {
+        kind.value: {
+            "count": 0,
+            "recoverability_correct": 0,
+            "termination_correct": 0,
+        }
+        for kind in RolloutStressKind
+    }
+    recoverability_correct = 0
+    termination_correct = 0
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        for example, batch in zip(examples, batches, strict=True):
+            controller = SparseWavefrontController(controller_config)
+            oracle = StateOracle(example.case, batch, controller_config)
+            hypotheses = _stress_hypotheses(model, batch, example)
+            evidence = model.initial_evidence(batch)
+            node_offset = int(
+                batch.graph.topology.graph_node_ptr[0].item()
+            )
+            context_ledger = tuple(
+                ContextLedgerEntry(
+                    node_id=node_offset + node,
+                    edge_id=-1,
+                    arc_id=-1,
+                    round_index=max(0, example.round_index - 1),
+                    frontier_position=-1,
+                    parent_trace_id=-1,
+                )
+                for node in example.contexts_read_nodes
+            )
+            evidence_ledger = tuple(
+                EvidenceLedgerEntry(
+                    node_id=node_offset + node,
+                    edge_id=-1,
+                    arc_id=-1,
+                    round_index=max(0, example.round_index - 1),
+                    frontier_position=-1,
+                    parent_trace_id=-1,
+                    context_read=node in example.contexts_read_nodes,
+                )
+                for node in example.accumulated_evidence_nodes
+            )
+            search_limit, context_limit, evidence_limit = (
+                controller.resolved_limits(batch)
+            )
+            state = ControllerState(
+                round_index=example.round_index,
+                arcs_scored=example.arcs_scored,
+                contexts_read=example.contexts_read,
+                evidence_selected=len(evidence_ledger),
+                search_budget_exhausted=(
+                    example.arcs_scored >= search_limit
+                ),
+                context_budget_exhausted=(
+                    example.contexts_read >= context_limit
+                ),
+                evidence_budget_exhausted=(
+                    len(evidence_ledger) >= evidence_limit
+                ),
+                frontier_empty=hypotheses.count == 0,
+                last_expansion_had_arcs=False,
+                last_expansion_truncated=False,
+                deliberate_empty_frontier=False,
+                depth_exhausted=False,
+                trace_ledger=(),
+                context_ledger=context_ledger,
+                evidence_ledger=evidence_ledger,
+            )
+            proposal = controller.propose(
+                model,
+                batch,
+                hypotheses,
+                evidence,
+                state,
+            )
+            supervision = oracle.label(proposal, hypotheses, state)
+            actions = controller.choose_actions(
+                proposal,
+                supervision=None,
+                state=state,
+                schedule=ActionSchedule.model_only(),
+                randomizer=random.Random(0),
+            )
+            transition = controller.apply(
+                model,
+                batch,
+                hypotheses,
+                evidence,
+                state,
+                proposal,
+                actions,
+            )
+            target = oracle.termination_target(transition).decision
+            logits = model.termination_logits(
+                batch,
+                transition.next_hypotheses,
+                transition.next_evidence,
+                transition.termination_control,
+            )
+            prediction = controller.execute_termination(
+                logits,
+                transition,
+            )[0]
+            recoverable_match = (
+                supervision.recoverable == example.expected_recoverable
+            )
+            termination_match = prediction is target
+            recoverability_correct += int(recoverable_match)
+            termination_correct += int(termination_match)
+            metrics = per_kind[example.kind.value]
+            metrics["count"] += 1
+            metrics["recoverability_correct"] += int(recoverable_match)
+            metrics["termination_correct"] += int(termination_match)
+    model.train(was_training)
+    for metrics in per_kind.values():
+        count = max(1, int(metrics["count"]))
+        metrics["recoverability_accuracy"] = (
+            int(metrics["recoverability_correct"]) / count
+        )
+        metrics["termination_accuracy"] = (
+            int(metrics["termination_correct"]) / count
+        )
+    return {
+        "case_count": len(examples),
+        "recoverability_accuracy": recoverability_correct / len(examples),
+        "termination_accuracy": termination_correct / len(examples),
+        "per_kind": per_kind,
+    }
 
 
 def _valid_wavefront(
@@ -616,6 +811,49 @@ def evaluate_closed_loop_batches(
             for prediction_index, count in enumerate(row)
         )
         / len(batches),
+        "answer_unknown_accuracy_on_stop_targets": (
+            sum(
+                int(
+                    (target_index == 1)
+                    == (prediction_index == 1)
+                )
+                * count
+                for target_index, row in enumerate(overall_confusion)
+                if target_index >= 1
+                for prediction_index, count in enumerate(row)
+            )
+            / max(
+                1,
+                sum(
+                    count
+                    for target_index, row in enumerate(overall_confusion)
+                    if target_index >= 1
+                    for count in row
+                ),
+            )
+        ),
+        "unknown_reason_accuracy_on_unknown_targets": (
+            sum(
+                overall_confusion[index][index]
+                for index in range(2, len(_DECISIONS))
+            )
+            / max(
+                1,
+                sum(
+                    count
+                    for target_index, row in enumerate(overall_confusion)
+                    if target_index >= 2
+                    for count in row
+                ),
+            )
+        ),
+        "per_class_recall": {
+            decision.value: (
+                overall_confusion[index][index]
+                / max(1, sum(overall_confusion[index]))
+            )
+            for index, decision in enumerate(_DECISIONS)
+        },
     }
     per_family = {
         family.value: {

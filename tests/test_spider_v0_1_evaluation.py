@@ -8,6 +8,8 @@ from hippocampus import GraphSchema
 from hippocampus.programs import (
     GeneratorConfig,
     SyntheticManifoldRenderer,
+    default_split_specs_v0_2,
+    generate_rollout_stress_examples,
     pack_rendered_cases,
 )
 from hippocampus.spider import (
@@ -19,6 +21,7 @@ from hippocampus.spider import (
     calibrate_on_development_batches,
     controller_rollout,
     evaluate_closed_loop_batches,
+    evaluate_rollout_stress_states,
     make_tiny_cases,
 )
 
@@ -160,3 +163,60 @@ def test_termination_observes_post_transition_state_in_all_modes() -> None:
         len(diagnostic.frontier_candidate_indices)
         for diagnostic in result.action_diagnostics
     )
+
+
+def test_rollout_stress_states_execute_the_shared_transition() -> None:
+    schema = GraphSchema(summary_dim=8, context_dim=8, edge_dim=8)
+    spec = next(
+        spec
+        for spec in default_split_specs_v0_2(case_scale=0.0625)
+        if spec.name == "development_rollout_stress"
+    )
+    examples = generate_rollout_stress_examples(spec)
+    renderer = SyntheticManifoldRenderer(schema, query_dim=8, seed=73)
+    batches = tuple(
+        pack_rendered_cases(
+            (example.case,),
+            (renderer.render(example.case),),
+            schema=schema,
+        )
+        for example in examples
+    )
+    model = SpiderModel(
+        SpiderModelConfig(
+            summary_dim=8,
+            context_dim=8,
+            edge_dim=8,
+            query_dim=8,
+            d_model=16,
+            num_heads=4,
+            num_blocks=1,
+            path_rows=3,
+            evidence_rows=3,
+        )
+    ).eval()
+    report = evaluate_rollout_stress_states(
+        model,
+        examples,
+        batches,
+        controller_config=SparseControllerConfig(
+            max_rounds=8,
+            frontier_width=8,
+            hypotheses_per_node=2,
+            context_read_budget=4,
+            evidence_selection_budget=4,
+            search_budget=128,
+            max_depth=10,
+        ),
+    )
+
+    assert report["case_count"] == len(examples)
+    assert set(report["per_kind"]) == {
+        "recoverable_off_oracle",
+        "partial_evidence",
+        "false_positive_context",
+        "missed_evidence_recovery",
+        "premature_stop",
+        "budget_boundary",
+        "duplicate_converging",
+    }

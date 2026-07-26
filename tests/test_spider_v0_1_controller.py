@@ -316,6 +316,40 @@ def test_model_policy_can_choose_an_empty_frontier() -> None:
     assert actions.frontier_candidate_indices.numel() == 0
 
 
+def test_scheduled_actions_respect_configured_frontier_limits() -> None:
+    _, batch, model, _ = _fixture()
+    controller = SparseWavefrontController(
+        SparseControllerConfig(
+            max_rounds=4,
+            frontier_width=1,
+            hypotheses_per_node=1,
+            context_read_budget=2,
+            evidence_selection_budget=2,
+            search_budget=64,
+            max_depth=6,
+            expand_threshold=0.0,
+        )
+    )
+    hypotheses = model.initial_hypotheses(batch)
+    state = ControllerState.initial()
+    proposal = controller.propose(
+        model,
+        batch,
+        hypotheses,
+        model.initial_evidence(batch),
+        state,
+    )
+    actions = controller.choose_actions(
+        proposal,
+        supervision=None,
+        state=state,
+        schedule=ActionSchedule.model_only(),
+        randomizer=random.Random(6),
+    )
+
+    assert actions.frontier_candidate_indices.numel() <= 1
+
+
 def test_oracle_selected_actions_follow_independent_schedule() -> None:
     case, batch, model, controller = _fixture(ProgramFamily.LATEST_VALID)
     hypotheses = model.initial_hypotheses(batch)
