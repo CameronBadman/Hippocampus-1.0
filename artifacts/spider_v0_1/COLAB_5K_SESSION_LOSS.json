@@ -1,0 +1,39 @@
+{
+  "active_run_at_loss": {
+    "elapsed_seconds": 307,
+    "experiment_id": "L-E004-recurrent-s1802-5k",
+    "result_accepted": false
+  },
+  "analysis_status": "interrupted attempt; excluded from final 5k aggregate",
+  "completed_remote_runs": [
+    {
+      "artifact_recovered": false,
+      "experiment_id": "L-E004-recurrent-s1701-5k",
+      "remote_evaluator_guard_passed": true,
+      "score": 0.34232954545454547,
+      "training_elapsed_seconds": 1596.5655389569997
+    },
+    {
+      "artifact_recovered": false,
+      "experiment_id": "L-E005-pooled-s1701-5k",
+      "remote_evaluator_guard_passed": true,
+      "score": 0.38636363636363635,
+      "training_elapsed_seconds": 1041.8442573759999
+    }
+  ],
+  "created_at": "2026-07-26T05:27:24.217278Z",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "failure": "Colab CLI reported the named session lost with HTTP 404/401",
+  "failure_at": "2026-07-26T06:27:59.263689Z",
+  "local_artifact_recovery_succeeded": false,
+  "oauth_recheck": {
+    "authenticated": true,
+    "missing_scopes": []
+  },
+  "replacement_policy": "rerun every frozen spec in an isolated A100 session and download before release",
+  "results_accepted_for_final_aggregate": 0,
+  "sealed_access_allowed": false,
+  "sealed_access_count_observed": 0,
+  "session_name": "hippocampus-spider-v01-5k-6b35ac08",
+  "source_model_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746"
+}

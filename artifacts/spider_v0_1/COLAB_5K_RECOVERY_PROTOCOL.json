@@ -1,0 +1,53 @@
+{
+  "accelerator_policy": {
+    "fallback": null,
+    "forbidden_fallbacks": [
+      "G4",
+      "L4",
+      "T4",
+      "CPU"
+    ],
+    "required": "A100"
+  },
+  "analysis_status": "post-sealed replication; cannot alter finalist selection",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "execution_change_only": true,
+  "experiment_ids": [
+    "L-E004-recurrent-s1701-5k",
+    "L-E005-pooled-s1701-5k",
+    "L-E004-recurrent-s1802-5k",
+    "L-E005-pooled-s1802-5k",
+    "L-E004-recurrent-s1903-5k",
+    "L-E005-pooled-s1903-5k"
+  ],
+  "frozen_at": "2026-07-26T06:31:42.792694Z",
+  "maximum_runtime_seconds_per_run": 3600,
+  "models": [
+    "E004 hierarchical tied recurrent Spider",
+    "E005 matched hierarchical pooled control"
+  ],
+  "reason": "the original multi-run Colab session was lost after one hour and its artifacts could not be recovered",
+  "recovery_policy": {
+    "archive_validation": "evaluator pass, exact source/dataset hashes, six non-sealed reports only, sealed_access_count=0",
+    "download": "download and hash each archive before releasing its session",
+    "isolation": "one fresh A100 session per run",
+    "prior_attempt": "exclude all prior remote results because complete artifacts were not recovered",
+    "replay": "rerun all six frozen model/seed specifications"
+  },
+  "scientific_configuration_changes": [],
+  "sealed_access_allowed": false,
+  "seeds": [
+    1701,
+    1802,
+    1903
+  ],
+  "selection_effect": "none",
+  "source_model_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746",
+  "training": {
+    "cases": 512,
+    "dtype": "float32",
+    "optimizer_steps_per_run": 5000,
+    "total_optimizer_steps": 30000
+  },
+  "worker_sha256": "6fe6b79507a50918f9134b33f8ca407f3f6b7f760e46626e0d410c982c9acf85"
+}
