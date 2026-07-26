@@ -51,6 +51,25 @@
       "parent_folder_id": "10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw",
       "score": 0.4034090909090909,
       "sealed_access_count": 0
+    },
+    {
+      "archive": {
+        "bytes": 3573368,
+        "drive_file_id": "1EwOJv38ydbWGHE2DNoCKqvJ8NUNDwHNh",
+        "sha256": "91ec031ec28f9d240d0c6165276212edcc09b7d7bc5d6f307f6fc466096ae597",
+        "url": "https://drive.google.com/file/d/1EwOJv38ydbWGHE2DNoCKqvJ8NUNDwHNh/view?usp=drivesdk"
+      },
+      "checkpoint": {
+        "bytes": 3898641,
+        "drive_file_id": "1bUwpUaXk2n8qyvrt0y6J1e-muDB-iAwO",
+        "sha256": "ecd06aa8db614e43dce9ad367258dfdb4aedb4d2a02129c56319a01d7a624a39",
+        "url": "https://drive.google.com/file/d/1bUwpUaXk2n8qyvrt0y6J1e-muDB-iAwO/view?usp=drivesdk"
+      },
+      "experiment_id": "L-E004-recurrent-s1802-5k",
+      "metadata_verified_at": "2026-07-26T08:08:07Z",
+      "parent_folder_id": "10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw",
+      "score": 0.3778409090909091,
+      "sealed_access_count": 0
     }
   ]
 }
