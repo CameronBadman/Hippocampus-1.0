@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from enum import Enum
+import random
+from typing import Protocol
 
 import torch
+from torch.nn import functional as F
 
 from ..programs.batching import PackedProgramBatch
 from ..programs.schema import TerminationDecision
@@ -23,6 +27,35 @@ _TERMINATION_CLASSES = (
 )
 
 
+class ActionSource(str, Enum):
+    ORACLE = "oracle"
+    MODEL = "model"
+
+
+@dataclass(frozen=True, slots=True)
+class ActionSchedule:
+    """Independent teacher-forcing probabilities for discrete actions."""
+
+    frontier: float
+    context: float
+    evidence: float
+    termination: float
+
+    def __post_init__(self) -> None:
+        for name in ("frontier", "context", "evidence", "termination"):
+            value = getattr(self, name)
+            if not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} teacher-forcing fraction must be in [0, 1]")
+
+    @classmethod
+    def oracle_only(cls) -> "ActionSchedule":
+        return cls(1.0, 1.0, 1.0, 1.0)
+
+    @classmethod
+    def model_only(cls) -> "ActionSchedule":
+        return cls(0.0, 0.0, 0.0, 0.0)
+
+
 @dataclass(frozen=True, slots=True)
 class TraceLedgerEntry:
     node_id: int
@@ -32,6 +65,16 @@ class TraceLedgerEntry:
     frontier_position: int
     parent_trace_id: int
     context_read: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ContextLedgerEntry:
+    node_id: int
+    edge_id: int
+    arc_id: int
+    round_index: int
+    frontier_position: int
+    parent_trace_id: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,9 +93,17 @@ class ControllerState:
     round_index: int
     arcs_scored: int
     contexts_read: int
+    evidence_selected: int
     search_budget_exhausted: bool
     context_budget_exhausted: bool
+    evidence_budget_exhausted: bool
+    frontier_empty: bool
+    last_expansion_had_arcs: bool
+    last_expansion_truncated: bool
+    deliberate_empty_frontier: bool
+    depth_exhausted: bool
     trace_ledger: tuple[TraceLedgerEntry, ...]
+    context_ledger: tuple[ContextLedgerEntry, ...]
     evidence_ledger: tuple[EvidenceLedgerEntry, ...]
 
     @classmethod
@@ -61,22 +112,114 @@ class ControllerState:
             round_index=0,
             arcs_scored=0,
             contexts_read=0,
+            evidence_selected=0,
             search_budget_exhausted=False,
             context_budget_exhausted=False,
+            evidence_budget_exhausted=False,
+            frontier_empty=False,
+            last_expansion_had_arcs=False,
+            last_expansion_truncated=False,
+            deliberate_empty_frontier=False,
+            depth_exhausted=False,
             trace_ledger=(),
+            context_ledger=(),
             evidence_ledger=(),
         )
 
 
 @dataclass(frozen=True, slots=True)
-class ControllerStep:
+class ControllerProposal:
     expansion: FrontierExpansion
-    outputs: CandidateOutputs
-    selected_candidate_indices: torch.Tensor
+    candidate_control_features: torch.Tensor
+    candidate_outputs: CandidateOutputs
+    depth_eligible: torch.Tensor
+    search_limit: int
+    context_limit: int
+    evidence_limit: int
+    full_arc_count: int
+    search_truncated: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerActions:
+    frontier_candidate_indices: torch.Tensor
     context_candidate_indices: torch.Tensor
+    evidence_candidate_indices: torch.Tensor
+    frontier_source: ActionSource
+    context_source: ActionSource
+    evidence_source: ActionSource
+    termination_source: ActionSource
+
+    @classmethod
+    def empty(
+        cls,
+        device: torch.device | str,
+        *,
+        source: ActionSource = ActionSource.MODEL,
+    ) -> "ControllerActions":
+        empty = torch.empty(0, dtype=torch.int64, device=device)
+        return cls(
+            frontier_candidate_indices=empty,
+            context_candidate_indices=empty,
+            evidence_candidate_indices=empty,
+            frontier_source=source,
+            context_source=source,
+            evidence_source=source,
+            termination_source=source,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerTransition:
+    proposal: ControllerProposal
+    actions: ControllerActions
+    refined_outputs: CandidateOutputs
     next_hypotheses: HypothesisBatch
-    evidence: torch.Tensor
-    state: ControllerState
+    next_evidence: torch.Tensor
+    next_controller_state: ControllerState
+    termination_control: torch.Tensor
+
+    # Compatibility properties for the v0 ControllerStep surface.
+    @property
+    def expansion(self) -> FrontierExpansion:
+        return self.proposal.expansion
+
+    @property
+    def outputs(self) -> CandidateOutputs:
+        return self.refined_outputs
+
+    @property
+    def selected_candidate_indices(self) -> torch.Tensor:
+        return self.actions.frontier_candidate_indices
+
+    @property
+    def context_candidate_indices(self) -> torch.Tensor:
+        return self.actions.context_candidate_indices
+
+    @property
+    def evidence(self) -> torch.Tensor:
+        return self.next_evidence
+
+    @property
+    def state(self) -> ControllerState:
+        return self.next_controller_state
+
+
+# Retain the public v0 name while making it the shared transition record.
+ControllerStep = ControllerTransition
+
+
+@dataclass(frozen=True, slots=True)
+class ActionDiagnostic:
+    round_index: int
+    frontier_source: ActionSource
+    context_source: ActionSource
+    evidence_source: ActionSource
+    termination_source: ActionSource
+    frontier_candidate_indices: tuple[int, ...]
+    context_candidate_indices: tuple[int, ...]
+    evidence_candidate_indices: tuple[int, ...]
+    executed_termination: TerminationDecision
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,10 +229,24 @@ class ControllerResult:
     termination: tuple[TerminationDecision, ...]
     selected_arc_trace: tuple[tuple[int, ...], ...]
     trace_ledger: tuple[TraceLedgerEntry, ...]
+    context_ledger: tuple[ContextLedgerEntry, ...]
     evidence_ledger: tuple[EvidenceLedgerEntry, ...]
+    action_diagnostics: tuple[ActionDiagnostic, ...]
+    final_termination_logits: torch.Tensor
     rounds: int
     arcs_scored: int
     contexts_read: int
+
+
+class _CandidateTargets(Protocol):
+    acceptable: torch.Tensor
+    context_has_value: torch.Tensor
+    include_as_evidence: torch.Tensor
+    remaining_cost: torch.Tensor
+
+
+class _StateSupervision(Protocol):
+    candidates: _CandidateTargets
 
 
 def _stable_priority_order(
@@ -105,6 +262,9 @@ def _stable_priority_order(
         dtype=torch.int64,
         device=priorities.device,
     )
+    # Stable least-to-most-significant sorts make priority primary, arc ID the
+    # final snapshot-local tie-breaker, and frontier occurrence the last
+    # deterministic fallback for duplicate arc occurrences.
     order = order[
         torch.argsort(
             expansion.frontier_positions[order],
@@ -202,9 +362,162 @@ def _slice_expansion(
     )
 
 
+def candidate_control_features(
+    hypotheses: HypothesisBatch,
+    expansion: FrontierExpansion,
+    state: ControllerState,
+    *,
+    config: SparseControllerConfig,
+    search_limit: int,
+    context_limit: int,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    """Build the sole candidate-control representation for every mode."""
+
+    count = expansion.total_arcs
+    if count == 0:
+        return torch.empty(
+            (0, 6),
+            dtype=dtype,
+            device=hypotheses.device,
+        )
+    parents = expansion.frontier_positions.to(torch.int64)
+    depth = hypotheses.depths[parents].to(dtype)
+    remaining_search = max(0, search_limit - state.arcs_scored)
+    remaining_context = max(0, context_limit - state.contexts_read)
+    constant = torch.tensor(
+        [
+            state.round_index / max(1, config.max_rounds),
+            remaining_search / max(1, search_limit),
+            remaining_context / max(1, context_limit),
+            float(remaining_search == 0),
+            float(remaining_context == 0),
+        ],
+        dtype=dtype,
+        device=hypotheses.device,
+    )
+    return torch.cat(
+        (
+            depth[:, None] / max(1, config.max_depth),
+            constant.expand(count, -1),
+        ),
+        dim=1,
+    )
+
+
+def termination_control_features(
+    batch: PackedProgramBatch,
+    hypotheses: HypothesisBatch,
+    state: ControllerState,
+    *,
+    config: SparseControllerConfig,
+    search_limit: int,
+    context_limit: int,
+) -> torch.Tensor:
+    """Build post-transition controls with fixed runtime normalisation."""
+
+    features = torch.zeros(
+        (batch.graph_count, 6),
+        dtype=hypotheses.path_state.dtype,
+        device=batch.device,
+    )
+    features[:, 0] = state.round_index / max(1, config.max_rounds)
+    features[:, 1] = min(state.arcs_scored, search_limit) / max(1, search_limit)
+    features[:, 2] = min(state.contexts_read, context_limit) / max(
+        1, context_limit
+    )
+    features[:, 3] = float(hypotheses.count == 0)
+    features[:, 4] = float(state.search_budget_exhausted)
+    features[:, 5] = float(state.context_budget_exhausted)
+    return features
+
+
+def _validate_action_indices(
+    name: str,
+    indices: torch.Tensor,
+    *,
+    count: int,
+    device: torch.device,
+) -> torch.Tensor:
+    resolved = indices.to(device=device, dtype=torch.int64)
+    if resolved.ndim != 1:
+        raise ValueError(f"{name} candidate indices must be one-dimensional")
+    if resolved.numel() and (
+        bool((resolved < 0).any().item())
+        or bool((resolved >= count).any().item())
+    ):
+        raise IndexError(f"{name} candidate index is out of range")
+    if resolved.numel() != torch.unique(resolved).numel():
+        raise ValueError(f"{name} candidate indices must be unique")
+    return resolved
+
+
+def _source(fraction: float, randomizer: random.Random) -> ActionSource:
+    if fraction <= 0.0:
+        return ActionSource.MODEL
+    if fraction >= 1.0:
+        return ActionSource.ORACLE
+    return (
+        ActionSource.ORACLE
+        if randomizer.random() < fraction
+        else ActionSource.MODEL
+    )
+
+
+def _filtered_stable_selection(
+    proposal: ControllerProposal,
+    eligible_indices: torch.Tensor,
+    priorities: torch.Tensor,
+    *,
+    width: int,
+    per_node: int,
+) -> torch.Tensor:
+    if width <= 0 or eligible_indices.numel() == 0:
+        return torch.empty(
+            0,
+            dtype=torch.int64,
+            device=proposal.expansion.arc_ids.device,
+        )
+    sliced = _slice_expansion(
+        proposal.expansion,
+        eligible_indices,
+        frontier_count=proposal.expansion.arc_offsets.numel() - 1,
+    )
+    selected_local = stable_candidate_selection(
+        sliced,
+        priorities[eligible_indices],
+        frontier_width=width,
+        hypotheses_per_node=per_node,
+    )
+    return eligible_indices[selected_local]
+
+
 class SparseWavefrontController:
+    """One packed controller transition shared by training and inference."""
+
     def __init__(self, config: SparseControllerConfig | None = None) -> None:
         self.config = config or SparseControllerConfig()
+
+    def resolved_limits(
+        self,
+        batch: PackedProgramBatch,
+    ) -> tuple[int, int, int]:
+        if batch.graph_count == 1:
+            case = batch.cases[0]
+            search = min(self.config.search_budget, case.search_budget)
+            context = min(
+                self.config.context_read_budget,
+                case.context_budget,
+            )
+        else:
+            search = self.config.search_budget
+            context = self.config.context_read_budget
+        return search, context, self.config.evidence_selection_budget
+
+    # Backwards-compatible private helper used by older callers.
+    def _limits(self, batch: PackedProgramBatch) -> tuple[int, int]:
+        search, context, _ = self.resolved_limits(batch)
+        return search, context
 
     def _candidate_control(
         self,
@@ -216,40 +529,14 @@ class SparseWavefrontController:
         search_limit: int,
         context_limit: int,
     ) -> torch.Tensor:
-        count = expansion.total_arcs
-        if count == 0:
-            return torch.empty(
-                (0, 6),
-                dtype=dtype,
-                device=hypotheses.device,
-            )
-        parents = expansion.frontier_positions.to(torch.int64)
-        depth = hypotheses.depths[parents].to(dtype)
-        search_remaining = max(
-            0,
-            search_limit - state.arcs_scored,
-        )
-        context_remaining = max(
-            0,
-            context_limit - state.contexts_read,
-        )
-        constant = torch.tensor(
-            [
-                state.round_index / max(1, self.config.max_rounds),
-                search_remaining / max(1, search_limit),
-                context_remaining / max(1, context_limit),
-                float(state.search_budget_exhausted),
-                float(state.context_budget_exhausted),
-            ],
+        return candidate_control_features(
+            hypotheses,
+            expansion,
+            state,
+            config=self.config,
+            search_limit=search_limit,
+            context_limit=context_limit,
             dtype=dtype,
-            device=hypotheses.device,
-        )
-        return torch.cat(
-            (
-                depth[:, None] / max(1, self.config.max_depth),
-                constant.expand(count, -1),
-            ),
-            dim=1,
         )
 
     def _termination_control(
@@ -261,53 +548,34 @@ class SparseWavefrontController:
         search_limit: int,
         context_limit: int,
     ) -> torch.Tensor:
-        features = torch.zeros(
-            (batch.graph_count, 6),
-            dtype=hypotheses.path_state.dtype,
-            device=batch.device,
-        )
-        features[:, 0] = state.round_index / max(1, self.config.max_rounds)
-        features[:, 1] = state.arcs_scored / max(1, search_limit)
-        features[:, 2] = state.contexts_read / max(
-            1,
-            context_limit,
-        )
-        features[:, 3] = float(hypotheses.count == 0)
-        features[:, 4] = float(state.search_budget_exhausted)
-        features[:, 5] = float(state.context_budget_exhausted)
-        return features
-
-    def _limits(self, batch: PackedProgramBatch) -> tuple[int, int]:
-        if batch.graph_count == 1:
-            case = batch.cases[0]
-            return (
-                min(self.config.search_budget, case.search_budget),
-                min(self.config.context_read_budget, case.context_budget),
-            )
-        return (
-            self.config.search_budget,
-            self.config.context_read_budget,
+        return termination_control_features(
+            batch,
+            hypotheses,
+            state,
+            config=self.config,
+            search_limit=search_limit,
+            context_limit=context_limit,
         )
 
-    def step(
+    def propose(
         self,
         model: CandidateScorerBase,
         batch: PackedProgramBatch,
         hypotheses: HypothesisBatch,
         evidence: torch.Tensor,
         state: ControllerState,
-    ) -> ControllerStep:
+    ) -> ControllerProposal:
+        """Expand CSR and score candidates with the canonical controls."""
+
         full_expansion = batch.graph.topology.expand_frontier(
             hypotheses.node_ids,
             validate_ids=False,
         )
-        search_limit, context_limit = self._limits(batch)
-        remaining_search = max(
-            0,
-            search_limit - state.arcs_scored,
-        )
+        search_limit, context_limit, evidence_limit = self.resolved_limits(batch)
+        remaining_search = max(0, search_limit - state.arcs_scored)
         evaluated_count = min(full_expansion.total_arcs, remaining_search)
-        if evaluated_count != full_expansion.total_arcs:
+        search_truncated = evaluated_count != full_expansion.total_arcs
+        if search_truncated:
             expansion = _slice_expansion(
                 full_expansion,
                 torch.arange(
@@ -319,212 +587,501 @@ class SparseWavefrontController:
             )
         else:
             expansion = full_expansion
-        budget_exhausted = (
-            state.arcs_scored + expansion.total_arcs
-            >= search_limit
-        )
-        control = self._candidate_control(
+        controls = candidate_control_features(
             hypotheses,
             expansion,
             state,
-            dtype=hypotheses.path_state.dtype,
+            config=self.config,
             search_limit=search_limit,
             context_limit=context_limit,
+            dtype=hypotheses.path_state.dtype,
         )
         outputs = model.score_candidates(
             batch,
             hypotheses,
             expansion,
             evidence,
-            control,
+            controls,
             round_index=state.round_index,
         )
-
-        remaining_context = max(
-            0,
-            context_limit - state.contexts_read,
-        )
-        if expansion.total_arcs and remaining_context:
-            context_order = _stable_priority_order(
-                expansion,
-                outputs.context_logits,
-            )
-            positive = (
-                torch.sigmoid(outputs.context_logits[context_order]) >= 0.5
-            )
-            context_indices = context_order[positive][:remaining_context]
-            outputs = model.refine_with_context(
-                batch,
-                expansion,
-                outputs,
-                context_indices,
-            )
-        else:
-            context_indices = torch.empty(
-                0,
-                dtype=torch.int64,
-                device=batch.device,
-            )
-
         if expansion.total_arcs:
             parents = expansion.frontier_positions.to(torch.int64)
-            eligible = (
+            depth_eligible = (
                 hypotheses.depths[parents].to(torch.int64) + 1
                 <= self.config.max_depth
             )
-            eligible_indices = torch.nonzero(
-                eligible,
-                as_tuple=False,
-            ).flatten()
-            if eligible_indices.numel():
-                eligible_expansion = _slice_expansion(
-                    expansion,
-                    eligible_indices,
-                    frontier_count=hypotheses.count,
-                )
-                combined_priority = (
-                    outputs.priority_logits[eligible_indices]
-                    + torch.nn.functional.logsigmoid(
-                        outputs.expand_logits[eligible_indices]
-                    )
-                )
-                selected_local = stable_candidate_selection(
-                    eligible_expansion,
-                    combined_priority,
-                    frontier_width=self.config.frontier_width,
-                    hypotheses_per_node=self.config.hypotheses_per_node,
-                )
-                selected = eligible_indices[selected_local]
-            else:
-                selected = eligible_indices
         else:
-            selected = torch.empty(
+            depth_eligible = torch.empty(
                 0,
-                dtype=torch.int64,
+                dtype=torch.bool,
                 device=batch.device,
             )
+        return ControllerProposal(
+            expansion=expansion,
+            candidate_control_features=controls,
+            candidate_outputs=outputs,
+            depth_eligible=depth_eligible,
+            search_limit=search_limit,
+            context_limit=context_limit,
+            evidence_limit=evidence_limit,
+            full_arc_count=full_expansion.total_arcs,
+            search_truncated=search_truncated,
+        )
 
+    def choose_actions(
+        self,
+        proposal: ControllerProposal,
+        *,
+        supervision: _StateSupervision | None,
+        state: ControllerState,
+        schedule: ActionSchedule,
+        randomizer: random.Random,
+    ) -> ControllerActions:
+        """Choose four independently scheduled action sources."""
+
+        candidates = None if supervision is None else supervision.candidates
+        sources = {
+            "frontier": _source(schedule.frontier, randomizer),
+            "context": _source(schedule.context, randomizer),
+            "evidence": _source(schedule.evidence, randomizer),
+            "termination": _source(schedule.termination, randomizer),
+        }
+        if candidates is None and any(
+            source is ActionSource.ORACLE for source in sources.values()
+        ):
+            raise ValueError("oracle action source requires state supervision")
+
+        outputs = proposal.candidate_outputs
+        device = proposal.expansion.arc_ids.device
+        remaining_context = max(
+            0,
+            proposal.context_limit - state.contexts_read,
+        )
+        remaining_evidence = max(
+            0,
+            proposal.evidence_limit - state.evidence_selected,
+        )
+
+        if sources["context"] is ActionSource.ORACLE:
+            assert candidates is not None
+            context = torch.nonzero(
+                candidates.context_has_value,
+                as_tuple=False,
+            ).flatten()[:remaining_context]
+        else:
+            eligible = torch.nonzero(
+                torch.sigmoid(outputs.context_logits)
+                >= self.config.context_threshold,
+                as_tuple=False,
+            ).flatten()
+            order = _stable_priority_order(
+                proposal.expansion,
+                outputs.context_logits,
+            )
+            eligible_mask = torch.zeros(
+                proposal.expansion.total_arcs,
+                dtype=torch.bool,
+                device=device,
+            )
+            if eligible.numel():
+                eligible_mask[eligible] = True
+            context = order[eligible_mask[order]][:remaining_context]
+
+        if sources["evidence"] is ActionSource.ORACLE:
+            assert candidates is not None
+            evidence_eligible = torch.nonzero(
+                candidates.include_as_evidence,
+                as_tuple=False,
+            ).flatten()
+            evidence = _filtered_stable_selection(
+                proposal,
+                evidence_eligible,
+                -candidates.remaining_cost,
+                width=remaining_evidence,
+                per_node=1,
+            )
+        else:
+            evidence_eligible = torch.nonzero(
+                torch.sigmoid(outputs.evidence_logits)
+                >= self.config.evidence_threshold,
+                as_tuple=False,
+            ).flatten()
+            evidence = _filtered_stable_selection(
+                proposal,
+                evidence_eligible,
+                outputs.evidence_logits,
+                width=remaining_evidence,
+                per_node=1,
+            )
+
+        if sources["frontier"] is ActionSource.ORACLE:
+            assert candidates is not None
+            frontier_eligible = torch.nonzero(
+                candidates.acceptable & proposal.depth_eligible,
+                as_tuple=False,
+            ).flatten()
+            frontier = _filtered_stable_selection(
+                proposal,
+                frontier_eligible,
+                -candidates.remaining_cost,
+                width=self.config.frontier_width,
+                per_node=self.config.hypotheses_per_node,
+            )
+        else:
+            model_eligible = (
+                proposal.depth_eligible
+                & (
+                    torch.sigmoid(outputs.expand_logits)
+                    >= self.config.expand_threshold
+                )
+            )
+            frontier_eligible = torch.nonzero(
+                model_eligible,
+                as_tuple=False,
+            ).flatten()
+            combined = outputs.priority_logits + F.logsigmoid(
+                outputs.expand_logits
+            )
+            frontier = _filtered_stable_selection(
+                proposal,
+                frontier_eligible,
+                combined,
+                width=self.config.frontier_width,
+                per_node=self.config.hypotheses_per_node,
+            )
+
+        return ControllerActions(
+            frontier_candidate_indices=frontier,
+            context_candidate_indices=context,
+            evidence_candidate_indices=evidence,
+            frontier_source=sources["frontier"],
+            context_source=sources["context"],
+            evidence_source=sources["evidence"],
+            termination_source=sources["termination"],
+        )
+
+    def apply(
+        self,
+        model: CandidateScorerBase,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        state: ControllerState,
+        proposal: ControllerProposal,
+        actions: ControllerActions,
+    ) -> ControllerTransition:
+        """Apply context, evidence, frontier, ledgers, and budgets once."""
+
+        count = proposal.expansion.total_arcs
+        context_indices = _validate_action_indices(
+            "context",
+            actions.context_candidate_indices,
+            count=count,
+            device=batch.device,
+        )
+        evidence_indices = _validate_action_indices(
+            "evidence",
+            actions.evidence_candidate_indices,
+            count=count,
+            device=batch.device,
+        )
+        frontier_indices = _validate_action_indices(
+            "frontier",
+            actions.frontier_candidate_indices,
+            count=count,
+            device=batch.device,
+        )
+        remaining_context = max(
+            0,
+            proposal.context_limit - state.contexts_read,
+        )
+        remaining_evidence = max(
+            0,
+            proposal.evidence_limit - state.evidence_selected,
+        )
+        if context_indices.numel() > remaining_context:
+            raise ValueError("context actions exceed the remaining budget")
+        if evidence_indices.numel() > remaining_evidence:
+            raise ValueError("evidence actions exceed the remaining budget")
+        if frontier_indices.numel() > self.config.frontier_width:
+            raise ValueError("frontier actions exceed configured width")
+        if frontier_indices.numel() and not bool(
+            proposal.depth_eligible[frontier_indices].all().item()
+        ):
+            raise ValueError("frontier actions include a depth-ineligible candidate")
+
+        refined = model.refine_with_context(
+            batch,
+            proposal.expansion,
+            proposal.candidate_outputs,
+            context_indices,
+        )
         context_flags = torch.zeros(
-            expansion.total_arcs,
+            count,
             dtype=torch.bool,
             device=batch.device,
         )
         if context_indices.numel():
-            context_flags = context_flags.index_fill(0, context_indices, True)
-        trace_entries = list(state.trace_ledger)
-        evidence_entries = list(state.evidence_ledger)
-        parent_trace_ids: list[int] = []
-        selected_list = selected.tolist()
-        for candidate_index in selected_list:
+            context_flags[context_indices] = True
+
+        context_entries = list(state.context_ledger)
+        for candidate_index in context_indices.tolist():
             frontier_position = int(
-                expansion.frontier_positions[candidate_index].item()
+                proposal.expansion.frontier_positions[candidate_index].item()
             )
-            parent_trace_id = int(
-                hypotheses.parent_trace_ids[frontier_position].item()
+            context_entries.append(
+                ContextLedgerEntry(
+                    node_id=int(
+                        proposal.expansion.destination_node_ids[
+                            candidate_index
+                        ].item()
+                    ),
+                    edge_id=int(
+                        proposal.expansion.edge_ids[candidate_index].item()
+                    ),
+                    arc_id=int(
+                        proposal.expansion.arc_ids[candidate_index].item()
+                    ),
+                    round_index=state.round_index,
+                    frontier_position=frontier_position,
+                    parent_trace_id=int(
+                        hypotheses.parent_trace_ids[frontier_position].item()
+                    ),
+                )
             )
-            entry = TraceLedgerEntry(
-                node_id=int(
-                    expansion.destination_node_ids[candidate_index].item()
-                ),
-                edge_id=int(expansion.edge_ids[candidate_index].item()),
-                arc_id=int(expansion.arc_ids[candidate_index].item()),
-                round_index=state.round_index,
-                frontier_position=frontier_position,
-                parent_trace_id=parent_trace_id,
-                context_read=bool(context_flags[candidate_index].item()),
+
+        evidence_entries = list(state.evidence_ledger)
+        if evidence_indices.numel():
+            evidence_parents = proposal.expansion.frontier_positions[
+                evidence_indices
+            ].to(torch.int64)
+            evidence_graph_ids = hypotheses.graph_ids[evidence_parents]
+            evidence = model.update_evidence(
+                evidence,
+                refined.next_path_state[evidence_indices].mean(dim=1),
+                evidence_graph_ids,
             )
-            trace_entries.append(entry)
+            for candidate_index in evidence_indices.tolist():
+                frontier_position = int(
+                    proposal.expansion.frontier_positions[candidate_index].item()
+                )
+                evidence_entries.append(
+                    EvidenceLedgerEntry(
+                        node_id=int(
+                            proposal.expansion.destination_node_ids[
+                                candidate_index
+                            ].item()
+                        ),
+                        edge_id=int(
+                            proposal.expansion.edge_ids[candidate_index].item()
+                        ),
+                        arc_id=int(
+                            proposal.expansion.arc_ids[candidate_index].item()
+                        ),
+                        round_index=state.round_index,
+                        frontier_position=frontier_position,
+                        parent_trace_id=int(
+                            hypotheses.parent_trace_ids[
+                                frontier_position
+                            ].item()
+                        ),
+                        context_read=bool(
+                            context_flags[candidate_index].item()
+                        ),
+                    )
+                )
+
+        trace_entries = list(state.trace_ledger)
+        parent_trace_ids: list[int] = []
+        for candidate_index in frontier_indices.tolist():
+            frontier_position = int(
+                proposal.expansion.frontier_positions[candidate_index].item()
+            )
+            trace_entries.append(
+                TraceLedgerEntry(
+                    node_id=int(
+                        proposal.expansion.destination_node_ids[
+                            candidate_index
+                        ].item()
+                    ),
+                    edge_id=int(
+                        proposal.expansion.edge_ids[candidate_index].item()
+                    ),
+                    arc_id=int(
+                        proposal.expansion.arc_ids[candidate_index].item()
+                    ),
+                    round_index=state.round_index,
+                    frontier_position=frontier_position,
+                    parent_trace_id=int(
+                        hypotheses.parent_trace_ids[frontier_position].item()
+                    ),
+                    context_read=bool(
+                        context_flags[candidate_index].item()
+                    ),
+                )
+            )
             parent_trace_ids.append(len(trace_entries) - 1)
 
-        if selected.numel():
-            parent_positions = expansion.frontier_positions[selected].to(torch.int64)
-            graph_ids = hypotheses.graph_ids[parent_positions]
+        if frontier_indices.numel():
+            parents = proposal.expansion.frontier_positions[
+                frontier_indices
+            ].to(torch.int64)
             next_hypotheses = HypothesisBatch(
-                node_ids=expansion.destination_node_ids[selected],
-                graph_ids=graph_ids,
-                path_state=outputs.next_path_state[selected],
+                node_ids=proposal.expansion.destination_node_ids[
+                    frontier_indices
+                ],
+                graph_ids=hypotheses.graph_ids[parents],
+                path_state=refined.next_path_state[frontier_indices],
                 scores=(
-                    hypotheses.scores[parent_positions]
-                    + outputs.priority_logits[selected]
+                    hypotheses.scores[parents]
+                    + refined.priority_logits[frontier_indices]
                 ),
-                depths=hypotheses.depths[parent_positions] + 1,
+                depths=hypotheses.depths[parents] + 1,
                 parent_trace_ids=torch.tensor(
                     parent_trace_ids,
                     dtype=torch.int64,
                     device=batch.device,
                 ),
-                incoming_arc_ids=expansion.arc_ids[selected],
-                incoming_edge_ids=expansion.edge_ids[selected],
-                context_read=context_flags[selected],
+                incoming_arc_ids=proposal.expansion.arc_ids[
+                    frontier_indices
+                ],
+                incoming_edge_ids=proposal.expansion.edge_ids[
+                    frontier_indices
+                ],
+                context_read=context_flags[frontier_indices],
             ).validate()
-            evidence_mask = (
-                torch.sigmoid(outputs.evidence_logits[selected])
-                >= self.config.evidence_threshold
-            )
-            evidence_candidates = selected[evidence_mask]
-            if evidence_candidates.numel():
-                evidence_parent_positions = expansion.frontier_positions[
-                    evidence_candidates
-                ].to(torch.int64)
-                evidence_graph_ids = hypotheses.graph_ids[
-                    evidence_parent_positions
-                ]
-                evidence = model.update_evidence(
-                    evidence,
-                    outputs.next_path_state[evidence_candidates].mean(dim=1),
-                    evidence_graph_ids,
-                )
-                for candidate_index in evidence_candidates.tolist():
-                    frontier_position = int(
-                        expansion.frontier_positions[candidate_index].item()
-                    )
-                    evidence_entries.append(
-                        EvidenceLedgerEntry(
-                            node_id=int(
-                                expansion.destination_node_ids[
-                                    candidate_index
-                                ].item()
-                            ),
-                            edge_id=int(
-                                expansion.edge_ids[candidate_index].item()
-                            ),
-                            arc_id=int(
-                                expansion.arc_ids[candidate_index].item()
-                            ),
-                            round_index=state.round_index,
-                            frontier_position=frontier_position,
-                            parent_trace_id=int(
-                                hypotheses.parent_trace_ids[
-                                    frontier_position
-                                ].item()
-                            ),
-                            context_read=bool(
-                                context_flags[candidate_index].item()
-                            ),
-                        )
-                    )
         else:
             next_hypotheses = model.empty_hypotheses(batch.device)
 
         contexts_read = state.contexts_read + int(context_indices.numel())
+        evidence_selected = state.evidence_selected + int(
+            evidence_indices.numel()
+        )
+        arcs_scored = state.arcs_scored + count
+        search_exhausted = (
+            arcs_scored >= proposal.search_limit
+            or proposal.search_truncated
+            or proposal.search_limit == 0
+        )
+        context_exhausted = (
+            contexts_read >= proposal.context_limit
+            or proposal.context_limit == 0
+        )
+        evidence_exhausted = (
+            evidence_selected >= proposal.evidence_limit
+            or proposal.evidence_limit == 0
+        )
+        had_arcs = proposal.full_arc_count > 0
+        no_depth_eligible = (
+            proposal.expansion.total_arcs > 0
+            and not bool(proposal.depth_eligible.any().item())
+        )
+        deliberate_empty = (
+            had_arcs
+            and frontier_indices.numel() == 0
+            and not search_exhausted
+            and not no_depth_eligible
+        )
         next_state = ControllerState(
             round_index=state.round_index + 1,
-            arcs_scored=state.arcs_scored + expansion.total_arcs,
+            arcs_scored=arcs_scored,
             contexts_read=contexts_read,
-            search_budget_exhausted=budget_exhausted,
-            context_budget_exhausted=contexts_read >= context_limit,
+            evidence_selected=evidence_selected,
+            search_budget_exhausted=search_exhausted,
+            context_budget_exhausted=context_exhausted,
+            evidence_budget_exhausted=evidence_exhausted,
+            frontier_empty=next_hypotheses.count == 0,
+            last_expansion_had_arcs=had_arcs,
+            last_expansion_truncated=proposal.search_truncated,
+            deliberate_empty_frontier=deliberate_empty,
+            depth_exhausted=no_depth_eligible,
             trace_ledger=tuple(trace_entries),
+            context_ledger=tuple(context_entries),
             evidence_ledger=tuple(evidence_entries),
         )
-        return ControllerStep(
-            expansion=expansion,
-            outputs=outputs,
-            selected_candidate_indices=selected,
-            context_candidate_indices=context_indices,
-            next_hypotheses=next_hypotheses,
-            evidence=evidence,
-            state=next_state,
+        termination_control = termination_control_features(
+            batch,
+            next_hypotheses,
+            next_state,
+            config=self.config,
+            search_limit=proposal.search_limit,
+            context_limit=proposal.context_limit,
         )
+        return ControllerTransition(
+            proposal=replace(proposal, candidate_outputs=refined),
+            actions=replace(
+                actions,
+                frontier_candidate_indices=frontier_indices,
+                context_candidate_indices=context_indices,
+                evidence_candidate_indices=evidence_indices,
+            ),
+            refined_outputs=refined,
+            next_hypotheses=next_hypotheses,
+            next_evidence=evidence,
+            next_controller_state=next_state,
+            termination_control=termination_control,
+        )
+
+    def transition(
+        self,
+        model: CandidateScorerBase,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        state: ControllerState,
+        *,
+        supervision: _StateSupervision | None,
+        schedule: ActionSchedule,
+        randomizer: random.Random,
+    ) -> ControllerTransition:
+        proposal = self.propose(model, batch, hypotheses, evidence, state)
+        actions = self.choose_actions(
+            proposal,
+            supervision=supervision,
+            state=state,
+            schedule=schedule,
+            randomizer=randomizer,
+        )
+        return self.apply(
+            model,
+            batch,
+            hypotheses,
+            evidence,
+            state,
+            proposal,
+            actions,
+        )
+
+    def step(
+        self,
+        model: CandidateScorerBase,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        state: ControllerState,
+    ) -> ControllerTransition:
+        """Compatibility runtime step using model actions only."""
+
+        return self.transition(
+            model,
+            batch,
+            hypotheses,
+            evidence,
+            state,
+            supervision=None,
+            schedule=ActionSchedule.model_only(),
+            randomizer=random.Random(0),
+        )
+
+    @staticmethod
+    def _empty_fallback(state: ControllerState) -> TerminationDecision:
+        if (
+            state.search_budget_exhausted
+            or state.depth_exhausted
+            or state.deliberate_empty_frontier
+        ):
+            return TerminationDecision.UNKNOWN_INCOMPLETE
+        return TerminationDecision.UNKNOWN_ABSENT
 
     def run(
         self,
@@ -534,53 +1091,76 @@ class SparseWavefrontController:
         hypotheses = model.initial_hypotheses(batch)
         evidence = model.initial_evidence(batch)
         state = ControllerState.initial()
-        search_limit, context_limit = self._limits(batch)
         arc_trace: list[tuple[int, ...]] = []
+        diagnostics: list[ActionDiagnostic] = []
         termination = tuple(
-            TerminationDecision.CONTINUE
-            for _ in range(batch.graph_count)
+            TerminationDecision.CONTINUE for _ in range(batch.graph_count)
         )
+        final_logits = evidence.new_zeros((batch.graph_count, len(_TERMINATION_CLASSES)))
+        randomizer = random.Random(0)
         for _ in range(self.config.max_rounds):
-            step = self.step(
+            proposal = self.propose(model, batch, hypotheses, evidence, state)
+            actions = self.choose_actions(
+                proposal,
+                supervision=None,
+                state=state,
+                schedule=ActionSchedule.model_only(),
+                randomizer=randomizer,
+            )
+            transition = self.apply(
                 model,
                 batch,
                 hypotheses,
                 evidence,
                 state,
+                proposal,
+                actions,
             )
             arc_trace.append(
                 tuple(
-                    step.expansion.arc_ids[
-                        step.selected_candidate_indices
+                    transition.expansion.arc_ids[
+                        transition.selected_candidate_indices
                     ].tolist()
                 )
             )
-            hypotheses = step.next_hypotheses
-            evidence = step.evidence
-            state = step.state
-            if hypotheses.count == 0:
-                decision = (
-                    TerminationDecision.UNKNOWN_INCOMPLETE
-                    if state.search_budget_exhausted
-                    else TerminationDecision.UNKNOWN_ABSENT
-                )
-                termination = tuple(decision for _ in range(batch.graph_count))
-                break
-            logits = model.termination_logits(
+            hypotheses = transition.next_hypotheses
+            evidence = transition.next_evidence
+            state = transition.next_controller_state
+            final_logits = model.termination_logits(
                 batch,
                 hypotheses,
                 evidence,
-                self._termination_control(
-                    batch,
-                    hypotheses,
-                    state,
-                    search_limit=search_limit,
-                    context_limit=context_limit,
-                ),
+                transition.termination_control,
             )
             termination = tuple(
                 _TERMINATION_CLASSES[index]
-                for index in logits.argmax(dim=-1).tolist()
+                for index in final_logits.argmax(dim=-1).tolist()
+            )
+            if hypotheses.count == 0:
+                termination = tuple(
+                    self._empty_fallback(state)
+                    if decision is TerminationDecision.CONTINUE
+                    else decision
+                    for decision in termination
+                )
+            diagnostics.append(
+                ActionDiagnostic(
+                    round_index=state.round_index - 1,
+                    frontier_source=actions.frontier_source,
+                    context_source=actions.context_source,
+                    evidence_source=actions.evidence_source,
+                    termination_source=actions.termination_source,
+                    frontier_candidate_indices=tuple(
+                        actions.frontier_candidate_indices.tolist()
+                    ),
+                    context_candidate_indices=tuple(
+                        actions.context_candidate_indices.tolist()
+                    ),
+                    evidence_candidate_indices=tuple(
+                        actions.evidence_candidate_indices.tolist()
+                    ),
+                    executed_termination=termination[0],
+                )
             )
             if all(
                 decision is not TerminationDecision.CONTINUE
@@ -600,7 +1180,10 @@ class SparseWavefrontController:
             termination=termination,
             selected_arc_trace=tuple(arc_trace),
             trace_ledger=state.trace_ledger,
+            context_ledger=state.context_ledger,
             evidence_ledger=state.evidence_ledger,
+            action_diagnostics=tuple(diagnostics),
+            final_termination_logits=final_logits,
             rounds=state.round_index,
             arcs_scored=state.arcs_scored,
             contexts_read=state.contexts_read,

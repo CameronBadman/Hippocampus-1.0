@@ -5,6 +5,7 @@ from typing import Literal
 
 
 EdgeMode = Literal["standard", "compositional"]
+TerminationMode = Literal["flat", "hierarchical"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +27,7 @@ class SpiderModelConfig:
     tied_recurrence: bool = True
     untied_rounds: int = 8
     control_width: int = 6
+    termination_mode: TerminationMode = "flat"
 
     def __post_init__(self) -> None:
         for name in (
@@ -54,6 +56,8 @@ class SpiderModelConfig:
                 raise ValueError("compositional mode requires edge transforms")
             if self.adapter_rank <= 0:
                 raise ValueError("compositional mode requires a positive adapter rank")
+        if self.termination_mode not in {"flat", "hierarchical"}:
+            raise ValueError("termination_mode must be flat or hierarchical")
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,7 +68,10 @@ class SparseControllerConfig:
     context_read_budget: int = 4
     search_budget: int = 4096
     max_depth: int = 12
+    expand_threshold: float = 0.5
+    context_threshold: float = 0.5
     evidence_threshold: float = 0.5
+    evidence_selection_budget: int = 32
 
     def __post_init__(self) -> None:
         for name in (
@@ -80,5 +87,12 @@ class SparseControllerConfig:
                 raise ValueError(f"{name} must be positive")
         if self.context_read_budget < 0:
             raise ValueError("context_read_budget must be non-negative")
-        if not 0.0 <= self.evidence_threshold <= 1.0:
-            raise ValueError("evidence_threshold must be in [0, 1]")
+        if self.evidence_selection_budget < 0:
+            raise ValueError("evidence_selection_budget must be non-negative")
+        for name in (
+            "expand_threshold",
+            "context_threshold",
+            "evidence_threshold",
+        ):
+            if not 0.0 <= getattr(self, name) <= 1.0:
+                raise ValueError(f"{name} must be in [0, 1]")

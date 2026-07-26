@@ -3,13 +3,22 @@
 from .baselines import FlatTransformerScorer, PooledScorer
 from .config import SparseControllerConfig, SpiderModelConfig
 from .controller import (
+    ActionDiagnostic,
+    ActionSchedule,
+    ActionSource,
+    ContextLedgerEntry,
+    ControllerActions,
+    ControllerProposal,
     ControllerResult,
     ControllerState,
     ControllerStep,
+    ControllerTransition,
     EvidenceLedgerEntry,
     SparseWavefrontController,
     TraceLedgerEntry,
+    candidate_control_features,
     stable_candidate_selection,
+    termination_control_features,
 )
 from .hypothesis import HypothesisBatch
 from .experiment import (
@@ -29,6 +38,7 @@ from .losses import (
     multi_positive_priority_loss,
 )
 from .model import CandidateScorerBase, SpiderModel
+from .state_oracle import StateOracle, StateSupervision
 from .set_attention import (
     AttentionBackendStatus,
     PositionFreeCrossAttention,
@@ -39,9 +49,11 @@ from .types import CandidateOutputs, PaddedSet
 from .training import (
     OracleMetrics,
     OracleRollout,
+    RolloutRoundDiagnostic,
     TrainingLoopConfig,
     TrainingRecord,
     TrainingResult,
+    controller_rollout,
     evaluate_oracle_batches,
     make_tiny_cases,
     mixed_rollout,
@@ -51,12 +63,19 @@ from .training import (
 
 __all__ = [
     "AttentionBackendStatus",
+    "ActionDiagnostic",
+    "ActionSchedule",
+    "ActionSource",
     "CandidateOutputs",
     "CandidateScorerBase",
     "CandidateSupervision",
+    "ContextLedgerEntry",
+    "ControllerActions",
+    "ControllerProposal",
     "ControllerResult",
     "ControllerState",
     "ControllerStep",
+    "ControllerTransition",
     "EvidenceLedgerEntry",
     "EvaluationReport",
     "FlatTransformerScorer",
@@ -68,12 +87,15 @@ __all__ = [
     "PooledScorer",
     "PositionFreeCrossAttention",
     "ResolvedExperiment",
+    "RolloutRoundDiagnostic",
     "SparseControllerConfig",
     "SparseWavefrontController",
     "SpiderModel",
     "SpiderModelConfig",
     "SpiderLossConfig",
     "SpiderLossReport",
+    "StateOracle",
+    "StateSupervision",
     "TraceLedgerEntry",
     "TrainingLoopConfig",
     "TrainingRecord",
@@ -81,7 +103,9 @@ __all__ = [
     "attention_backend_status",
     "behavioural_consistency_loss",
     "build_model",
+    "candidate_control_features",
     "candidate_loss_report",
+    "controller_rollout",
     "evaluate_oracle_batches",
     "evaluate_batches",
     "make_tiny_cases",
@@ -92,5 +116,6 @@ __all__ = [
     "parameter_count",
     "padded_family_gather",
     "stable_candidate_selection",
+    "termination_control_features",
     "train_oracle_batches",
 ]

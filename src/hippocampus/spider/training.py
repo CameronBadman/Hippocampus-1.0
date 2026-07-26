@@ -19,7 +19,13 @@ from ..programs import (
 )
 from ..programs.schema import CandidateTarget, TerminationDecision
 from .hypothesis import HypothesisBatch
-from .controller import stable_candidate_selection
+from .config import SparseControllerConfig
+from .controller import (
+    ActionSchedule,
+    ActionSource,
+    ControllerState,
+    SparseWavefrontController,
+)
 from .losses import (
     CandidateSupervision,
     LossTerm,
@@ -29,6 +35,7 @@ from .losses import (
     termination_loss_term,
 )
 from .model import CandidateScorerBase
+from .state_oracle import StateOracle
 from .types import CandidateOutputs
 
 
@@ -52,6 +59,7 @@ class TrainingLoopConfig:
     log_every: int = 25
     max_grad_norm: float = 5.0
     oracle_fraction_schedule: tuple[float, ...] = (1.0,)
+    action_schedule: tuple[ActionSchedule, ...] = ()
 
     def __post_init__(self) -> None:
         if self.steps <= 0 or self.batch_size <= 0:
@@ -67,6 +75,15 @@ class TrainingLoopConfig:
             for fraction in self.oracle_fraction_schedule
         ):
             raise ValueError("oracle fractions must be in [0, 1]")
+
+    @property
+    def resolved_action_schedule(self) -> tuple[ActionSchedule, ...]:
+        if self.action_schedule:
+            return self.action_schedule
+        return tuple(
+            ActionSchedule(fraction, fraction, fraction, fraction)
+            for fraction in self.oracle_fraction_schedule
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,6 +238,24 @@ class OracleRollout:
     report: SpiderLossReport
     metrics: OracleMetrics
     rounds: int
+    diagnostics: tuple["RolloutRoundDiagnostic", ...] = ()
+    evidence_scores: torch.Tensor | None = None
+    evidence_labels: torch.Tensor | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RolloutRoundDiagnostic:
+    round_index: int
+    frontier_source: ActionSource
+    context_source: ActionSource
+    evidence_source: ActionSource
+    termination_source: ActionSource
+    frontier_count: int
+    context_count: int
+    evidence_count: int
+    termination_hypothesis_count: int
+    termination_target: TerminationDecision
+    executed_termination: TerminationDecision
 
 
 @dataclass(frozen=True, slots=True)
@@ -576,232 +611,78 @@ def _aggregate_reports(
     return SpiderLossReport(aggregated)
 
 
-def oracle_rollout(
+def controller_rollout(
     model: CandidateScorerBase,
     batch: PackedProgramBatch,
     *,
-    loss_config: SpiderLossConfig | None = None,
-) -> OracleRollout:
-    if batch.graph_count != 1:
-        raise ValueError("oracle rollout currently requires one graph per batch")
-    config = loss_config or SpiderLossConfig()
-    hypotheses = model.initial_hypotheses(batch)
-    evidence = model.initial_evidence(batch)
-    reports: list[SpiderLossReport] = []
-    metrics = OracleMetrics.empty()
-    case = batch.cases[0]
-    for round_index, oracle_round in enumerate(case.trace.rounds):
-        expansion = batch.graph.expand_frontier(
-            hypotheses.node_ids,
-            validate_ids=False,
-        )
-        supervision = candidate_supervision(batch, round_index, expansion)
-        outputs = model.score_candidates(
-            batch,
-            hypotheses,
-            expansion,
-            evidence,
-            round_index=round_index,
-        )
-        context_logits = outputs.context_logits
-        context_candidates = torch.nonzero(
-            supervision.context_has_value,
-            as_tuple=False,
-        ).flatten()
-        if context_candidates.numel():
-            outputs = model.refine_with_context(
-                batch,
-                expansion,
-                outputs,
-                context_candidates,
-            )
-        candidate_report = candidate_loss_report(
-            outputs,
-            supervision,
-            expansion.frontier_positions,
-            frontier_count=hypotheses.count,
-            config=config,
-            context_logits=context_logits,
-        )
-        next_hypotheses = _next_oracle_hypotheses(
-            model,
-            hypotheses,
-            expansion,
-            outputs,
-            supervision.acceptable,
-        )
-        evidence_candidates = torch.nonzero(
-            supervision.include_as_evidence,
-            as_tuple=False,
-        ).flatten()
-        if evidence_candidates.numel():
-            parents = expansion.frontier_positions[
-                evidence_candidates
-            ].to(torch.int64)
-            evidence = model.update_evidence(
-                evidence,
-                outputs.next_path_state[evidence_candidates].mean(dim=1),
-                hypotheses.graph_ids[parents],
-            )
-        termination_hypotheses = (
-            next_hypotheses
-            if next_hypotheses.count
-            else hypotheses
-        )
-        termination_control = outputs.priority_logits.new_zeros((1, 6))
-        termination_control[:, 0] = (round_index + 1) / max(
-            1,
-            len(case.trace.rounds),
-        )
-        termination_control[:, 3] = float(next_hypotheses.count == 0)
-        termination_control[:, 4] = float(case.search_budget == 0)
-        termination_control[:, 5] = float(
-            case.context_budget == 0
-            and bool(supervision.context_has_value.any().item())
-        )
-        termination_logits = model.termination_logits(
-            batch,
-            termination_hypotheses,
-            evidence,
-            termination_control,
-        )
-        termination_target = TERMINATION_TO_INDEX[
-            oracle_round.termination.decision
-        ]
-        termination = termination_loss_term(
-            termination_logits,
-            torch.tensor(
-                [termination_target],
-                dtype=torch.int64,
-                device=batch.device,
-            ),
-            config=config,
-        )
-        reports.append(
-            SpiderLossReport(
-                terms={
-                    **candidate_report.terms,
-                    "termination": termination,
-                }
-            )
-        )
-        metrics = metrics + _round_metrics(
-            outputs,
-            context_logits,
-            supervision,
-            expansion.frontier_positions,
-            termination_logits,
-            termination_target,
-            frontier_count=hypotheses.count,
-        )
-        hypotheses = next_hypotheses
-        if round_index + 1 < len(case.trace.rounds) and hypotheses.count == 0:
-            raise ValueError("oracle trace continues after an empty acceptable frontier")
-
-    report = _aggregate_reports(
-        reports,
-        reference=model.path_seed,
-    )
-    return OracleRollout(
-        loss=report.total,
-        report=report,
-        metrics=metrics,
-        rounds=len(case.trace.rounds),
-    )
-
-
-def mixed_rollout(
-    model: CandidateScorerBase,
-    batch: PackedProgramBatch,
-    *,
-    oracle_fraction: float,
+    controller_config: SparseControllerConfig,
+    action_schedule: ActionSchedule,
     randomizer: random.Random,
     loss_config: SpiderLossConfig | None = None,
     max_rounds: int | None = None,
 ) -> OracleRollout:
-    """Scheduled oracle/model execution with off-trace candidates as negatives."""
+    """Train on the exact state machine used by autonomous execution."""
 
-    if not 0.0 <= oracle_fraction <= 1.0:
-        raise ValueError("oracle_fraction must be in [0, 1]")
     if batch.graph_count != 1:
-        raise ValueError("mixed rollout currently requires singleton batches")
+        raise ValueError("closed-loop rollout currently requires singleton batches")
     config = loss_config or SpiderLossConfig()
-    case = batch.cases[0]
+    controller = SparseWavefrontController(controller_config)
+    oracle = StateOracle(batch.cases[0], batch, controller_config)
     hypotheses = model.initial_hypotheses(batch)
     evidence = model.initial_evidence(batch)
+    state = ControllerState.initial()
     reports: list[SpiderLossReport] = []
     metrics = OracleMetrics.empty()
-    round_limit = max_rounds or max(2, len(case.trace.rounds) + 2)
-    for rollout_round in range(round_limit):
-        expansion = batch.graph.expand_frontier(
-            hypotheses.node_ids,
-            validate_ids=False,
-        )
-        supervision = _encountered_supervision(batch, expansion)
-        outputs = model.score_candidates(
+    diagnostics: list[RolloutRoundDiagnostic] = []
+    evidence_scores: list[torch.Tensor] = []
+    evidence_labels: list[torch.Tensor] = []
+    round_limit = max_rounds or controller_config.max_rounds
+
+    for _ in range(round_limit):
+        proposal = controller.propose(
+            model,
             batch,
             hypotheses,
-            expansion,
             evidence,
-            round_index=rollout_round,
+            state,
         )
-        context_logits = outputs.context_logits
-        context_candidates = torch.nonzero(
-            supervision.context_has_value,
-            as_tuple=False,
-        ).flatten()
-        if context_candidates.numel():
-            outputs = model.refine_with_context(
-                batch,
-                expansion,
-                outputs,
-                context_candidates,
-            )
-        candidate_report = candidate_loss_report(
-            outputs,
-            supervision,
-            expansion.frontier_positions,
-            frontier_count=hypotheses.count,
-            config=config,
-            context_logits=context_logits,
+        supervision = oracle.label(proposal, hypotheses, state)
+        actions = controller.choose_actions(
+            proposal,
+            supervision=supervision,
+            state=state,
+            schedule=action_schedule,
+            randomizer=randomizer,
         )
-
-        local_nodes = {
-            node_id
-            - int(batch.graph.topology.graph_node_ptr[0].item())
-            for node_id in hypotheses.node_ids.tolist()
-        }
-        matching_round = next(
-            (
-                oracle_round
-                for oracle_round in case.trace.rounds
-                if set(oracle_round.frontier_nodes) == local_nodes
-            ),
-            None,
+        transition = controller.apply(
+            model,
+            batch,
+            hypotheses,
+            evidence,
+            state,
+            proposal,
+            actions,
         )
-        termination_decision = (
-            matching_round.termination.decision
-            if matching_round is not None
-            else TerminationDecision.UNKNOWN_INCOMPLETE
-        )
-        termination_target = TERMINATION_TO_INDEX[termination_decision]
-        termination_control = outputs.priority_logits.new_zeros((1, 6))
-        termination_control[:, 0] = (rollout_round + 1) / round_limit
-        termination_control[:, 4] = float(case.search_budget == 0)
-        termination_control[:, 5] = float(
-            case.context_budget == 0
-            and bool(supervision.context_has_value.any().item())
-        )
+        termination_target = oracle.termination_target(transition)
+        target_index = TERMINATION_TO_INDEX[termination_target.decision]
         termination_logits = model.termination_logits(
             batch,
-            hypotheses,
-            evidence,
-            termination_control,
+            transition.next_hypotheses,
+            transition.next_evidence,
+            transition.termination_control,
+        )
+        candidate_report = candidate_loss_report(
+            transition.refined_outputs,
+            supervision.candidates,
+            proposal.expansion.frontier_positions,
+            frontier_count=hypotheses.count,
+            config=config,
+            context_logits=proposal.candidate_outputs.context_logits,
         )
         termination = termination_loss_term(
             termination_logits,
             torch.tensor(
-                [termination_target],
+                [target_index],
                 dtype=torch.int64,
                 device=batch.device,
             ),
@@ -816,64 +697,60 @@ def mixed_rollout(
             )
         )
         metrics = metrics + _round_metrics(
-            outputs,
-            context_logits,
-            supervision,
-            expansion.frontier_positions,
+            transition.refined_outputs,
+            proposal.candidate_outputs.context_logits,
+            supervision.candidates,
+            proposal.expansion.frontier_positions,
             termination_logits,
-            termination_target,
+            target_index,
             frontier_count=hypotheses.count,
         )
-        if (
-            termination_decision is not TerminationDecision.CONTINUE
-            or expansion.total_arcs == 0
-        ):
-            break
-
-        use_oracle = (
-            supervision.acceptable.any().item()
-            and randomizer.random() < oracle_fraction
+        evidence_scores.append(
+            transition.refined_outputs.evidence_logits.detach()
         )
-        if use_oracle:
-            selected = torch.nonzero(
-                supervision.acceptable,
-                as_tuple=False,
-            ).flatten()
-        else:
-            selected = stable_candidate_selection(
-                expansion,
-                outputs.priority_logits
-                + torch.nn.functional.logsigmoid(outputs.expand_logits),
-                frontier_width=16,
-                hypotheses_per_node=2,
-            )
-        selection_mask = torch.zeros(
-            expansion.total_arcs,
-            dtype=torch.bool,
-            device=batch.device,
+        evidence_labels.append(
+            supervision.candidates.include_as_evidence.detach()
         )
-        if selected.numel():
-            selection_mask = selection_mask.index_fill(0, selected, True)
-        evidence_candidates = selected[
-            supervision.include_as_evidence[selected]
+        model_decision = _TERMINATION_FROM_INDEX[
+            int(termination_logits.argmax(dim=-1)[0].item())
         ]
-        if evidence_candidates.numel():
-            parents = expansion.frontier_positions[
-                evidence_candidates
-            ].to(torch.int64)
-            evidence = model.update_evidence(
-                evidence,
-                outputs.next_path_state[evidence_candidates].mean(dim=1),
-                hypotheses.graph_ids[parents],
-            )
-        hypotheses = _next_oracle_hypotheses(
-            model,
-            hypotheses,
-            expansion,
-            outputs,
-            selection_mask,
+        executed = (
+            termination_target.decision
+            if actions.termination_source is ActionSource.ORACLE
+            else model_decision
         )
-        if hypotheses.count == 0:
+        if (
+            executed is TerminationDecision.CONTINUE
+            and transition.next_hypotheses.count == 0
+        ):
+            executed = TerminationDecision.UNKNOWN_INCOMPLETE
+        diagnostics.append(
+            RolloutRoundDiagnostic(
+                round_index=state.round_index,
+                frontier_source=actions.frontier_source,
+                context_source=actions.context_source,
+                evidence_source=actions.evidence_source,
+                termination_source=actions.termination_source,
+                frontier_count=int(
+                    actions.frontier_candidate_indices.numel()
+                ),
+                context_count=int(
+                    actions.context_candidate_indices.numel()
+                ),
+                evidence_count=int(
+                    actions.evidence_candidate_indices.numel()
+                ),
+                termination_hypothesis_count=(
+                    transition.next_hypotheses.count
+                ),
+                termination_target=termination_target.decision,
+                executed_termination=executed,
+            )
+        )
+        hypotheses = transition.next_hypotheses
+        evidence = transition.next_evidence
+        state = transition.next_controller_state
+        if executed is not TerminationDecision.CONTINUE:
             break
 
     report = _aggregate_reports(reports, reference=model.path_seed)
@@ -882,6 +759,98 @@ def mixed_rollout(
         report=report,
         metrics=metrics,
         rounds=len(reports),
+        diagnostics=tuple(diagnostics),
+        evidence_scores=(
+            torch.cat(evidence_scores)
+            if evidence_scores
+            else model.path_seed.new_empty((0,))
+        ),
+        evidence_labels=(
+            torch.cat(evidence_labels)
+            if evidence_labels
+            else torch.empty(0, dtype=torch.bool, device=batch.device)
+        ),
+    )
+
+
+_TERMINATION_FROM_INDEX = {
+    index: decision
+    for decision, index in TERMINATION_TO_INDEX.items()
+}
+
+
+def _default_controller_config(
+    batch: PackedProgramBatch,
+    *,
+    max_rounds: int | None = None,
+) -> SparseControllerConfig:
+    case = batch.cases[0]
+    return SparseControllerConfig(
+        max_rounds=max_rounds or max(2, len(case.trace.rounds) + 2),
+        frontier_width=32,
+        hypotheses_per_node=2,
+        context_read_budget=case.context_budget,
+        evidence_selection_budget=max(4, len(case.evidence_nodes)),
+        search_budget=case.search_budget,
+        max_depth=max(12, len(case.trace.rounds) + 2),
+    )
+
+
+def oracle_rollout(
+    model: CandidateScorerBase,
+    batch: PackedProgramBatch,
+    *,
+    loss_config: SpiderLossConfig | None = None,
+    controller_config: SparseControllerConfig | None = None,
+) -> OracleRollout:
+    return controller_rollout(
+        model,
+        batch,
+        controller_config=(
+            controller_config or _default_controller_config(batch)
+        ),
+        action_schedule=ActionSchedule.oracle_only(),
+        randomizer=random.Random(0),
+        loss_config=loss_config,
+    )
+
+
+def mixed_rollout(
+    model: CandidateScorerBase,
+    batch: PackedProgramBatch,
+    *,
+    oracle_fraction: float | None = None,
+    action_schedule: ActionSchedule | None = None,
+    randomizer: random.Random,
+    loss_config: SpiderLossConfig | None = None,
+    max_rounds: int | None = None,
+    controller_config: SparseControllerConfig | None = None,
+) -> OracleRollout:
+    """Scheduled execution using the same proposal and transition as runtime."""
+
+    if action_schedule is None:
+        if oracle_fraction is None or not 0.0 <= oracle_fraction <= 1.0:
+            raise ValueError(
+                "provide an action schedule or oracle_fraction in [0, 1]"
+            )
+        action_schedule = ActionSchedule(
+            oracle_fraction,
+            oracle_fraction,
+            oracle_fraction,
+            oracle_fraction,
+        )
+    resolved_controller = (
+        controller_config
+        or _default_controller_config(batch, max_rounds=max_rounds)
+    )
+    return controller_rollout(
+        model,
+        batch,
+        controller_config=resolved_controller,
+        action_schedule=action_schedule,
+        randomizer=randomizer,
+        loss_config=loss_config,
+        max_rounds=max_rounds,
     )
 
 
@@ -937,6 +906,7 @@ def evaluate_oracle_batches(
     batches: Sequence[PackedProgramBatch],
     *,
     loss_config: SpiderLossConfig | None = None,
+    controller_config: SparseControllerConfig | None = None,
 ) -> tuple[float, OracleMetrics]:
     was_training = model.training
     model.eval()
@@ -944,7 +914,12 @@ def evaluate_oracle_batches(
     metrics = OracleMetrics.empty()
     with torch.no_grad():
         for batch in batches:
-            result = oracle_rollout(model, batch, loss_config=loss_config)
+            result = oracle_rollout(
+                model,
+                batch,
+                loss_config=loss_config,
+                controller_config=controller_config,
+            )
             total_loss += float(result.loss.item())
             metrics = metrics + result.metrics
     model.train(was_training)
@@ -957,6 +932,7 @@ def train_oracle_batches(
     *,
     loop_config: TrainingLoopConfig,
     loss_config: SpiderLossConfig | None = None,
+    controller_config: SparseControllerConfig | None = None,
     checkpoint_path: Path | None = None,
 ) -> TrainingResult:
     if not batches:
@@ -972,6 +948,7 @@ def train_oracle_batches(
         model,
         batches,
         loss_config=loss_settings,
+        controller_config=controller_config,
     )
     records = [
         TrainingRecord(
@@ -989,29 +966,26 @@ def train_oracle_batches(
             batches[randomizer.randrange(len(batches))]
             for _ in range(loop_config.batch_size)
         ]
+        schedules = loop_config.resolved_action_schedule
         schedule_index = min(
-            len(loop_config.oracle_fraction_schedule) - 1,
+            len(schedules) - 1,
             (step - 1)
-            * len(loop_config.oracle_fraction_schedule)
+            * len(schedules)
             // loop_config.steps,
         )
-        oracle_fraction = loop_config.oracle_fraction_schedule[schedule_index]
+        action_schedule = schedules[schedule_index]
         loss = torch.stack(
             [
-                (
-                    oracle_rollout(
-                        model,
-                        batch,
-                        loss_config=loss_settings,
-                    )
-                    if oracle_fraction == 1.0
-                    else mixed_rollout(
-                        model,
-                        batch,
-                        oracle_fraction=oracle_fraction,
-                        randomizer=randomizer,
-                        loss_config=loss_settings,
-                    )
+                controller_rollout(
+                    model,
+                    batch,
+                    controller_config=(
+                        controller_config
+                        or _default_controller_config(batch)
+                    ),
+                    action_schedule=action_schedule,
+                    randomizer=randomizer,
+                    loss_config=loss_settings,
                 ).loss
                 for batch in selected
             ]
@@ -1038,6 +1012,7 @@ def train_oracle_batches(
         model,
         batches,
         loss_config=loss_settings,
+        controller_config=controller_config,
     )
     records.append(
         TrainingRecord(
@@ -1056,6 +1031,11 @@ def train_oracle_batches(
                 "model_config": asdict(model.config),
                 "loop_config": asdict(loop_config),
                 "loss_config": asdict(loss_settings),
+                "controller_config": (
+                    asdict(controller_config)
+                    if controller_config is not None
+                    else None
+                ),
                 "final_metrics": final_metrics.as_dict(),
             },
             checkpoint_path,
