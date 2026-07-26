@@ -1,0 +1,38 @@
+{
+  "dataset_version": "spider-programs-v0.3-recurrence-dev",
+  "decision_rules": {
+    "material_state_use": {
+      "mean_absolute_degradation": 0.05,
+      "minimum_seed_wins": 2
+    },
+    "recurrent_advantage": {
+      "mean_paired_delta": 0.02,
+      "minimum_seed_wins": 2
+    }
+  },
+  "fixed_horizons": [
+    "oracle_required",
+    4,
+    6,
+    8
+  ],
+  "historical_sealed_access_allowed": false,
+  "models": [
+    "recurrent",
+    "pooled"
+  ],
+  "primary_metric": "fixed_horizon_structural_success",
+  "seeds": [
+    1701,
+    1802,
+    1903
+  ],
+  "state_interventions": [
+    "none",
+    "reset",
+    "detach",
+    "shuffle",
+    "pooled_current_node"
+  ],
+  "status": "frozen_before_implementation"
+}

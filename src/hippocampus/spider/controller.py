@@ -12,6 +12,11 @@ from ..programs.batching import PackedProgramBatch
 from ..programs.schema import TerminationDecision
 from ..topology import FrontierExpansion
 from .config import SparseControllerConfig
+from .execution import (
+    ControllerExecutionPolicy,
+    HorizonMode,
+    apply_path_state_intervention,
+)
 from .hypothesis import HypothesisBatch
 from .model import CandidateScorerBase
 from .types import CandidateOutputs
@@ -1107,7 +1112,14 @@ class SparseWavefrontController:
         self,
         model: CandidateScorerBase,
         batch: PackedProgramBatch,
+        *,
+        execution_policy: ControllerExecutionPolicy | None = None,
     ) -> ControllerResult:
+        policy = execution_policy or ControllerExecutionPolicy.learned()
+        round_limit = policy.resolve_round_limit(
+            batch,
+            configured_max_rounds=self.config.max_rounds,
+        )
         hypotheses = model.initial_hypotheses(batch)
         evidence = model.initial_evidence(batch)
         state = ControllerState.initial()
@@ -1118,7 +1130,15 @@ class SparseWavefrontController:
         )
         final_logits = evidence.new_zeros((batch.graph_count, len(_TERMINATION_CLASSES)))
         randomizer = random.Random(0)
-        for _ in range(self.config.max_rounds):
+        for round_offset in range(round_limit):
+            hypotheses = apply_path_state_intervention(
+                model,
+                batch,
+                hypotheses,
+                intervention=policy.path_state_intervention,
+                round_index=state.round_index,
+                seed=policy.intervention_seed,
+            )
             proposal = self.propose(model, batch, hypotheses, evidence, state)
             actions = self.choose_actions(
                 proposal,
@@ -1146,16 +1166,26 @@ class SparseWavefrontController:
             hypotheses = transition.next_hypotheses
             evidence = transition.next_evidence
             state = transition.next_controller_state
-            final_logits = model.termination_logits(
-                batch,
-                hypotheses,
-                evidence,
-                transition.termination_control,
+            evaluate_termination = (
+                policy.horizon_mode is HorizonMode.LEARNED
+                or round_offset == round_limit - 1
             )
-            termination = self.execute_termination(
-                final_logits,
-                transition,
-            )
+            if evaluate_termination:
+                final_logits = model.termination_logits(
+                    batch,
+                    hypotheses,
+                    evidence,
+                    transition.termination_control,
+                )
+                termination = self.execute_termination(
+                    final_logits,
+                    transition,
+                )
+            else:
+                termination = tuple(
+                    TerminationDecision.CONTINUE
+                    for _ in range(batch.graph_count)
+                )
             diagnostics.append(
                 ActionDiagnostic(
                     round_index=state.round_index - 1,
@@ -1175,12 +1205,18 @@ class SparseWavefrontController:
                     executed_termination=termination[0],
                 )
             )
-            if all(
-                decision is not TerminationDecision.CONTINUE
-                for decision in termination
+            if (
+                policy.horizon_mode is HorizonMode.LEARNED
+                and all(
+                    decision is not TerminationDecision.CONTINUE
+                    for decision in termination
+                )
             ):
                 break
-        else:
+        if all(
+            decision is TerminationDecision.CONTINUE
+            for decision in termination
+        ):
             termination = tuple(
                 TerminationDecision.UNKNOWN_INCOMPLETE
                 if decision is TerminationDecision.CONTINUE

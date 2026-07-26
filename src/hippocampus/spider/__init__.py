@@ -28,6 +28,12 @@ from .controller import (
     termination_control_features,
 )
 from .hypothesis import HypothesisBatch
+from .execution import (
+    ControllerExecutionPolicy,
+    HorizonMode,
+    PathStateIntervention,
+    apply_path_state_intervention,
+)
 from .experiment import (
     ResolvedExperiment,
     build_model,
@@ -94,6 +100,7 @@ __all__ = [
     "ClosedLoopEvaluationReport",
     "ContextLedgerEntry",
     "ControllerActions",
+    "ControllerExecutionPolicy",
     "ControllerProposal",
     "ControllerResult",
     "ControllerState",
@@ -105,10 +112,12 @@ __all__ = [
     "EvaluationReport",
     "FlatTransformerScorer",
     "HypothesisBatch",
+    "HorizonMode",
     "LossTerm",
     "OracleMetrics",
     "OracleRollout",
     "PaddedSet",
+    "PathStateIntervention",
     "PooledScorer",
     "PositionFreeCrossAttention",
     "PrecisionRecallPoint",
@@ -129,6 +138,7 @@ __all__ = [
     "TrainingRecord",
     "TrainingResult",
     "attention_backend_status",
+    "apply_path_state_intervention",
     "authorize_v0_2_sealed_evaluation",
     "behavioural_consistency_loss",
     "binary_average_precision",

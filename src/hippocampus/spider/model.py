@@ -160,18 +160,7 @@ class CandidateScorerBase(nn.Module, ABC):
         device = batch.device
         graph_tensor = torch.tensor(graph_ids, dtype=torch.int32, device=device)
         node_tensor = torch.tensor(node_ids, dtype=torch.int32, device=device)
-        query = self._queries(batch, graph_tensor)
-        path = self.path_seed.to(device=device).unsqueeze(0).expand(
-            len(node_ids),
-            -1,
-            -1,
-        )
-        path_mask = torch.ones(
-            path.shape[:2],
-            dtype=torch.bool,
-            device=device,
-        )
-        path = self.path_initializer(path, path_mask, query)
+        path = self.initial_path_state(batch, graph_tensor)
         hypotheses = HypothesisBatch(
             node_ids=node_tensor,
             graph_ids=graph_tensor,
@@ -203,6 +192,52 @@ class CandidateScorerBase(nn.Module, ABC):
             ),
         )
         return hypotheses.validate()
+
+    def initial_path_state(
+        self,
+        batch: PackedProgramBatch,
+        graph_ids: torch.Tensor,
+    ) -> torch.Tensor:
+        """Build the query-conditioned path seed for owner occurrences."""
+
+        resolved_graph_ids = graph_ids.to(
+            device=batch.device,
+            dtype=torch.int32,
+        )
+        query = self._queries(batch, resolved_graph_ids)
+        path = self.path_seed.to(device=batch.device).unsqueeze(0).expand(
+            resolved_graph_ids.numel(),
+            -1,
+            -1,
+        )
+        path_mask = torch.ones(
+            path.shape[:2],
+            dtype=torch.bool,
+            device=batch.device,
+        )
+        return self.path_initializer(path, path_mask, query)
+
+    def pooled_current_node_path_state(
+        self,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+    ) -> torch.Tensor:
+        """Replace history with a symmetric current-summary representation."""
+
+        summary = project_padded_set(
+            padded_family_gather(
+                batch.graph.summaries,
+                hypotheses.node_ids,
+                validate_ids=False,
+            ),
+            self.summary_projection,
+        )
+        pooled = masked_mean(summary.values, summary.mask)
+        return pooled[:, None, :].expand(
+            -1,
+            self.config.path_rows,
+            -1,
+        )
 
     def empty_hypotheses(self, device: torch.device | str) -> HypothesisBatch:
         target = torch.device(device)
