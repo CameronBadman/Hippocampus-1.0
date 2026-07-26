@@ -1,0 +1,11 @@
+{
+  "checkpoint_path": "/content/spider-v02-recurrence/REC-recurrent-s1701-6k/run/checkpoint.pt",
+  "checkpoint_sha256": "03db6a832b2271e0bd90e49a7dc37c470551f4180c30cdccc64e9aca0956d543",
+  "dataset_hashes": {
+    "train_recurrence_necessity": "ff36529a8090581f6156a8fc36258e4a14eee9a542955623b70550001469fe56",
+    "validation_recurrence_necessity": "67c2273e4899af179bc1e10185742b806d751f5f5dba858c771f2eca8a6af4aa"
+  },
+  "evidence_threshold": 0.8697770237922668,
+  "sealed_access_count": 0,
+  "source_commit": "acb533666d481daf9b6fb56562d69a5dd78c5e0e"
+}
