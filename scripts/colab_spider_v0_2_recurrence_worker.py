@@ -29,6 +29,7 @@ ALLOWED_ACCELERATORS = ("H100", "A100")
 ALLOWED_SEEDS = (1701, 1802, 1903)
 ALLOWED_MODELS = ("recurrent", "pooled")
 STEPS = 6_000
+TRAINING_TIMEOUT_SECONDS = 14_400
 TRAIN_MANIFEST_SHA256 = (
     "ff36529a8090581f6156a8fc36258e4a14eee9a542955623b70550001469fe56"
 )
@@ -281,6 +282,7 @@ def train_one(
     log_path = output / "training.log"
     arguments = [
         sys.executable,
+        "-u",
         "scripts/train_spider_recurrence.py",
         "--config",
         CONFIGS[str(spec["model"])],
@@ -306,7 +308,7 @@ def train_one(
         output=output,
         log_path=log_path,
         spec=spec,
-        timeout_seconds=10_800,
+        timeout_seconds=TRAINING_TIMEOUT_SECONDS,
     )
     if return_code:
         tail = log_path.read_text(errors="replace")[-20_000:]

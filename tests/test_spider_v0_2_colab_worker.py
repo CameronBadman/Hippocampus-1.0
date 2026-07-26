@@ -26,6 +26,7 @@ def test_colab_worker_is_pinned_and_has_no_sealed_dataset() -> None:
 
     assert len(str(constants["SOURCE_COMMIT"])) == 40
     assert constants["STEPS"] == 6000
+    assert constants["TRAINING_TIMEOUT_SECONDS"] == 14400
     assert constants["ALLOWED_ACCELERATORS"] == ("H100", "A100")
     assert "sealed" not in str(constants["CONFIGS"]).lower()
     assert len(str(constants["TRAIN_MANIFEST_SHA256"])) == 64
@@ -50,6 +51,7 @@ def test_worker_streams_stable_periodic_checkpoints() -> None:
     assert '"application/octet-stream"' in source
     assert '"published_checkpoints": published_checkpoints' in source
     assert "published checkpoint hashes are incomplete" in source
+    assert 'sys.executable,\n        "-u",' in source
 
 
 def test_launch_specs_cover_the_frozen_six_run_matrix() -> None:
