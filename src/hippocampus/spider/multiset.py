@@ -113,6 +113,7 @@ class MultiSetSpiderBlock(nn.Module):
     ) -> None:
         super().__init__()
         self.query_read = CrossSetRead(d_model, num_heads, dropout)
+        self.evidence_read = CrossSetRead(d_model, num_heads, dropout)
         self.source_read = CrossSetRead(d_model, num_heads, dropout)
         self.edge_read = CrossSetRead(d_model, num_heads, dropout)
         self.destination_read = CrossSetRead(d_model, num_heads, dropout)
@@ -132,11 +133,13 @@ class MultiSetSpiderBlock(nn.Module):
         path: torch.Tensor,
         path_mask: torch.Tensor,
         query: PaddedSet,
+        evidence: PaddedSet,
         source: PaddedSet,
         edge: PaddedSet,
         destination: PaddedSet,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         path = self.query_read(path, path_mask, query)
+        path = self.evidence_read(path, path_mask, evidence)
         path = self.source_read(path, path_mask, source)
         path = self.edge_read(path, path_mask, edge)
         destination_update = self.destination_read.update(

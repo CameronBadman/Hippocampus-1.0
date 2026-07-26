@@ -9,10 +9,12 @@ from hippocampus.programs import (
     pack_rendered_cases,
 )
 from hippocampus.spider import (
+    SparseControllerConfig,
     SpiderLossConfig,
     SpiderModel,
     SpiderModelConfig,
     TrainingLoopConfig,
+    evaluate_batches,
     make_tiny_cases,
     multi_positive_priority_loss,
     oracle_rollout,
@@ -123,3 +125,30 @@ def test_tiny_training_decreases_loss_and_saves_checkpoint(tmp_path) -> None:
     assert checkpoint.exists()
     saved = torch.load(checkpoint, weights_only=False)
     assert saved["final_metrics"]["candidate_expand_accuracy"] >= 0.80
+
+
+def test_evaluation_reports_rollout_costs_and_invariance() -> None:
+    torch.manual_seed(23)
+    model, batches = _training_fixture()
+    report = evaluate_batches(
+        model.eval(),
+        batches[:2],
+        split="test_fixture",
+        controller_config=SparseControllerConfig(
+            max_rounds=2,
+            frontier_width=8,
+            hypotheses_per_node=2,
+            context_read_budget=2,
+            search_budget=64,
+            max_depth=4,
+        ),
+        permuted_batches=batches[:2],
+        invariance_sample_limit=2,
+    )
+
+    assert report.case_count == 2
+    assert report.teacher_forced["candidate_mrr"] >= 0.0
+    assert report.rollout["trace_validity"] == 1.0
+    assert report.efficiency["mean_arcs_scored"] > 0
+    assert report.invariance["deterministic_replay_mismatches"] == 0
+    assert report.invariance["row_permutation_decision_mismatches"] == 0

@@ -70,6 +70,16 @@ class OracleMetrics:
     conflict_correct: int
     priority_opportunities: int
     priority_top1_correct: int
+    priority_reciprocal_rank_sum: float
+    frontier_recall_at_4_sum: float
+    predicted_expansions: int
+    invalid_expansions: int
+    context_true_positive: int
+    context_false_positive: int
+    context_false_negative: int
+    evidence_true_positive: int
+    evidence_false_positive: int
+    evidence_false_negative: int
     termination_count: int
     termination_correct: int
 
@@ -98,6 +108,58 @@ class OracleMetrics:
         return self.priority_top1_correct / max(1, self.priority_opportunities)
 
     @property
+    def candidate_mrr(self) -> float:
+        return self.priority_reciprocal_rank_sum / max(
+            1,
+            self.priority_opportunities,
+        )
+
+    @property
+    def valid_frontier_recall_at_4(self) -> float:
+        return self.frontier_recall_at_4_sum / max(
+            1,
+            self.priority_opportunities,
+        )
+
+    @property
+    def invalid_expansion_rate(self) -> float:
+        return self.invalid_expansions / max(1, self.predicted_expansions)
+
+    @property
+    def context_precision(self) -> float:
+        return self.context_true_positive / max(
+            1,
+            self.context_true_positive + self.context_false_positive,
+        )
+
+    @property
+    def context_recall(self) -> float:
+        return self.context_true_positive / max(
+            1,
+            self.context_true_positive + self.context_false_negative,
+        )
+
+    @property
+    def evidence_precision(self) -> float:
+        return self.evidence_true_positive / max(
+            1,
+            self.evidence_true_positive + self.evidence_false_positive,
+        )
+
+    @property
+    def evidence_recall(self) -> float:
+        return self.evidence_true_positive / max(
+            1,
+            self.evidence_true_positive + self.evidence_false_negative,
+        )
+
+    @property
+    def evidence_f1(self) -> float:
+        precision = self.evidence_precision
+        recall = self.evidence_recall
+        return 2 * precision * recall / max(1e-12, precision + recall)
+
+    @property
     def termination_accuracy(self) -> float:
         return self.termination_correct / max(1, self.termination_count)
 
@@ -119,6 +181,14 @@ class OracleMetrics:
             "support_accuracy": self.support_accuracy,
             "conflict_accuracy": self.conflict_accuracy,
             "candidate_top1": self.priority_top1,
+            "candidate_mrr": self.candidate_mrr,
+            "valid_frontier_recall_at_4": self.valid_frontier_recall_at_4,
+            "invalid_expansion_rate": self.invalid_expansion_rate,
+            "context_read_precision": self.context_precision,
+            "context_read_recall": self.context_recall,
+            "evidence_precision": self.evidence_precision,
+            "evidence_recall": self.evidence_recall,
+            "evidence_f1": self.evidence_f1,
             "termination_accuracy": self.termination_accuracy,
             "joint_action_accuracy": self.joint_action_accuracy,
         }
@@ -311,6 +381,8 @@ def _round_metrics(
     )
     priority_count = 0
     priority_correct = 0
+    reciprocal_rank_sum = 0.0
+    recall_at_4_sum = 0.0
     for frontier in range(frontier_count):
         positions = torch.nonzero(
             frontier_positions == frontier,
@@ -322,10 +394,26 @@ def _round_metrics(
         if positives.numel() == 0:
             continue
         priority_count += 1
-        winner = positions[
-            outputs.priority_logits[positions].argmax()
+        order = positions[
+            torch.argsort(
+                outputs.priority_logits[positions],
+                descending=True,
+                stable=True,
+            )
         ]
+        winner = order[0]
         priority_correct += int(bool((positives == winner).any().item()))
+        positive_ranks = torch.nonzero(
+            supervision.acceptable[order],
+            as_tuple=False,
+        ).flatten()
+        reciprocal_rank_sum += 1.0 / (int(positive_ranks[0].item()) + 1)
+        recall_at_4_sum += float(
+            supervision.acceptable[order[:4]].sum().item()
+        ) / positives.numel()
+    expand_predictions = outputs.expand_logits >= 0
+    context_predictions = context_logits >= 0
+    evidence_predictions = outputs.evidence_logits >= 0
     termination_prediction = int(termination_logits.argmax(dim=-1)[0].item())
     return OracleMetrics(
         candidate_count=count,
@@ -336,6 +424,42 @@ def _round_metrics(
         conflict_correct=conflict_correct,
         priority_opportunities=priority_count,
         priority_top1_correct=priority_correct,
+        priority_reciprocal_rank_sum=reciprocal_rank_sum,
+        frontier_recall_at_4_sum=recall_at_4_sum,
+        predicted_expansions=int(expand_predictions.sum().item()),
+        invalid_expansions=int(
+            (expand_predictions & ~supervision.acceptable).sum().item()
+        ),
+        context_true_positive=int(
+            (
+                context_predictions & supervision.context_has_value
+            ).sum().item()
+        ),
+        context_false_positive=int(
+            (
+                context_predictions & ~supervision.context_has_value
+            ).sum().item()
+        ),
+        context_false_negative=int(
+            (
+                ~context_predictions & supervision.context_has_value
+            ).sum().item()
+        ),
+        evidence_true_positive=int(
+            (
+                evidence_predictions & supervision.include_as_evidence
+            ).sum().item()
+        ),
+        evidence_false_positive=int(
+            (
+                evidence_predictions & ~supervision.include_as_evidence
+            ).sum().item()
+        ),
+        evidence_false_negative=int(
+            (
+                ~evidence_predictions & supervision.include_as_evidence
+            ).sum().item()
+        ),
         termination_count=1,
         termination_correct=int(termination_prediction == termination_target),
     )

@@ -354,7 +354,7 @@ class SpiderModel(CandidateScorerBase):
             )
         parent_positions = expansion.frontier_positions.to(torch.int64)
         path = hypotheses.path_state[parent_positions]
-        query, source, edge, destination, _, _ = self._candidate_sets(
+        query, source, edge, destination, evidence_set, _ = self._candidate_sets(
             batch,
             expansion,
             evidence,
@@ -367,6 +367,7 @@ class SpiderModel(CandidateScorerBase):
         path, _ = self.processor_for_round(round_index)(
             path,
             query,
+            evidence_set,
             source,
             edge,
             destination,

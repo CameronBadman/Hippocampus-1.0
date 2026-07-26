@@ -18,6 +18,7 @@ from .experiment import (
     load_experiment,
     parameter_count,
 )
+from .evaluation import EvaluationReport, evaluate_batches
 from .losses import (
     CandidateSupervision,
     LossTerm,
@@ -55,6 +56,7 @@ __all__ = [
     "ControllerState",
     "ControllerStep",
     "EvidenceLedgerEntry",
+    "EvaluationReport",
     "FlatTransformerScorer",
     "HypothesisBatch",
     "LossTerm",
@@ -78,6 +80,7 @@ __all__ = [
     "build_model",
     "candidate_loss_report",
     "evaluate_oracle_batches",
+    "evaluate_batches",
     "make_tiny_cases",
     "multi_positive_priority_loss",
     "load_experiment",
