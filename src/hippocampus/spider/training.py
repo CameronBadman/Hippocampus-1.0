@@ -36,6 +36,7 @@ from .losses import (
     SpiderLossConfig,
     SpiderLossReport,
     candidate_loss_report,
+    null_expansion_loss_term,
     termination_loss_report,
 )
 from .model import CandidateScorerBase
@@ -534,11 +535,23 @@ def controller_rollout(
             ),
             config=config,
         )
+        null_expansion_term = null_expansion_loss_term(
+            proposal.null_expansion_logits,
+            supervision.candidates.acceptable,
+            proposal.depth_eligible,
+            proposal.candidate_graph_ids,
+            config=config,
+        )
         reports.append(
             SpiderLossReport(
                 terms={
                     **candidate_report.terms,
                     **termination_report.terms,
+                    **(
+                        {"null_expansion": null_expansion_term}
+                        if null_expansion_term is not None
+                        else {}
+                    ),
                 }
             )
         )
@@ -558,7 +571,7 @@ def controller_rollout(
             supervision.candidates.include_as_evidence.detach()
         )
         model_decision = controller.execute_termination(
-            termination_logits,
+            termination_output,
             transition,
         )[0]
         if (

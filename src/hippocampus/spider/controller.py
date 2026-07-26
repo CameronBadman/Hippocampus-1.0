@@ -19,6 +19,7 @@ from .execution import (
 )
 from .hypothesis import HypothesisBatch
 from .model import CandidateScorerBase
+from .terminator import TerminationOutput
 from .types import CandidateOutputs
 
 
@@ -143,6 +144,8 @@ class ControllerProposal:
     evidence_limit: int
     full_arc_count: int
     search_truncated: bool
+    candidate_graph_ids: torch.Tensor
+    null_expansion_logits: torch.Tensor | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -609,6 +612,29 @@ class SparseWavefrontController:
             controls,
             round_index=state.round_index,
         )
+        candidate_graph_ids = batch.graph.topology.node_graph_ids[
+            expansion.source_node_ids.to(torch.int64)
+        ]
+        null_expansion_logits = None
+        if self.config.expansion_policy == "learned_null":
+            if not model.config.use_null_expansion:
+                raise ValueError(
+                    "learned_null expansion requires a model null-action head"
+                )
+            current_control = termination_control_features(
+                batch,
+                hypotheses,
+                state,
+                config=self.config,
+                search_limit=search_limit,
+                context_limit=context_limit,
+            )
+            null_expansion_logits = model.null_expansion_logits(
+                batch,
+                hypotheses,
+                evidence,
+                current_control,
+            )
         if expansion.total_arcs:
             parents = expansion.frontier_positions.to(torch.int64)
             depth_eligible = (
@@ -631,6 +657,8 @@ class SparseWavefrontController:
             evidence_limit=evidence_limit,
             full_arc_count=full_expansion.total_arcs,
             search_truncated=search_truncated,
+            candidate_graph_ids=candidate_graph_ids,
+            null_expansion_logits=null_expansion_logits,
         )
 
     def choose_actions(
@@ -740,6 +768,18 @@ class SparseWavefrontController:
                     >= self.config.expand_threshold
                 )
             )
+            if self.config.expansion_policy == "learned_null":
+                if proposal.null_expansion_logits is None:
+                    raise ValueError(
+                        "learned_null proposal is missing null-action logits"
+                    )
+                choose_null = (
+                    proposal.null_expansion_logits[
+                        proposal.candidate_graph_ids.to(torch.int64)
+                    ]
+                    >= 0
+                )
+                model_eligible = model_eligible & ~choose_null
             frontier_eligible = torch.nonzero(
                 model_eligible,
                 as_tuple=False,
@@ -1090,11 +1130,54 @@ class SparseWavefrontController:
 
     def execute_termination(
         self,
-        logits: torch.Tensor,
+        output: torch.Tensor | TerminationOutput,
         transition: ControllerTransition,
     ) -> tuple[TerminationDecision, ...]:
         """Execute model termination with the canonical empty-state fallback."""
 
+        logits = output.logits if isinstance(output, TerminationOutput) else output
+        if (
+            isinstance(output, TerminationOutput)
+            and output.evidence_sufficient_logits is not None
+        ):
+            if (
+                output.useful_work_remaining_logits is None
+                or output.answer_supported_logits is None
+                or output.unknown_logits is None
+            ):
+                raise ValueError("factorized termination output is incomplete")
+            state = transition.next_controller_state
+            exact_stop = (
+                state.frontier_empty
+                or state.search_budget_exhausted
+                or state.depth_exhausted
+                or state.round_index >= self.config.max_rounds
+            )
+            sufficient = output.evidence_sufficient_logits >= 0
+            useful = output.useful_work_remaining_logits >= 0
+            answer = output.answer_supported_logits >= 0
+            unknown_indices = output.unknown_logits.argmax(dim=-1)
+            decisions = []
+            for graph_id in range(logits.shape[0]):
+                stop_allowed = (
+                    bool(sufficient[graph_id].item())
+                    or not bool(useful[graph_id].item())
+                    or exact_stop
+                )
+                if not stop_allowed:
+                    decisions.append(TerminationDecision.CONTINUE)
+                elif (
+                    bool(sufficient[graph_id].item())
+                    and bool(answer[graph_id].item())
+                ):
+                    decisions.append(TerminationDecision.ANSWER)
+                else:
+                    decisions.append(
+                        _TERMINATION_CLASSES[
+                            int(unknown_indices[graph_id].item()) + 2
+                        ]
+                    )
+            return tuple(decisions)
         decisions = tuple(
             _TERMINATION_CLASSES[index]
             for index in logits.argmax(dim=-1).tolist()
@@ -1171,14 +1254,15 @@ class SparseWavefrontController:
                 or round_offset == round_limit - 1
             )
             if evaluate_termination:
-                final_logits = model.termination_logits(
+                final_output = model.termination_output(
                     batch,
                     hypotheses,
                     evidence,
                     transition.termination_control,
                 )
+                final_logits = final_output.logits
                 termination = self.execute_termination(
-                    final_logits,
+                    final_output,
                     transition,
                 )
             else:

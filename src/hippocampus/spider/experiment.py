@@ -83,6 +83,9 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         tied_recurrence=bool(model_data.get("tied_recurrence", True)),
         untied_rounds=int(model_data.get("untied_rounds", 8)),
         termination_mode=str(model_data.get("termination_mode", "flat")),
+        use_null_expansion=bool(
+            model_data.get("use_null_expansion", False)
+        ),
     )
     controller_data = raw["controller"]
     controller_config = SparseControllerConfig(
@@ -104,7 +107,17 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         evidence_selection_budget=int(
             controller_data.get("evidence_selection_budget", 32)
         ),
+        expansion_policy=str(
+            controller_data.get("expansion_policy", "threshold")
+        ),
     )
+    if (
+        controller_config.expansion_policy == "learned_null"
+        and not model_config.use_null_expansion
+    ):
+        raise ValueError(
+            "learned_null expansion requires model.use_null_expansion=true"
+        )
     training_data = raw["training"]
     training_config = TrainingLoopConfig(
         steps=int(training_data["steps"]),

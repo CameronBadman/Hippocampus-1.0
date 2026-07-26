@@ -22,6 +22,7 @@ from .set_attention import (
     project_padded_set,
 )
 from .terminator import (
+    FactorizedTerminationHead,
     HierarchicalTerminationHead,
     TerminationHead,
     TerminationOutput,
@@ -68,13 +69,33 @@ class CandidateScorerBase(nn.Module, ABC):
             config.num_heads,
             config.dropout,
         )
-        self.termination_head = (
-            TerminationHead(config.d_model, config.control_width)
-            if config.termination_mode == "flat"
-            else HierarchicalTerminationHead(
+        if config.termination_mode == "flat":
+            self.termination_head = TerminationHead(
                 config.d_model,
                 config.control_width,
             )
+        elif config.termination_mode == "hierarchical":
+            self.termination_head = HierarchicalTerminationHead(
+                config.d_model,
+                config.control_width,
+            )
+        else:
+            self.termination_head = FactorizedTerminationHead(
+                config.d_model,
+                config.control_width,
+            )
+        self.null_expansion_head = (
+            nn.Sequential(
+                nn.LayerNorm(3 * config.d_model + config.control_width),
+                nn.Linear(
+                    3 * config.d_model + config.control_width,
+                    config.d_model,
+                ),
+                nn.GELU(),
+                nn.Linear(config.d_model, 1),
+            )
+            if config.use_null_expansion
+            else None
         )
 
     def _validate_batch_widths(self, batch: PackedProgramBatch) -> None:
@@ -325,13 +346,13 @@ class CandidateScorerBase(nn.Module, ABC):
             return evidence
         return self.evidence_updater(evidence, messages, graph_ids)
 
-    def termination_output(
+    def _global_state_inputs(
         self,
         batch: PackedProgramBatch,
         hypotheses: HypothesisBatch,
         evidence: torch.Tensor,
         controller_features: torch.Tensor | None = None,
-    ) -> TerminationOutput:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         graph_count = batch.graph_count
         graph_ids = torch.arange(
             graph_count,
@@ -359,6 +380,42 @@ class CandidateScorerBase(nn.Module, ABC):
             query.new_zeros((graph_count, self.config.control_width))
             if controller_features is None
             else controller_features
+        )
+        return query, evidence_pool, frontier, control
+
+    def null_expansion_logits(
+        self,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        controller_features: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Score the explicit per-graph action that selects no candidate."""
+
+        if self.null_expansion_head is None:
+            raise RuntimeError(
+                "null expansion was not enabled in SpiderModelConfig"
+            )
+        inputs = self._global_state_inputs(
+            batch,
+            hypotheses,
+            evidence,
+            controller_features,
+        )
+        return self.null_expansion_head(torch.cat(inputs, dim=-1)).squeeze(-1)
+
+    def termination_output(
+        self,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        controller_features: torch.Tensor | None = None,
+    ) -> TerminationOutput:
+        query, evidence_pool, frontier, control = self._global_state_inputs(
+            batch,
+            hypotheses,
+            evidence,
+            controller_features,
         )
         output = self.termination_head(
             query,

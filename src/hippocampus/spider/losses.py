@@ -31,6 +31,7 @@ class SpiderLossConfig:
     evidence_positive_weight: float | None = None
     evidence_focal_gamma: float = 2.0
     evidence_false_positive_penalty: float = 0.1
+    null_expansion: float = 1.0
 
     def __post_init__(self) -> None:
         for field in fields(self):
@@ -330,6 +331,44 @@ def termination_loss_term(
     )
 
 
+def null_expansion_loss_term(
+    null_logits: torch.Tensor | None,
+    acceptable: torch.Tensor,
+    depth_eligible: torch.Tensor,
+    candidate_graph_ids: torch.Tensor,
+    *,
+    config: SpiderLossConfig,
+) -> LossTerm | None:
+    """Supervise the explicit action that declines every candidate."""
+
+    if null_logits is None:
+        return None
+    if not (
+        acceptable.shape
+        == depth_eligible.shape
+        == candidate_graph_ids.shape
+    ):
+        raise ValueError("null-expansion supervision must align with candidates")
+    targets = torch.ones_like(null_logits, dtype=torch.bool)
+    preserving = acceptable.bool() & depth_eligible.bool()
+    if bool(preserving.any().item()):
+        targets[
+            candidate_graph_ids[preserving].to(
+                device=null_logits.device,
+                dtype=torch.int64,
+            )
+        ] = False
+    raw = F.binary_cross_entropy_with_logits(
+        null_logits.float(),
+        targets.float(),
+    )
+    return _term(
+        raw,
+        weight=config.null_expansion,
+        target_count=int(targets.numel()),
+    )
+
+
 def termination_loss_report(
     output: TerminationOutput,
     targets: torch.Tensor,
@@ -339,6 +378,66 @@ def termination_loss_report(
     """Return flat or masked hierarchical termination objectives."""
 
     resolved = targets.to(device=output.logits.device, dtype=torch.int64)
+    if output.evidence_sufficient_logits is not None:
+        if (
+            output.useful_work_remaining_logits is None
+            or output.answer_supported_logits is None
+            or output.unknown_logits is None
+        ):
+            raise ValueError("factorized termination output is incomplete")
+        sufficient_targets = (resolved == 1) | (resolved == 3)
+        useful_targets = resolved == 0
+        sufficient_raw = F.binary_cross_entropy_with_logits(
+            output.evidence_sufficient_logits.float(),
+            sufficient_targets.float(),
+        )
+        useful_raw = F.binary_cross_entropy_with_logits(
+            output.useful_work_remaining_logits.float(),
+            useful_targets.float(),
+        )
+        if bool(sufficient_targets.any().item()):
+            answer_raw = F.binary_cross_entropy_with_logits(
+                output.answer_supported_logits[sufficient_targets].float(),
+                (resolved[sufficient_targets] == 1).float(),
+            )
+            answer_count = int(sufficient_targets.sum().item())
+        else:
+            answer_raw = _zero(output.answer_supported_logits)
+            answer_count = 0
+        unknown_mask = resolved >= 2
+        if bool(unknown_mask.any().item()):
+            unknown_raw = F.cross_entropy(
+                output.unknown_logits[unknown_mask].float(),
+                resolved[unknown_mask] - 2,
+            )
+            unknown_count = int(unknown_mask.sum().item())
+        else:
+            unknown_raw = _zero(output.unknown_logits)
+            unknown_count = 0
+        return SpiderLossReport(
+            {
+                "termination_evidence_sufficient": _term(
+                    sufficient_raw,
+                    weight=config.termination,
+                    target_count=int(resolved.numel()),
+                ),
+                "termination_useful_work": _term(
+                    useful_raw,
+                    weight=config.termination,
+                    target_count=int(resolved.numel()),
+                ),
+                "termination_answer_supported": _term(
+                    answer_raw,
+                    weight=config.termination,
+                    target_count=answer_count,
+                ),
+                "termination_unknown": _term(
+                    unknown_raw,
+                    weight=config.termination,
+                    target_count=unknown_count,
+                ),
+            }
+        )
     if output.stop_logits is None:
         return SpiderLossReport(
             {

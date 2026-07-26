@@ -15,6 +15,9 @@ class TerminationOutput:
     stop_logits: torch.Tensor | None = None
     answer_logits: torch.Tensor | None = None
     unknown_logits: torch.Tensor | None = None
+    evidence_sufficient_logits: torch.Tensor | None = None
+    useful_work_remaining_logits: torch.Tensor | None = None
+    answer_supported_logits: torch.Tensor | None = None
 
 
 class TerminationHead(nn.Module):
@@ -84,4 +87,63 @@ class HierarchicalTerminationHead(nn.Module):
             stop_logits=stop,
             answer_logits=answer,
             unknown_logits=unknown,
+        )
+
+
+class FactorizedTerminationHead(nn.Module):
+    """Evidence sufficiency, reachable work, answer support, and reason."""
+
+    def __init__(self, d_model: int, control_width: int) -> None:
+        super().__init__()
+        width = 3 * d_model + control_width
+        self.trunk = nn.Sequential(
+            nn.LayerNorm(width),
+            nn.Linear(width, d_model),
+            nn.GELU(),
+        )
+        self.evidence_sufficient = nn.Linear(d_model, 1)
+        self.useful_work_remaining = nn.Linear(d_model, 1)
+        self.answer_supported = nn.Linear(d_model, 1)
+        self.unknown_reason = nn.Linear(d_model, 4)
+
+    def forward(
+        self,
+        query: torch.Tensor,
+        evidence: torch.Tensor,
+        frontier: torch.Tensor,
+        control: torch.Tensor,
+    ) -> TerminationOutput:
+        hidden = self.trunk(
+            torch.cat((query, evidence, frontier, control), dim=-1)
+        )
+        sufficient = self.evidence_sufficient(hidden).squeeze(-1)
+        useful = self.useful_work_remaining(hidden).squeeze(-1)
+        answer = self.answer_supported(hidden).squeeze(-1)
+        unknown = self.unknown_reason(hidden)
+
+        continue_log_probability = (
+            F.logsigmoid(-sufficient) + F.logsigmoid(useful)
+        )
+        answer_log_probability = (
+            F.logsigmoid(sufficient) + F.logsigmoid(answer)
+        )
+        unknown_log_probability = torch.logaddexp(
+            F.logsigmoid(sufficient) + F.logsigmoid(-answer),
+            F.logsigmoid(-sufficient) + F.logsigmoid(-useful),
+        )
+        logits = torch.cat(
+            (
+                continue_log_probability[:, None],
+                answer_log_probability[:, None],
+                unknown_log_probability[:, None]
+                + F.log_softmax(unknown, dim=-1),
+            ),
+            dim=-1,
+        )
+        return TerminationOutput(
+            logits=logits,
+            unknown_logits=unknown,
+            evidence_sufficient_logits=sufficient,
+            useful_work_remaining_logits=useful,
+            answer_supported_logits=answer,
         )

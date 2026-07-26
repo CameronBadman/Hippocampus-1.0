@@ -55,6 +55,7 @@ from .losses import (
     behavioural_consistency_loss,
     candidate_loss_report,
     multi_positive_priority_loss,
+    null_expansion_loss_term,
     termination_loss_report,
 )
 from .model import CandidateScorerBase, SpiderModel
@@ -155,6 +156,7 @@ __all__ = [
     "make_tiny_cases",
     "multi_positive_priority_loss",
     "mixed_rollout",
+    "null_expansion_loss_term",
     "load_experiment",
     "oracle_rollout",
     "parameter_count",

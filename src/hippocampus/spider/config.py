@@ -5,7 +5,8 @@ from typing import Literal
 
 
 EdgeMode = Literal["standard", "compositional"]
-TerminationMode = Literal["flat", "hierarchical"]
+TerminationMode = Literal["flat", "hierarchical", "factorized"]
+ExpansionPolicy = Literal["threshold", "learned_null"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +29,7 @@ class SpiderModelConfig:
     untied_rounds: int = 8
     control_width: int = 6
     termination_mode: TerminationMode = "flat"
+    use_null_expansion: bool = False
 
     def __post_init__(self) -> None:
         for name in (
@@ -56,8 +58,14 @@ class SpiderModelConfig:
                 raise ValueError("compositional mode requires edge transforms")
             if self.adapter_rank <= 0:
                 raise ValueError("compositional mode requires a positive adapter rank")
-        if self.termination_mode not in {"flat", "hierarchical"}:
-            raise ValueError("termination_mode must be flat or hierarchical")
+        if self.termination_mode not in {
+            "flat",
+            "hierarchical",
+            "factorized",
+        }:
+            raise ValueError(
+                "termination_mode must be flat, hierarchical, or factorized"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +80,7 @@ class SparseControllerConfig:
     context_threshold: float = 0.5
     evidence_threshold: float = 0.5
     evidence_selection_budget: int = 32
+    expansion_policy: ExpansionPolicy = "threshold"
 
     def __post_init__(self) -> None:
         for name in (
@@ -96,3 +105,7 @@ class SparseControllerConfig:
         ):
             if not 0.0 <= getattr(self, name) <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1]")
+        if self.expansion_policy not in {"threshold", "learned_null"}:
+            raise ValueError(
+                "expansion_policy must be threshold or learned_null"
+            )

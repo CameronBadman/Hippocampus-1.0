@@ -156,14 +156,15 @@ def _execute_case(
             or round_offset == round_limit - 1
         )
         if evaluate_termination:
-            final_logits = model.termination_logits(
+            final_output = model.termination_output(
                 batch,
                 transition.next_hypotheses,
                 transition.next_evidence,
                 transition.termination_control,
             )
+            final_logits = final_output.logits
             prediction = controller.execute_termination(
-                final_logits,
+                final_output,
                 transition,
             )[0]
             round_observations.append(
@@ -421,14 +422,15 @@ def evaluate_rollout_stress_states(
                 actions,
             )
             target = oracle.termination_target(transition).decision
-            logits = model.termination_logits(
+            output = model.termination_output(
                 batch,
                 transition.next_hypotheses,
                 transition.next_evidence,
                 transition.termination_control,
             )
+            logits = output.logits
             prediction = controller.execute_termination(
-                logits,
+                output,
                 transition,
             )[0]
             recoverable_match = (
