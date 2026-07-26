@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 
 from .equivalent_views import make_equivalent_view
 from .generator import GeneratorConfig, GraphProgramGenerator
-from .schema import GraphProgramCase, ProgramFamily
+from .schema import GraphProgramCase, ProgramFamily, TerminationDecision
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,7 +190,17 @@ def generate_split_cases(
     cases: list[GraphProgramCase] = []
     for index in range(case_count):
         family = families[index % len(families)]
-        answerable = (index // len(families)) % 2 == 0
+        outcome_group = index // len(families)
+        answerable = outcome_group % 2 == 0
+        unknown_decision = None
+        context_budget_exhausted = False
+        if not answerable:
+            negative_variant = (outcome_group // 2) % 3
+            if negative_variant == 1:
+                unknown_decision = TerminationDecision.UNKNOWN_INCOMPLETE
+                context_budget_exhausted = family is ProgramFamily.LATEST_VALID
+            elif negative_variant == 2:
+                unknown_decision = TerminationDecision.UNKNOWN_UNSUPPORTED
         case = generator.generate(
             family=family,
             seed=spec.seed_start + index,
@@ -203,6 +213,8 @@ def generate_split_cases(
                     or index % 3 == 0
                 )
             ),
+            unknown_decision=unknown_decision,
+            context_budget_exhausted=context_budget_exhausted,
         )
         if spec.domain != "train":
             case = make_equivalent_view(

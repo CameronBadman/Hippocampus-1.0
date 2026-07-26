@@ -213,6 +213,8 @@ class SparseWavefrontController:
         state: ControllerState,
         *,
         dtype: torch.dtype,
+        search_limit: int,
+        context_limit: int,
     ) -> torch.Tensor:
         count = expansion.total_arcs
         if count == 0:
@@ -225,17 +227,17 @@ class SparseWavefrontController:
         depth = hypotheses.depths[parents].to(dtype)
         search_remaining = max(
             0,
-            self.config.search_budget - state.arcs_scored,
+            search_limit - state.arcs_scored,
         )
         context_remaining = max(
             0,
-            self.config.context_read_budget - state.contexts_read,
+            context_limit - state.contexts_read,
         )
         constant = torch.tensor(
             [
                 state.round_index / max(1, self.config.max_rounds),
-                search_remaining / max(1, self.config.search_budget),
-                context_remaining / max(1, self.config.context_read_budget),
+                search_remaining / max(1, search_limit),
+                context_remaining / max(1, context_limit),
                 float(state.search_budget_exhausted),
                 float(state.context_budget_exhausted),
             ],
@@ -255,6 +257,9 @@ class SparseWavefrontController:
         batch: PackedProgramBatch,
         hypotheses: HypothesisBatch,
         state: ControllerState,
+        *,
+        search_limit: int,
+        context_limit: int,
     ) -> torch.Tensor:
         features = torch.zeros(
             (batch.graph_count, 6),
@@ -262,15 +267,27 @@ class SparseWavefrontController:
             device=batch.device,
         )
         features[:, 0] = state.round_index / max(1, self.config.max_rounds)
-        features[:, 1] = state.arcs_scored / max(1, self.config.search_budget)
+        features[:, 1] = state.arcs_scored / max(1, search_limit)
         features[:, 2] = state.contexts_read / max(
             1,
-            self.config.context_read_budget,
+            context_limit,
         )
         features[:, 3] = float(hypotheses.count == 0)
         features[:, 4] = float(state.search_budget_exhausted)
         features[:, 5] = float(state.context_budget_exhausted)
         return features
+
+    def _limits(self, batch: PackedProgramBatch) -> tuple[int, int]:
+        if batch.graph_count == 1:
+            case = batch.cases[0]
+            return (
+                min(self.config.search_budget, case.search_budget),
+                min(self.config.context_read_budget, case.context_budget),
+            )
+        return (
+            self.config.search_budget,
+            self.config.context_read_budget,
+        )
 
     def step(
         self,
@@ -284,9 +301,10 @@ class SparseWavefrontController:
             hypotheses.node_ids,
             validate_ids=False,
         )
+        search_limit, context_limit = self._limits(batch)
         remaining_search = max(
             0,
-            self.config.search_budget - state.arcs_scored,
+            search_limit - state.arcs_scored,
         )
         evaluated_count = min(full_expansion.total_arcs, remaining_search)
         if evaluated_count != full_expansion.total_arcs:
@@ -303,13 +321,15 @@ class SparseWavefrontController:
             expansion = full_expansion
         budget_exhausted = (
             state.arcs_scored + expansion.total_arcs
-            >= self.config.search_budget
+            >= search_limit
         )
         control = self._candidate_control(
             hypotheses,
             expansion,
             state,
             dtype=hypotheses.path_state.dtype,
+            search_limit=search_limit,
+            context_limit=context_limit,
         )
         outputs = model.score_candidates(
             batch,
@@ -322,7 +342,7 @@ class SparseWavefrontController:
 
         remaining_context = max(
             0,
-            self.config.context_read_budget - state.contexts_read,
+            context_limit - state.contexts_read,
         )
         if expansion.total_arcs and remaining_context:
             context_order = _stable_priority_order(
@@ -492,9 +512,7 @@ class SparseWavefrontController:
             arcs_scored=state.arcs_scored + expansion.total_arcs,
             contexts_read=contexts_read,
             search_budget_exhausted=budget_exhausted,
-            context_budget_exhausted=(
-                contexts_read >= self.config.context_read_budget
-            ),
+            context_budget_exhausted=contexts_read >= context_limit,
             trace_ledger=tuple(trace_entries),
             evidence_ledger=tuple(evidence_entries),
         )
@@ -516,6 +534,7 @@ class SparseWavefrontController:
         hypotheses = model.initial_hypotheses(batch)
         evidence = model.initial_evidence(batch)
         state = ControllerState.initial()
+        search_limit, context_limit = self._limits(batch)
         arc_trace: list[tuple[int, ...]] = []
         termination = tuple(
             TerminationDecision.CONTINUE
@@ -555,6 +574,8 @@ class SparseWavefrontController:
                     batch,
                     hypotheses,
                     state,
+                    search_limit=search_limit,
+                    context_limit=context_limit,
                 ),
             )
             termination = tuple(

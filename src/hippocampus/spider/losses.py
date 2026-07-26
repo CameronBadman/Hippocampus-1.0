@@ -242,3 +242,67 @@ def termination_loss_term(
         weight=config.termination,
         target_count=int(targets.numel()),
     )
+
+
+def behavioural_consistency_loss(
+    first: CandidateOutputs,
+    second: CandidateOutputs,
+    first_indices: torch.Tensor,
+    second_indices: torch.Tensor,
+    *,
+    weight: float = 1.0,
+) -> LossTerm:
+    """Compare aligned behaviours without forcing hidden-coordinate equality."""
+
+    left = first_indices.to(
+        device=first.priority_logits.device,
+        dtype=torch.int64,
+    )
+    right = second_indices.to(
+        device=second.priority_logits.device,
+        dtype=torch.int64,
+    )
+    if left.numel() != right.numel():
+        raise ValueError("behavioural alignments must have equal lengths")
+    count = int(left.numel())
+    if count == 0:
+        raw = _zero(first.priority_logits) + _zero(second.priority_logits)
+        return _term(raw, weight=weight, target_count=0)
+    first_priority = torch.log_softmax(
+        first.priority_logits[left].float(),
+        dim=0,
+    )
+    second_priority = torch.log_softmax(
+        second.priority_logits[right].float(),
+        dim=0,
+    )
+    priority = 0.5 * (
+        F.kl_div(
+            first_priority,
+            second_priority.exp(),
+            reduction="batchmean",
+        )
+        + F.kl_div(
+            second_priority,
+            first_priority.exp(),
+            reduction="batchmean",
+        )
+    )
+    action_pairs = (
+        (first.expand_logits, second.expand_logits),
+        (first.context_logits, second.context_logits),
+        (first.evidence_logits, second.evidence_logits),
+        (first.support_logits, second.support_logits),
+        (first.conflict_logits, second.conflict_logits),
+    )
+    actions = torch.stack(
+        [
+            F.mse_loss(
+                torch.sigmoid(first_logits[left].float()),
+                torch.sigmoid(second_logits[right].float()),
+            )
+            for first_logits, second_logits in action_pairs
+        ]
+    ).mean()
+    raw = priority + actions
+    return _term(raw, weight=weight, target_count=count)

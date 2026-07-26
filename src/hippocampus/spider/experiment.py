@@ -103,6 +103,13 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         seed=int(training_data["seed"]),
         log_every=int(training_data.get("log_every", 25)),
         max_grad_norm=float(training_data.get("max_grad_norm", 5.0)),
+        oracle_fraction_schedule=tuple(
+            float(value)
+            for value in training_data.get(
+                "oracle_fraction_schedule",
+                (1.0,),
+            )
+        ),
     )
     loss_config = SpiderLossConfig(
         **{name: float(value) for name, value in raw["loss"].items()}

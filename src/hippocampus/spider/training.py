@@ -19,6 +19,7 @@ from ..programs import (
 )
 from ..programs.schema import CandidateTarget, TerminationDecision
 from .hypothesis import HypothesisBatch
+from .controller import stable_candidate_selection
 from .losses import (
     CandidateSupervision,
     LossTerm,
@@ -50,6 +51,7 @@ class TrainingLoopConfig:
     seed: int = 0
     log_every: int = 25
     max_grad_norm: float = 5.0
+    oracle_fraction_schedule: tuple[float, ...] = (1.0,)
 
     def __post_init__(self) -> None:
         if self.steps <= 0 or self.batch_size <= 0:
@@ -58,6 +60,13 @@ class TrainingLoopConfig:
             raise ValueError("learning_rate must be positive")
         if self.weight_decay < 0:
             raise ValueError("weight_decay must be non-negative")
+        if not self.oracle_fraction_schedule:
+            raise ValueError("oracle_fraction_schedule may not be empty")
+        if any(
+            fraction < 0.0 or fraction > 1.0
+            for fraction in self.oracle_fraction_schedule
+        ):
+            raise ValueError("oracle fractions must be in [0, 1]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -272,6 +281,82 @@ def candidate_supervision(
             raise ValueError(
                 f"expanded candidate {key} is absent from oracle round {round_index}"
             ) from exc
+    device = batch.device
+    return CandidateSupervision(
+        acceptable=torch.tensor(
+            [target.acceptable for target in resolved],
+            dtype=torch.bool,
+            device=device,
+        ),
+        context_has_value=torch.tensor(
+            [target.context_has_value for target in resolved],
+            dtype=torch.bool,
+            device=device,
+        ),
+        include_as_evidence=torch.tensor(
+            [target.include_as_evidence for target in resolved],
+            dtype=torch.bool,
+            device=device,
+        ),
+        remaining_cost=torch.tensor(
+            [target.remaining_cost for target in resolved],
+            dtype=torch.float32,
+            device=device,
+        ),
+        support=torch.tensor(
+            [target.support for target in resolved],
+            dtype=torch.float32,
+            device=device,
+        ),
+        conflict=torch.tensor(
+            [target.conflict for target in resolved],
+            dtype=torch.float32,
+            device=device,
+        ),
+    )
+
+
+def _encountered_supervision(
+    batch: PackedProgramBatch,
+    expansion,
+) -> CandidateSupervision:
+    case = batch.cases[0]
+    node_offset = int(batch.graph.topology.graph_node_ptr[0].item())
+    edge_offset = int(batch.graph.topology.graph_edge_ptr[0].item())
+    targets = {
+        (
+            candidate.edge_id,
+            candidate.source_node,
+            candidate.destination_node,
+        ): candidate
+        for round_ in case.trace.rounds
+        for candidate in round_.candidates
+    }
+    resolved: list[CandidateTarget] = []
+    for edge_id, source, destination in zip(
+        expansion.edge_ids.tolist(),
+        expansion.source_node_ids.tolist(),
+        expansion.destination_node_ids.tolist(),
+        strict=True,
+    ):
+        key = (
+            edge_id - edge_offset,
+            source - node_offset,
+            destination - node_offset,
+        )
+        resolved.append(
+            targets.get(
+                key,
+                CandidateTarget(
+                    edge_id=key[0],
+                    source_node=key[1],
+                    destination_node=key[2],
+                    acceptable=False,
+                    priority_tier=1,
+                    remaining_cost=0.0,
+                ),
+            )
+        )
     device = batch.device
     return CandidateSupervision(
         acceptable=torch.tensor(
@@ -563,10 +648,22 @@ def oracle_rollout(
             if next_hypotheses.count
             else hypotheses
         )
+        termination_control = outputs.priority_logits.new_zeros((1, 6))
+        termination_control[:, 0] = (round_index + 1) / max(
+            1,
+            len(case.trace.rounds),
+        )
+        termination_control[:, 3] = float(next_hypotheses.count == 0)
+        termination_control[:, 4] = float(case.search_budget == 0)
+        termination_control[:, 5] = float(
+            case.context_budget == 0
+            and bool(supervision.context_has_value.any().item())
+        )
         termination_logits = model.termination_logits(
             batch,
             termination_hypotheses,
             evidence,
+            termination_control,
         )
         termination_target = TERMINATION_TO_INDEX[
             oracle_round.termination.decision
@@ -613,6 +710,181 @@ def oracle_rollout(
     )
 
 
+def mixed_rollout(
+    model: CandidateScorerBase,
+    batch: PackedProgramBatch,
+    *,
+    oracle_fraction: float,
+    randomizer: random.Random,
+    loss_config: SpiderLossConfig | None = None,
+    max_rounds: int | None = None,
+) -> OracleRollout:
+    """Scheduled oracle/model execution with off-trace candidates as negatives."""
+
+    if not 0.0 <= oracle_fraction <= 1.0:
+        raise ValueError("oracle_fraction must be in [0, 1]")
+    if batch.graph_count != 1:
+        raise ValueError("mixed rollout currently requires singleton batches")
+    config = loss_config or SpiderLossConfig()
+    case = batch.cases[0]
+    hypotheses = model.initial_hypotheses(batch)
+    evidence = model.initial_evidence(batch)
+    reports: list[SpiderLossReport] = []
+    metrics = OracleMetrics.empty()
+    round_limit = max_rounds or max(2, len(case.trace.rounds) + 2)
+    for rollout_round in range(round_limit):
+        expansion = batch.graph.expand_frontier(
+            hypotheses.node_ids,
+            validate_ids=False,
+        )
+        supervision = _encountered_supervision(batch, expansion)
+        outputs = model.score_candidates(
+            batch,
+            hypotheses,
+            expansion,
+            evidence,
+            round_index=rollout_round,
+        )
+        context_logits = outputs.context_logits
+        context_candidates = torch.nonzero(
+            supervision.context_has_value,
+            as_tuple=False,
+        ).flatten()
+        if context_candidates.numel():
+            outputs = model.refine_with_context(
+                batch,
+                expansion,
+                outputs,
+                context_candidates,
+            )
+        candidate_report = candidate_loss_report(
+            outputs,
+            supervision,
+            expansion.frontier_positions,
+            frontier_count=hypotheses.count,
+            config=config,
+            context_logits=context_logits,
+        )
+
+        local_nodes = {
+            node_id
+            - int(batch.graph.topology.graph_node_ptr[0].item())
+            for node_id in hypotheses.node_ids.tolist()
+        }
+        matching_round = next(
+            (
+                oracle_round
+                for oracle_round in case.trace.rounds
+                if set(oracle_round.frontier_nodes) == local_nodes
+            ),
+            None,
+        )
+        termination_decision = (
+            matching_round.termination.decision
+            if matching_round is not None
+            else TerminationDecision.UNKNOWN_INCOMPLETE
+        )
+        termination_target = TERMINATION_TO_INDEX[termination_decision]
+        termination_control = outputs.priority_logits.new_zeros((1, 6))
+        termination_control[:, 0] = (rollout_round + 1) / round_limit
+        termination_control[:, 4] = float(case.search_budget == 0)
+        termination_control[:, 5] = float(
+            case.context_budget == 0
+            and bool(supervision.context_has_value.any().item())
+        )
+        termination_logits = model.termination_logits(
+            batch,
+            hypotheses,
+            evidence,
+            termination_control,
+        )
+        termination = termination_loss_term(
+            termination_logits,
+            torch.tensor(
+                [termination_target],
+                dtype=torch.int64,
+                device=batch.device,
+            ),
+            config=config,
+        )
+        reports.append(
+            SpiderLossReport(
+                terms={
+                    **candidate_report.terms,
+                    "termination": termination,
+                }
+            )
+        )
+        metrics = metrics + _round_metrics(
+            outputs,
+            context_logits,
+            supervision,
+            expansion.frontier_positions,
+            termination_logits,
+            termination_target,
+            frontier_count=hypotheses.count,
+        )
+        if (
+            termination_decision is not TerminationDecision.CONTINUE
+            or expansion.total_arcs == 0
+        ):
+            break
+
+        use_oracle = (
+            supervision.acceptable.any().item()
+            and randomizer.random() < oracle_fraction
+        )
+        if use_oracle:
+            selected = torch.nonzero(
+                supervision.acceptable,
+                as_tuple=False,
+            ).flatten()
+        else:
+            selected = stable_candidate_selection(
+                expansion,
+                outputs.priority_logits
+                + torch.nn.functional.logsigmoid(outputs.expand_logits),
+                frontier_width=16,
+                hypotheses_per_node=2,
+            )
+        selection_mask = torch.zeros(
+            expansion.total_arcs,
+            dtype=torch.bool,
+            device=batch.device,
+        )
+        if selected.numel():
+            selection_mask = selection_mask.index_fill(0, selected, True)
+        evidence_candidates = selected[
+            supervision.include_as_evidence[selected]
+        ]
+        if evidence_candidates.numel():
+            parents = expansion.frontier_positions[
+                evidence_candidates
+            ].to(torch.int64)
+            evidence = model.update_evidence(
+                evidence,
+                outputs.next_path_state[evidence_candidates].mean(dim=1),
+                hypotheses.graph_ids[parents],
+            )
+        hypotheses = _next_oracle_hypotheses(
+            model,
+            hypotheses,
+            expansion,
+            outputs,
+            selection_mask,
+        )
+        if hypotheses.count == 0:
+            break
+
+    report = _aggregate_reports(reports, reference=model.path_seed)
+    return OracleRollout(
+        loss=report.total,
+        report=report,
+        metrics=metrics,
+        rounds=len(reports),
+    )
+
+
 def make_tiny_cases(
     *,
     case_count: int = 48,
@@ -631,19 +903,33 @@ def make_tiny_cases(
         )
     )
     families = tuple(ProgramFamily)
-    return tuple(
-        generator.generate(
-            family=families[index % len(families)],
-            seed=seed + index,
-            answerable=(index // len(families)) % 2 == 0,
-            require_multiple_paths=(
-                families[index % len(families)]
-                is ProgramFamily.REACHABILITY
-                and index % 3 == 0
-            ),
+    cases: list[GraphProgramCase] = []
+    for index in range(case_count):
+        family = families[index % len(families)]
+        outcome_group = index // len(families)
+        answerable = outcome_group % 2 == 0
+        unknown_decision = None
+        context_budget_exhausted = False
+        if not answerable:
+            negative_variant = (outcome_group // 2) % 3
+            if negative_variant == 1:
+                unknown_decision = TerminationDecision.UNKNOWN_INCOMPLETE
+                context_budget_exhausted = family is ProgramFamily.LATEST_VALID
+            elif negative_variant == 2:
+                unknown_decision = TerminationDecision.UNKNOWN_UNSUPPORTED
+        cases.append(
+            generator.generate(
+                family=family,
+                seed=seed + index,
+                answerable=answerable,
+                require_multiple_paths=(
+                    family is ProgramFamily.REACHABILITY and index % 3 == 0
+                ),
+                unknown_decision=unknown_decision,
+                context_budget_exhausted=context_budget_exhausted,
+            )
         )
-        for index in range(case_count)
-    )
+    return tuple(cases)
 
 
 def evaluate_oracle_batches(
@@ -703,12 +989,29 @@ def train_oracle_batches(
             batches[randomizer.randrange(len(batches))]
             for _ in range(loop_config.batch_size)
         ]
+        schedule_index = min(
+            len(loop_config.oracle_fraction_schedule) - 1,
+            (step - 1)
+            * len(loop_config.oracle_fraction_schedule)
+            // loop_config.steps,
+        )
+        oracle_fraction = loop_config.oracle_fraction_schedule[schedule_index]
         loss = torch.stack(
             [
-                oracle_rollout(
-                    model,
-                    batch,
-                    loss_config=loss_settings,
+                (
+                    oracle_rollout(
+                        model,
+                        batch,
+                        loss_config=loss_settings,
+                    )
+                    if oracle_fraction == 1.0
+                    else mixed_rollout(
+                        model,
+                        batch,
+                        oracle_fraction=oracle_fraction,
+                        randomizer=randomizer,
+                        loss_config=loss_settings,
+                    )
                 ).loss
                 for batch in selected
             ]

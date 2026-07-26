@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 import torch
 
 from hippocampus import GraphSchema
@@ -14,8 +15,11 @@ from hippocampus.spider import (
     SpiderModel,
     SpiderModelConfig,
     TrainingLoopConfig,
+    CandidateOutputs,
+    behavioural_consistency_loss,
     evaluate_batches,
     make_tiny_cases,
+    mixed_rollout,
     multi_positive_priority_loss,
     oracle_rollout,
     train_oracle_batches,
@@ -82,6 +86,48 @@ def test_multi_positive_priority_does_not_choose_one_canonical_target() -> None:
     assert good.grad[2] < 0
 
 
+def test_behavioural_consistency_aligns_actions_not_hidden_coordinates() -> None:
+    def outputs(offset: float) -> CandidateOutputs:
+        logits = (
+            torch.tensor([0.2, -0.4]) + offset
+        ).detach().requires_grad_()
+        state = (
+            torch.randn(2, 3, 4) + 10.0 * offset
+        ).detach().requires_grad_()
+        return CandidateOutputs(
+            next_path_state=state,
+            priority_logits=logits,
+            expand_logits=logits,
+            context_logits=logits,
+            evidence_logits=logits,
+            remaining_cost=logits.square(),
+            support_logits=logits,
+            conflict_logits=logits,
+        )
+
+    first = outputs(0.0)
+    equivalent = outputs(0.0)
+    shifted = outputs(1.0)
+    indices = torch.tensor([0, 1])
+    same = behavioural_consistency_loss(
+        first,
+        equivalent,
+        indices,
+        indices,
+    )
+    different = behavioural_consistency_loss(
+        first,
+        shifted,
+        indices,
+        indices,
+    )
+
+    assert same.raw < 1e-7
+    assert different.raw > same.raw
+    different.weighted.backward()
+    assert first.priority_logits.grad is not None
+
+
 def test_oracle_rollout_is_finite_and_backpropagates() -> None:
     torch.manual_seed(7)
     model, batches = _training_fixture()
@@ -95,6 +141,27 @@ def test_oracle_rollout_is_finite_and_backpropagates() -> None:
     assert torch.isfinite(result.loss)
     assert result.metrics.candidate_count > 0
     assert result.metrics.termination_count == result.rounds
+    assert any(
+        parameter.grad is not None and parameter.grad.abs().sum() > 0
+        for parameter in model.parameters()
+    )
+
+
+def test_mixed_model_rollout_produces_hard_negative_training_signal() -> None:
+    torch.manual_seed(13)
+    model, batches = _training_fixture()
+    result = mixed_rollout(
+        model,
+        batches[1],
+        oracle_fraction=0.0,
+        randomizer=random.Random(4),
+        max_rounds=4,
+    )
+    result.loss.backward()
+
+    assert result.rounds >= 1
+    assert torch.isfinite(result.loss)
+    assert result.metrics.candidate_count > 0
     assert any(
         parameter.grad is not None and parameter.grad.abs().sum() > 0
         for parameter in model.parameters()

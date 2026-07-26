@@ -21,6 +21,7 @@ from .schema import (
     TerminationDecision,
     TerminationTarget,
 )
+from .swapping import FunctionalEdgeSwap, swap_aligned_edge_manifolds
 from .splits import (
     SplitManifest,
     SplitSpec,
@@ -35,6 +36,7 @@ __all__ = [
     "GeneratorConfig",
     "GraphProgramCase",
     "GraphProgramGenerator",
+    "FunctionalEdgeSwap",
     "Intervention",
     "MetadataLeakageReport",
     "ObservableAtom",
@@ -58,5 +60,6 @@ __all__ = [
     "make_equivalent_view",
     "metadata_leakage_report",
     "pack_rendered_cases",
+    "swap_aligned_edge_manifolds",
     "verify_case",
 ]
