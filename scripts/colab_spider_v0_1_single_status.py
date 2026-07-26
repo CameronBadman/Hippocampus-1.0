@@ -49,8 +49,9 @@ job_status = (
 log_path = Path(launch["log_path"])
 if log_path.is_file():
     with log_path.open("rb") as handle:
-        handle.seek(max(0, log_path.stat().st_size - 8_192))
-        log_tail = handle.read().decode("utf-8", errors="replace")
+        handle.seek(max(0, log_path.stat().st_size - 2_048))
+        decoded = handle.read().decode("utf-8", errors="replace")
+        log_tail = "\n".join(decoded.replace("\r", "\n").splitlines()[-20:])
 else:
     log_tail = ""
 
