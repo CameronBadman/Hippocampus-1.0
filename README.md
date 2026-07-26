@@ -269,12 +269,22 @@ accelerator fallback). Inspect the frozen protocol before launching:
 python -m json.tool artifacts/spider_v0_1/COLAB_5K_PROTOCOL.json
 ```
 
-The remote entry point is `scripts/colab_spider_v0_1_long_run.py`. It checks
-out the frozen model commit, validates the accelerator and full test suite,
-runs only non-sealed splits, and emits a JSONL ledger plus aggregate report.
-`scripts/colab_spider_v0_1_status.py` reports bounded status for the guarded
-detached launcher. The aborted earlier T4 attempt remains recorded and is
-excluded from all aggregates.
+The accepted recovery matrix uses
+`scripts/colab_spider_v0_1_single_run.py`, one fresh A100 session per frozen
+model/seed specification, and downloads each result before releasing its
+session. Rebuild the verified six-run ledger and summary with:
+
+```bash
+.venv/bin/python scripts/aggregate_spider_v0_1_colab_runs.py
+```
+
+The post-sealed 5k diagnostic favored pooled (`0.3868`) over recurrent
+(`0.3726`) on the registered primary metric. It cannot change the already
+frozen finalist or sealed result. All six standalone checkpoints, complete
+archives, and aggregate reports are backed up in the
+[verified Google Drive folder](https://drive.google.com/drive/folders/10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw).
+Interrupted T4, lost-session, and concurrent-session attempts remain recorded
+and are excluded from all aggregates.
 
 See the [Spider v0.1 final
 report](docs/spider_v0_1/FINAL_REPORT.md), [failure

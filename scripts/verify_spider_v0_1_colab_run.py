@@ -34,11 +34,10 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("run_directory", type=Path)
-    args = parser.parse_args()
-    run_directory = args.run_directory.resolve()
+def verify_run(run_directory: Path) -> dict[str, Any]:
+    """Deeply verify one extracted run and return its compact identity."""
+
+    run_directory = run_directory.resolve()
     experiment_id = run_directory.name
     if EXPERIMENT_ID.fullmatch(experiment_id) is None:
         raise ValueError(f"unexpected experiment ID: {experiment_id!r}")
@@ -106,19 +105,22 @@ def main() -> None:
     if checkpoint_sha256 != metrics.get("checkpoint_sha256"):
         raise RuntimeError("checkpoint hash differs from metrics")
 
-    print(
-        json.dumps(
-            {
-                "checkpoint_bytes": checkpoint.stat().st_size,
-                "checkpoint_sha256": checkpoint_sha256,
-                "experiment_id": experiment_id,
-                "score": record["score"],
-                "sealed_access_count": 0,
-                "verified_file_count": len(actual_files) + 1,
-            },
-            sort_keys=True,
-        )
-    )
+    return {
+        "checkpoint_bytes": checkpoint.stat().st_size,
+        "checkpoint_sha256": checkpoint_sha256,
+        "experiment_id": experiment_id,
+        "score": record["score"],
+        "sealed_access_count": 0,
+        "verified_file_count": len(actual_files) + 1,
+    }
 
 
-main()
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("run_directory", type=Path)
+    args = parser.parse_args()
+    print(json.dumps(verify_run(args.run_directory), sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

@@ -4,14 +4,15 @@
 
 Spider v0.1 removes the mechanically confirmed train/runtime controller
 mismatches and substantially improves autonomous execution over the old
-checkpoint diagnostic. The tied recurrent Spider also beats the matched pooled
-control on the frozen three-seed, complete-validation primary metric.
+checkpoint diagnostic. In the frozen 400-step selection matrix, the tied
+recurrent Spider beats the matched pooled control on the three-seed,
+complete-validation primary metric.
 
-The result is qualified. One-round stopping remains common, the scheduled
-curriculum did not improve the primary seed, the hierarchical terminator did
-not beat its flat-head predecessor, and the pooled control retained better
-mean evidence F1 and answered risk. This is evidence that alignment was causal,
-not evidence that the controller is solved.
+That recurrent advantage did not survive the later, post-sealed 5,000-step
+A100 replication. Across three new paired seeds, pooled scored `0.3868` versus
+recurrent `0.3726`. One-round stopping also remained above `86%`. The combined
+evidence supports train/runtime alignment as causal for the improvement over
+v0, but does not support a durable recurrent advantage under longer training.
 
 ## Frozen experiment sequence
 
@@ -28,7 +29,7 @@ Subsystem metrics in this table are case-weighted across the seven complete
 non-sealed validation splits. E000 is diagnostic only: its high raw evidence
 recall came from indiscriminate inclusion and had poor exact-set accuracy.
 
-## Recurrent versus pooled
+## Frozen 400-step recurrent versus pooled
 
 | Model | Three-seed scores | Mean ± population SD |
 |---|---|---:|
@@ -96,7 +97,8 @@ figures are diagnostics only. They do not offset the autonomous failure modes.
 E000's `0.0838` to `0.3636` and reduced false-answer behaviour. It did not fix
 the literal one-round collapse. E001 still stopped after one round on `92.76%`
 of validation cases, and the selected model did so on `93.36%` of sealed
-cases.
+cases. Longer 5k training reduced the validation-ID rates to `86.98%`
+recurrent and `86.46%` pooled, but that remains a severe collapse.
 
 ### 2. Did autonomous evidence recall improve?
 
@@ -105,7 +107,9 @@ historical v0 sealed evidence F1 of `0.0232`, v0.2 sealed F1 is `0.4589`, with
 recall `0.4197`, AP `0.7593`, and exact-set accuracy `0.5000`. Within the v0.1
 causal sequence, balanced/set loss improved E002 evidence F1 from `0.4944` to
 `0.4990` and recall from `0.3622` to `0.3716`. It did not exceed E000's raw
-recall, which was inflated by false positives.
+recall, which was inflated by false positives. The post-sealed 5k
+validation-ID recall was `0.4116` recurrent and `0.4082` pooled, so longer
+training did not produce a decisive evidence-recall advantage.
 
 ### 3. Did scheduled closed-loop training improve risk and termination?
 
@@ -117,12 +121,14 @@ or better-shaped curriculum.
 
 ### 4. Does recurrence now outperform the pooled baseline across seeds?
 
-**Yes on the frozen primary metric and every split mean, with caveats.** The
-three-seed recurrent mean exceeds pooled by `0.0393`. Pooled evidence quality,
-answered risk, and seed stability are better, so the experiment supports a
-recurrent advantage only for the strict joint autonomous-success criterion.
-Only the recurrent finalist was opened on sealed data; no sealed pooled
-comparison was permitted.
+**Not under the longer post-sealed replication.** The frozen 400-step search
+favored recurrent by `0.0393`, which determined the finalist before sealed
+access. The independent 5,000-step A100 diagnostic instead favored pooled by
+`0.0142`; pooled won two of three paired seeds and six of seven ID/OOD split
+means. The original selection remains historically valid, but the stronger
+follow-up falsifies the claim that recurrence reliably dominates this pooled
+control. Only the frozen recurrent finalist was opened on sealed data; no
+sealed pooled comparison was permitted.
 
 ### 5. Which failures now appear architectural rather than supervisory?
 
@@ -140,6 +146,54 @@ The negative scheduled and hierarchical ablations show that supervision is
 not yet exhausted as an explanation. A longer curriculum and termination-loss
 study should precede new edge-attention complexity.
 
+## Post-sealed 5k A100 replication
+
+The pre-registered follow-up used three new paired seeds, 512 non-sealed
+training cases, 5,000 FP32 optimizer steps per run, and NVIDIA
+A100-SXM4-40GB GPUs. It contributed 30,000 accepted optimizer steps. All six
+accepted runs passed the remote test gate and evaluator guard, and every
+reported sealed-access count was zero.
+
+| Model | Seed scores | Mean ± population SD |
+|---|---|---:|
+| tied recurrent Spider | 0.3622, 0.3778, 0.3778 | 0.3726 ± 0.0074 |
+| matched pooled control | 0.4034, 0.3821, 0.3750 | 0.3868 ± 0.0121 |
+
+The paired recurrent-minus-pooled differences were `-0.0412`, `-0.0043`, and
+`+0.0028`, for a mean difference of `-0.0142`.
+
+| Split | Recurrent | Pooled | Difference |
+|---|---:|---:|---:|
+| validation ID | 0.3880 | 0.3672 | +0.0208 |
+| graph-size OOD | 0.3021 | 0.3611 | -0.0590 |
+| path-length OOD | 0.3507 | 0.3576 | -0.0069 |
+| topology OOD | 0.3715 | 0.3715 | +0.0000 |
+| cardinality OOD | 0.4097 | 0.4514 | -0.0417 |
+| equivalent-view OOD | 0.3715 | 0.3889 | -0.0174 |
+| composition OOD | 0.4097 | 0.4167 | -0.0069 |
+
+On validation ID, recurrent retained lower answered risk (`0.2935` versus
+`0.3514`) and higher termination accuracy (`0.4349` versus `0.3984`). Pooled
+had slightly higher evidence F1 (`0.4903` versus `0.4870`) and exact
+evidence-set accuracy (`0.5078` versus `0.4740`). Recurrent recall was only
+slightly higher (`0.4116` versus `0.4082`). Neither model fixed early stopping:
+the recurrent one-round stop rate was `0.8698` and pooled was `0.8646`.
+
+The first multi-run Colab session was lost after one hour, so none of its
+unrecovered outputs were accepted. A later attempt to run the final pair
+concurrently lost the recurrent session before checkpoint creation; that
+attempt is also excluded and recorded as infrastructure evidence. Every
+accepted run used a fresh isolated A100 session and was downloaded and deeply
+verified before release.
+
+All six standalone checkpoints and complete run archives are stored in the
+[verified Google Drive folder](https://drive.google.com/drive/folders/10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw).
+The machine-readable results are
+`artifacts/spider_v0_1/colab_5k/colab_5k_experiments.jsonl` and
+`artifacts/spider_v0_1/colab_5k/COLAB_5K_SUMMARY.json`. This replication is
+post-sealed evidence only and cannot alter the finalist, calibrated threshold,
+or one-time sealed report.
+
 ## Implementation and verification
 
 Oracle training, scheduled training, autonomous evaluation, and replay now use
@@ -153,7 +207,7 @@ Traversal uses `PackedTopology.expand_frontier`; summaries, edges, contexts,
 and repeated owner occurrences use packed manifold gathers. No Python graph
 engine was added to the hot path.
 
-The final local gate passed 131 CPU tests and 6 CUDA tests on the RTX 5070 Ti.
+The final local gate passed 134 CPU tests and 6 CUDA tests on the RTX 5070 Ti.
 The v0 report and artifacts were not modified or reopened. The v0.2 sealed
 access marker and report are immutable artifacts.
 
@@ -164,13 +218,9 @@ validate natural-language memory, learned writers, calibration, or production
 reasoning. The 400-step selected runs establish a controlled comparison, not
 full convergence.
 
-A post-sealed 5,000-step-per-run A100 replication is registered separately to
-test whether the recurrent advantage and termination behaviour persist with
-materially more optimisation. It covers three new seeds for both the recurrent
-model and matched pooled control, for 30,000 optimiser steps in total. The
-earlier T4 attempt was explicitly interrupted and contributed zero accepted
-records. Because this replication occurs after sealed access, it cannot change
-the finalist or the sealed claim. If longer training does not reduce
-one-round stopping, the next focused experiment should compare a learned
-null-expansion action and a factorised evidence-sufficiency terminator—without
-adding compositional edge attention.
+The completed post-sealed A100 replication shows that longer training neither
+removed one-round stopping nor reproduced the frozen recurrent advantage.
+The next focused experiment should therefore compare a learned null-expansion
+action and a factorised evidence-sufficiency terminator, with a training-length
+matched recurrent/pooled control. It should not add compositional edge
+attention until the termination failure is resolved.

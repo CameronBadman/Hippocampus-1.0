@@ -1,0 +1,88 @@
+{
+  "analysis_status": "post-sealed diagnostic; no selection effect",
+  "completed_at": "2026-07-26T09:32:49.504780+00:00",
+  "dataset_split_digest": "101af9fd4ff38a9b8416675fb57941d8a9d99126f4f80e2c406c0087287a3105",
+  "drive_backup": {
+    "folder_id": "10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw",
+    "folder_url": "https://drive.google.com/drive/folders/10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw",
+    "verified_upload_count": 6
+  },
+  "groups": {
+    "pooled": {
+      "mean": 0.38683712121212116,
+      "population_stddev": 0.01207154240907382,
+      "scores_by_seed": {
+        "1701": 0.4034090909090909,
+        "1802": 0.3821022727272727,
+        "1903": 0.375
+      },
+      "split_primary_means": {
+        "validation_cardinality_ood": 0.4513888888888889,
+        "validation_composition_ood": 0.4166666666666667,
+        "validation_equivalent_view_ood": 0.3888888888888889,
+        "validation_graph_size_ood": 0.36111111111111116,
+        "validation_id": 0.3671875,
+        "validation_path_length_ood": 0.35763888888888884,
+        "validation_topology_ood": 0.37152777777777785
+      },
+      "validation_id_metrics": {
+        "evidence_exact_set_accuracy": 0.5078125,
+        "evidence_f1": 0.4903403577854606,
+        "evidence_precision": 0.642616899097621,
+        "evidence_recall": 0.40816326530612246,
+        "mean_arcs_scored": 3.6276041666666665,
+        "mean_contexts_read": 0.5963541666666666,
+        "mean_rounds": 1.2473958333333333,
+        "one_round_stop_rate": 0.8645833333333334,
+        "risk_among_answered": 0.35135637309550355,
+        "termination_accuracy": 0.3984375
+      }
+    },
+    "recurrent": {
+      "mean": 0.37263257575757575,
+      "population_stddev": 0.00736569563735987,
+      "scores_by_seed": {
+        "1701": 0.3622159090909091,
+        "1802": 0.3778409090909091,
+        "1903": 0.3778409090909091
+      },
+      "split_primary_means": {
+        "validation_cardinality_ood": 0.40972222222222227,
+        "validation_composition_ood": 0.40972222222222227,
+        "validation_equivalent_view_ood": 0.37152777777777773,
+        "validation_graph_size_ood": 0.3020833333333333,
+        "validation_id": 0.3880208333333333,
+        "validation_path_length_ood": 0.3506944444444444,
+        "validation_topology_ood": 0.37152777777777785
+      },
+      "validation_id_metrics": {
+        "evidence_exact_set_accuracy": 0.4739583333333333,
+        "evidence_f1": 0.4870331219168429,
+        "evidence_precision": 0.598272803376318,
+        "evidence_recall": 0.4115646258503401,
+        "mean_arcs_scored": 3.6822916666666665,
+        "mean_contexts_read": 0.609375,
+        "mean_rounds": 1.2421875,
+        "one_round_stop_rate": 0.8697916666666666,
+        "risk_among_answered": 0.29348370927318296,
+        "termination_accuracy": 0.4348958333333333
+      }
+    }
+  },
+  "paired": {
+    "mean_recurrent_minus_pooled": -0.014204545454545414,
+    "pooled_seed_wins": 2,
+    "recurrent_minus_pooled_by_seed": {
+      "1701": -0.04119318181818177,
+      "1802": -0.004261363636363591,
+      "1903": 0.002840909090909116
+    },
+    "recurrent_seed_wins": 1
+  },
+  "primary_metric_winner": "pooled",
+  "run_count": 6,
+  "sealed_access_count": 0,
+  "source_model_commit": "966bccab778e5e4ba4b50b74ed14b9c038df8746",
+  "steps_per_run": 5000,
+  "total_optimizer_steps": 30000
+}

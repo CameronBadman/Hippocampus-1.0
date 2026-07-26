@@ -113,3 +113,34 @@ sealed interpretation. Their exact protocol is
 `artifacts/spider_v0_1/COLAB_5K_PROTOCOL.json`; allocation evidence is
 `artifacts/spider_v0_1/COLAB_5K_ALLOCATION.json`. No sealed access is allowed
 from the remote job.
+
+The completed accepted matrix contains six isolated A100 runs and 30,000
+optimizer steps. The recurrent scores were `0.3622`, `0.3778`, and `0.3778`
+(`0.3726 ± 0.0074` population SD). The pooled scores were `0.4034`, `0.3821`,
+and `0.3750` (`0.3868 ± 0.0121`). The post-sealed primary metric therefore
+favored pooled by `0.0142`. This does not change the frozen finalist.
+
+Every accepted run followed the same durability gate:
+
+1. complete training and all non-sealed evaluation;
+2. download the declared archive while the Colab lease remains active;
+3. verify the archive SHA-256 and all 11 manifested files;
+4. upload both the complete archive and standalone `checkpoint.pt` to Drive;
+5. read back Drive IDs, parent folder, and byte counts;
+6. record hashes and links in
+   `artifacts/spider_v0_1/GOOGLE_DRIVE_BACKUP.json`; and
+7. release the Colab session only after those checks pass.
+
+The resulting Drive folder contains all six checkpoints, all six archives, the
+JSONL experiment ledger, and JSON/Markdown summaries:
+<https://drive.google.com/drive/folders/10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw>.
+Regenerate the checked aggregate deterministically with:
+
+```bash
+.venv/bin/python scripts/aggregate_spider_v0_1_colab_runs.py
+```
+
+The original one-session job loss and the excluded concurrent-session retry
+are preserved as infrastructure failures. Neither contributed an accepted
+score. The final aggregate is
+`artifacts/spider_v0_1/colab_5k/COLAB_5K_SUMMARY.json`.
