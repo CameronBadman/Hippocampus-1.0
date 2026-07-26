@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import subprocess
 
 
 OUTPUT = Path("/content/spider-v01-colab-5k")
@@ -19,6 +20,21 @@ except ProcessLookupError:
     process_alive = False
 else:
     process_alive = True
+
+
+def command_output(arguments: list[str]) -> str | None:
+    try:
+        completed = subprocess.run(
+            arguments,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    output = completed.stdout.strip()
+    return output or None
 
 job_status_path = OUTPUT / "JOB_STATUS.json"
 job_status = (
@@ -43,14 +59,53 @@ completed_metric_files = (
     if run_directories.is_dir()
     else []
 )
+active_run = job_status.get("active_run")
+active_run_path = (
+    run_directories / active_run
+    if isinstance(active_run, str)
+    else None
+)
+active_files = (
+    {
+        str(path.relative_to(active_run_path)): path.stat().st_size
+        for path in sorted(active_run_path.rglob("*"))
+        if path.is_file()
+    }
+    if active_run_path is not None and active_run_path.is_dir()
+    else {}
+)
+history_tail: list[dict[str, object]] = []
+history_path = (
+    active_run_path / "history.jsonl"
+    if active_run_path is not None
+    else None
+)
+if history_path is not None and history_path.is_file():
+    lines = history_path.read_text().splitlines()[-3:]
+    history_tail = [json.loads(line) for line in lines if line.strip()]
+
+gpu_status = command_output(
+    [
+        "nvidia-smi",
+        "--query-gpu=name,utilization.gpu,memory.used,memory.total",
+        "--format=csv,noheader,nounits",
+    ]
+)
+process_status = command_output(
+    ["ps", "-o", "etimes=,pcpu=,pmem=,rss=,cmd=", "-p", str(pid)]
+)
 print(
     json.dumps(
         {
+            "active_files": active_files,
             "completed_metric_files": completed_metric_files,
+            "gpu_status": gpu_status,
+            "history_tail": history_tail,
             "job_status": job_status,
             "log_tail": log_tail,
             "pid": pid,
             "process_alive": process_alive,
+            "process_status": process_status,
         },
         sort_keys=True,
     )
