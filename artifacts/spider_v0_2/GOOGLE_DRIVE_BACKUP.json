@@ -50,6 +50,17 @@
         "drive_size_verified": true,
         "drive_url": "https://drive.google.com/file/d/1W1_TFF-lno4G_h4G6nI_NNmLpm9hmZY3/view?usp=drivesdk",
         "sha256": "5a2bc3738a153e575863bf0c3cde06d874f4190ae491bfc96ddc6b14735e1ed6"
+      },
+      "checkpoint_step_005000.pt": {
+        "bytes": 3750143,
+        "drive_created_time": "2026-07-26T14:56:45.956Z",
+        "drive_id": "1DqOuEte3CVrGiG9uS_Bd-5Z2hTX7uBa6",
+        "drive_mime_type": "application/x-zip",
+        "drive_parent_id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1DqOuEte3CVrGiG9uS_Bd-5Z2hTX7uBa6/view?usp=drivesdk",
+        "sha256": "138e8403cc4a7a04c52f3cb0e2c01c8a8ea04fd5f83b43fb855f17fc8df6f45e"
       }
     }
   },
