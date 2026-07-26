@@ -1,0 +1,17 @@
+{
+  "backup_policy": {
+    "archive": "upload the complete guarded per-run tar.gz",
+    "checkpoint": "upload checkpoint.pt separately for direct recovery",
+    "order": "download and verify locally, upload to Drive, verify Drive metadata, then release the Colab session"
+  },
+  "created_at": "2026-07-26T06:55:02Z",
+  "drive_folder": {
+    "id": "10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw",
+    "name": "Spider-v0.1-Colab-5k",
+    "parent_id": "1fI6AO_ZEgpz94iXpQYE4ymVATg22KFch",
+    "url": "https://drive.google.com/drive/folders/10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw"
+  },
+  "expected_run_count": 6,
+  "sealed_access_allowed": false,
+  "uploads": []
+}
