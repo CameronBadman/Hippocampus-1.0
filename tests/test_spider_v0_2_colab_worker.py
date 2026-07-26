@@ -41,6 +41,17 @@ def test_training_entrypoint_owns_creation_of_run_directory() -> None:
     assert 'str(run_output),' in source
 
 
+def test_worker_streams_stable_periodic_checkpoints() -> None:
+    source = Path(
+        "scripts/colab_spider_v0_2_recurrence_worker.py"
+    ).read_text()
+
+    assert "observed_checkpoints.get(path.name)" in source
+    assert '"application/octet-stream"' in source
+    assert '"published_checkpoints": published_checkpoints' in source
+    assert "published checkpoint hashes are incomplete" in source
+
+
 def test_launch_specs_cover_the_frozen_six_run_matrix() -> None:
     specs = {}
     worker_hashes = set()

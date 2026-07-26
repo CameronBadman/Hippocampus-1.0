@@ -208,8 +208,10 @@ def monitor_training(
     log_path: Path,
     spec: dict[str, object],
     timeout_seconds: int,
-) -> int:
+) -> tuple[int, dict[str, str]]:
     started = time.monotonic()
+    observed_checkpoints: dict[str, tuple[int, int]] = {}
+    published_checkpoints: dict[str, str] = {}
     while process.poll() is None:
         elapsed = time.monotonic() - started
         if elapsed > timeout_seconds:
@@ -218,9 +220,25 @@ def monitor_training(
             raise TimeoutError(
                 f"training exceeded {timeout_seconds} seconds"
             )
-        checkpoints = sorted(
-            path.name for path in (output / "run").glob("checkpoint*.pt")
+        checkpoint_paths = sorted(
+            (output / "run").glob("checkpoint*.pt")
         )
+        current_observations = {
+            path.name: (path.stat().st_size, path.stat().st_mtime_ns)
+            for path in checkpoint_paths
+        }
+        for path in checkpoint_paths:
+            if (
+                path.name not in published_checkpoints
+                and observed_checkpoints.get(path.name)
+                == current_observations[path.name]
+            ):
+                published_checkpoints[path.name] = publish_binary_artifact(
+                    path,
+                    experiment_id=str(spec["experiment_id"]),
+                    purpose="periodic_checkpoint",
+                )
+        observed_checkpoints = current_observations
         utilization = run(
             [
                 "nvidia-smi",
@@ -232,7 +250,8 @@ def monitor_training(
         heartbeat = {
             "elapsed_seconds": round(elapsed, 1),
             "experiment_id": spec["experiment_id"],
-            "checkpoints": checkpoints,
+            "checkpoints": sorted(current_observations),
+            "published_checkpoints": published_checkpoints,
             "gpu_utilization_percent_and_memory_mib": utilization,
             "log_bytes": log_path.stat().st_size if log_path.exists() else 0,
         }
@@ -244,7 +263,14 @@ def monitor_training(
         )
         print(json.dumps({"heartbeat": heartbeat}, sort_keys=True), flush=True)
         time.sleep(60)
-    return int(process.returncode or 0)
+    for path in sorted((output / "run").glob("checkpoint*.pt")):
+        if path.name not in published_checkpoints:
+            published_checkpoints[path.name] = publish_binary_artifact(
+                path,
+                experiment_id=str(spec["experiment_id"]),
+                purpose="final_checkpoint",
+            )
+    return int(process.returncode or 0), published_checkpoints
 
 
 def train_one(
@@ -275,7 +301,7 @@ def train_one(
             stderr=subprocess.STDOUT,
             start_new_session=True,
         )
-    return_code = monitor_training(
+    return_code, published_checkpoints = monitor_training(
         process,
         output=output,
         log_path=log_path,
@@ -306,6 +332,19 @@ def train_one(
     }
     if {path.name for path in checkpoints} != expected_names:
         raise RuntimeError("periodic checkpoint set is incomplete")
+    checkpoint_records = {
+        path.name: {
+            "bytes": path.stat().st_size,
+            "sha256": sha256(path),
+        }
+        for path in checkpoints
+    }
+    expected_published = {
+        name: str(metadata["sha256"])
+        for name, metadata in checkpoint_records.items()
+    }
+    if published_checkpoints != expected_published:
+        raise RuntimeError("published checkpoint hashes are incomplete")
     return {
         "experiment_id": spec["experiment_id"],
         "model": spec["model"],
@@ -325,13 +364,8 @@ def train_one(
             "primary_final_autonomous_success"
         ],
         "checkpoint_sha256": metrics["checkpoint_sha256"],
-        "checkpoints": {
-            path.name: {
-                "bytes": path.stat().st_size,
-                "sha256": sha256(path),
-            }
-            for path in checkpoints
-        },
+        "checkpoints": checkpoint_records,
+        "published_checkpoints": published_checkpoints,
         "peak_cuda_memory_bytes": metrics["peak_cuda_memory_bytes"],
     }
 
@@ -382,6 +416,27 @@ def publish_archive(archive: Path, archive_sha256: str) -> None:
         },
         raw=True,
     )
+
+
+def publish_binary_artifact(
+    path: Path,
+    *,
+    experiment_id: str,
+    purpose: str,
+) -> str:
+    artifact_sha256 = sha256(path)
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    display(
+        {"application/octet-stream": encoded},
+        metadata={
+            "experiment_id": experiment_id,
+            "filename": path.name,
+            "purpose": purpose,
+            "sha256": artifact_sha256,
+        },
+        raw=True,
+    )
+    return artifact_sha256
 
 
 def main() -> None:
