@@ -64,17 +64,21 @@ For recurrent runs also evaluate the preserved path-state interventions:
 ## Checkpoint durability
 
 Each run writes `checkpoint_step_001000.pt` through
-`checkpoint_step_005000.pt` and a final `checkpoint.pt`. A remote run is not
-released until:
+`checkpoint_step_005000.pt` and a final `checkpoint.pt`. Stable periodic
+checkpoints are emitted as individual Better Colab artifacts and copied to the
+registered Google Drive folder while training is still active. A remote run is
+not released until:
 
-1. its archive and standalone final checkpoint are downloaded;
-2. local SHA-256 verification passes;
-3. both are uploaded to the registered Google Drive experiment folder;
-4. Drive metadata and byte counts are verified;
+1. every available periodic checkpoint, the archive, and the standalone final
+   checkpoint are downloaded;
+2. local SHA-256 verification passes for each file;
+3. each checkpoint plus the archive is uploaded to the registered Google Drive
+   experiment folder;
+4. Drive IDs, parent folder, metadata, and byte counts are verified;
 5. the Drive file IDs are committed to the experiment ledger.
 
-Intermediate checkpoints remain inside the verified run archive. This keeps
-the Drive folder manageable while preserving recovery points.
+The local checkpoint binaries and final ZIP are ignored by Git; hashes,
+metrics, manifests, and Drive IDs remain versioned.
 
 ## Commands
 
@@ -97,4 +101,3 @@ Full recurrent seed:
   --output-dir artifacts/spider_v0_2/training/R-REC-s1701-6k \
   --seed 1701
 ```
-

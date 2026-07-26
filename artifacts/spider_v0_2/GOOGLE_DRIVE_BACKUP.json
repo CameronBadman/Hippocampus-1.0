@@ -1,0 +1,33 @@
+{
+  "folder": {
+    "id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+    "parent_id": "10Pmjb0lBATNtGWyf823SB4qHAYaZ7Euw",
+    "title": "Spider-v0.2-Fixed-Horizon",
+    "url": "https://drive.google.com/drive/folders/1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw"
+  },
+  "runs": {
+    "REC-recurrent-s1701-6k": {
+      "checkpoint_step_001000.pt": {
+        "bytes": 3750143,
+        "drive_created_time": "2026-07-26T13:43:17.138Z",
+        "drive_id": "1cORBWtzDL4K2oAj_kX3-RVDtiCnhdnBE",
+        "drive_mime_type": "application/x-zip",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1cORBWtzDL4K2oAj_kX3-RVDtiCnhdnBE/view?usp=drivesdk",
+        "sha256": "101a8e28af692b5d293d9fca09782caa2a00ea8741dced4ca4a8b77b6f19e17c"
+      },
+      "checkpoint_step_002000.pt": {
+        "bytes": 3750143,
+        "drive_created_time": "2026-07-26T13:43:28.581Z",
+        "drive_id": "1bxbKN57WOYbZFf0hWpPvB2pST47z2iQ_",
+        "drive_mime_type": "application/x-zip",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1bxbKN57WOYbZFf0hWpPvB2pST47z2iQ_/view?usp=drivesdk",
+        "sha256": "06f0b65e7f3efea691c7a20b130e29a824569d2ae8b28a8053801756b454b1ab"
+      }
+    }
+  },
+  "schema_version": 1
+}
