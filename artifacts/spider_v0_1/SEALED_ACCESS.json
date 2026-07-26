@@ -1,0 +1,8 @@
+{
+  "accessed_at": "2026-07-26T04:07:00.216573+00:00",
+  "dataset_version": "spider-programs-v0.2",
+  "finalist_manifest_sha256": "05588444690f8ea3a79655d343b96b8f03b87304c50fadc293e1c2335ce64005",
+  "purpose": "one-time frozen-finalist evaluation",
+  "sealed_split_sha256": "d89ca1e17c1d587678eb888ae4714286f1f7bd4e5e5fab5d9eee34d8a493f049",
+  "split": "test_sealed_v0_2"
+}
