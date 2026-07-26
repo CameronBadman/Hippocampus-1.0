@@ -588,6 +588,7 @@ def evaluate_closed_loop_batches(
     permuted_batches: Sequence[PackedProgramBatch] | None = None,
     invariance_sample_limit: int = 8,
     execution_policy: ControllerExecutionPolicy | None = None,
+    include_teacher_forced: bool = True,
 ) -> ClosedLoopEvaluationReport:
     if not batches:
         raise ValueError("evaluation requires at least one batch")
@@ -612,11 +613,20 @@ def evaluate_closed_loop_batches(
         torch.cuda.reset_peak_memory_stats(device)
         torch.cuda.synchronize(device)
     started = time.perf_counter()
-    oracle_loss, teacher = evaluate_oracle_batches(
-        model,
-        batches,
-        controller_config=resolved_controller,
-    )
+    if include_teacher_forced:
+        oracle_loss, teacher = evaluate_oracle_batches(
+            model,
+            batches,
+            controller_config=resolved_controller,
+        )
+        teacher_forced: dict[str, float | int] = {
+            "oracle_loss": oracle_loss,
+            **teacher.as_dict(),
+        }
+    else:
+        teacher_forced = {
+            "skipped": 1,
+        }
 
     termination_correct = 0
     unknown_correct = 0
@@ -970,10 +980,7 @@ def evaluate_closed_loop_batches(
                 policy.suppresses_intermediate_termination
             ),
         },
-        teacher_forced={
-            "oracle_loss": oracle_loss,
-            **teacher.as_dict(),
-        },
+        teacher_forced=teacher_forced,
         rollout=rollout,
         evidence=evidence_report,
         termination=termination_report,
