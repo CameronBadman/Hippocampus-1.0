@@ -327,7 +327,8 @@ in the [Spider v0.2 Drive
 folder](https://drive.google.com/drive/folders/1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw).
 See the [frozen design](docs/spider_v0_2/DESIGN.md), [training
 protocol](docs/spider_v0_2/TRAINING.md), and [dataset
-card](docs/spider_v0_2/DATASET_CARD.md). The current one-seed evidence is in
-the [interim report](docs/spider_v0_2/INTERIM_REPORT.md); use the exact
-[continuation handoff](docs/spider_v0_2/CONTINUATION.md) to complete the
-remaining A100/H100 runs without changing the frozen comparison.
+card](docs/spider_v0_2/DATASET_CARD.md). The completed three-seed result,
+state-use interventions, limitations, and next recommendation are in the
+[final report](docs/spider_v0_2/FINAL_REPORT.md); the certified machine-readable
+aggregate is
+[`artifacts/spider_v0_2/training/TRAINING_SUMMARY.json`](artifacts/spider_v0_2/training/TRAINING_SUMMARY.json).

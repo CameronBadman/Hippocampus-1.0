@@ -1,0 +1,83 @@
+{
+  "accepted_run_budget": {
+    "evidence_full": 6,
+    "evidence_screen": 9,
+    "multibinding": 12,
+    "termination_joint": 3,
+    "termination_screen": 9
+  },
+  "calibration": {
+    "coarse_thresholds": {
+      "start": 0.05,
+      "step": 0.05,
+      "stop": 0.95
+    },
+    "fine_radius": 0.05,
+    "fine_step": 0.005,
+    "objective": "exact_evidence_set_accuracy",
+    "precision_floor": "matched-seed E0 calibration precision minus 0.02",
+    "temperature_acceptance": {
+      "baseline_ece_above": 0.05,
+      "minimum_nll_improvement": 0.0001,
+      "require_nonworse_brier": true
+    }
+  },
+  "dataset_policy": {
+    "evidence_primary": "non-sealed four-family spider-programs-v0.2 development data",
+    "evidence_secondary": "spider-programs-v0.3-recurrence-dev",
+    "multibinding": "new non-sealed spider-programs-v0.4-multibinding-dev",
+    "sealed_access_allowed": false
+  },
+  "evidence_arms": {
+    "E0": "balanced BCE plus preserved set-level evidence objective",
+    "E1": "fixed class-weighted BCE plus top-4 invalid ranking",
+    "E2": "E1 plus up to four structurally plausible invalid candidates"
+  },
+  "evidence_ranking": {
+    "lambda": 0.5,
+    "margin": 0.2
+  },
+  "evidence_screen_gate": {
+    "maximum_mean_candidate_coverage_degradation": 0.01,
+    "maximum_mean_precision_degradation": 0.02,
+    "minimum_exact_set_gain": 0.03,
+    "minimum_recall_gain": 0.05,
+    "minimum_seed_wins": 2
+  },
+  "execution": {
+    "accelerator": "A100",
+    "dtype": "float32",
+    "hardware_mixing_allowed": false,
+    "pause_every": "never",
+    "remote_sessions": 1,
+    "seeds": [
+      1701,
+      1802,
+      1903
+    ]
+  },
+  "historical_reference": "artifacts/spider_v0_3/V0_2_FREEZE.json",
+  "keep_policy": "pass_only",
+  "milestone": "Spider v0.3",
+  "multibinding_gate": {
+    "minimum_mean_paired_gain": 0.02,
+    "minimum_seed_gain": 0.02,
+    "minimum_seed_wins": 2
+  },
+  "primary_question": "Can exact evidence diagnostics, ranked evidence supervision, and directly labelled factorized termination restore reliable autonomous pooled execution before multi-set attention is reconsidered?",
+  "status": "frozen_before_implementation",
+  "termination_arms": {
+    "T0": "fresh hierarchical head on exact six-way state decisions",
+    "T1": "directly labelled factorized termination",
+    "T2": "T1 plus per-hypothesis NULL expansion",
+    "T3": "conditional joint fine-tuning of the winning controller"
+  },
+  "termination_gate": {
+    "maximum_answered_risk_degradation": 0.02,
+    "maximum_premature_stop_rate": 0.25,
+    "minimum_autonomous_to_fixed_ratio": 0.85,
+    "minimum_continue_recall": 0.95,
+    "minimum_macro_unknown_recall": 0.7,
+    "minimum_seed_passes": 2
+  }
+}

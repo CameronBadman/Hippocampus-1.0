@@ -1,0 +1,25 @@
+{
+  "drive_folder_id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+  "files": {
+    "artifacts/spider_v0_2/GOOGLE_DRIVE_BACKUP.json": "71202d5ae5384d1f283b7040474b1210aa12d0febb54dea549da59046de6dce7",
+    "artifacts/spider_v0_2/PROTOCOL.json": "6f7baeacbaf7ba6e76c8ccac0d0672d33a193f8d62561cf27c4ac51d2910dfee",
+    "artifacts/spider_v0_2/splits/MANIFEST_INDEX.json": "461471c6b775a76d7155a942dd2d8be80c685388b9bb4d4206b4aabd88591d81",
+    "artifacts/spider_v0_2/training/TRAINING_SUMMARY.json": "4f41d4e044cbc5352b40e4e1809f8cff79ac0da0a448f231ecd25820bc22d64f",
+    "artifacts/spider_v0_2/training/training_experiments.jsonl": "9a3cdc7012fc7174f9ba1484f4a62de5b6a92ae84b48714310e52e1a4c39ea20",
+    "configs/spider_v0_2/pooled_recurrence.json": "abf23162022e5c62f7889e2535ce1a4dc559371c3fba81a35b4d9b017cbad84f",
+    "configs/spider_v0_2/recurrent_recurrence.json": "629e354ccebd0d6eb739cf8faad7d8203e35f5c03f6d1c801a6e11399e4e4ce4",
+    "docs/spider_v0_2/FINAL_REPORT.md": "bbc3e055c9c1576364a846befa9ab7fcc4b3d10b29f29360cdfa9e96fcf7c6e9",
+    "scripts/colab_spider_v0_2_recurrence_worker.py": "0bb62d1491f75bf604c0c8353dd93472dcc5cd91df10e9e151e4d929094ed9c8"
+  },
+  "final_commit": "06f8655f25f00ca5f0adff6b89df25c75e13c57a",
+  "final_tag": "spider-v0.2-fixed-horizon-final",
+  "logical_split_hashes": {
+    "train_recurrence_necessity": "ff36529a8090581f6156a8fc36258e4a14eee9a542955623b70550001469fe56",
+    "validation_recurrence_necessity": "67c2273e4899af179bc1e10185742b806d751f5f5dba858c771f2eca8a6af4aa"
+  },
+  "policy": "byte-immutable historical evidence",
+  "run_count": 6,
+  "sealed_access_count": 0,
+  "source_commit": "acb533666d481daf9b6fb56562d69a5dd78c5e0e",
+  "source_tag": "spider-v0.2-fixed-horizon-source"
+}
