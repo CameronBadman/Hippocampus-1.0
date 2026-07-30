@@ -1,0 +1,9 @@
+{
+  "error": null,
+  "experiment_id": "REC-pooled-s1903-6k",
+  "model": "pooled",
+  "sealed_access_count": 0,
+  "seed": 1903,
+  "state": "packaging",
+  "timestamp": "2026-07-30T22:15:36.014750+00:00"
+}
