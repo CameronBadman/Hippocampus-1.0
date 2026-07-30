@@ -400,6 +400,19 @@
         "drive_url": "https://drive.google.com/file/d/1evK9Gr2i0Y6hmNqHjIQQDMEFz8VGbmtl/view?usp=drivesdk",
         "sha256": "ab60cfb92e7292ba94153751b6e2c7a8d2b5fa4314f590e75673cb1a690a1ee0"
       }
+    },
+    "REC-pooled-s1903-6k": {
+      "checkpoint_step_001000.pt": {
+        "bytes": 2365542,
+        "drive_created_time": "2026-07-30T21:03:28.851Z",
+        "drive_id": "1xfh8yl1D1lD1mAiXEuujjCy_H9lu26Hf",
+        "drive_mime_type": "application/x-pytorch",
+        "drive_parent_id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1xfh8yl1D1lD1mAiXEuujjCy_H9lu26Hf/view?usp=drivesdk",
+        "sha256": "c8787a23fcfdfa6ba87442d2e5e4413134f4d9b8e3a66bee6c7ed87bbc9cd073"
+      }
     }
   },
   "schema_version": 1
