@@ -2,21 +2,20 @@
 
 ## Resume point
 
-Repository `main` contains all implementation, tests, accepted seed-1701
-results, plots tooling, and verified Drive records. The A100 session was
-released at handoff; no Colab credits should still be consumed.
+Repository `main` contains all implementation, tests, the accepted seed-1701
+pair, the accepted recurrent seed-1802 restart, plots tooling, and verified
+Drive records. The recurrent seed-1802 A100 session was released after its
+artifacts were verified; it is no longer consuming Colab credits.
 
-The cancelled `REC-recurrent-s1802-6k` attempt is **not resumable under the
-frozen protocol**. Its 3,000-step checkpoint is preserved for audit, but the
-current trainer does not restore optimizer/data-stream state. Restart that run
-from step zero so it remains comparable and can pass the deep verifier.
+The cancelled 3,000-step seed-1802 attempt remains preserved as excluded audit
+evidence. Its replacement restarted from step zero and completed all 6,000
+steps as `REC-recurrent-s1802-6k`.
 
 Remaining accepted-run order:
 
-1. recurrent seed 1802, restarted for all 6,000 steps;
-2. pooled seed 1802;
-3. recurrent seed 1903;
-4. pooled seed 1903.
+1. pooled seed 1802;
+2. recurrent seed 1903;
+3. pooled seed 1903.
 
 Do not overlap these runs, tune between them, change the fixed horizon, or read
 historical sealed artifacts.
@@ -43,7 +42,7 @@ Launch-source hashes:
 | `recurrent_1903.py` | `7ad2b6dccde3f16ea0ce05e58d2ca377aaeeb7ddad3386e1e0d3509d204f9b58` |
 | `pooled_1903.py` | `3b6e5d46a9ab27d2d5809c3429d495e98203ac3c1240991151defde6b95d576e` |
 
-## Restart recurrent seed 1802
+## Launch pooled seed 1802
 
 From the repository root:
 
@@ -52,14 +51,14 @@ git switch main
 git pull --ff-only
 .venv/bin/pytest -q
 
-sha256sum scripts/colab_spider_v0_2_specs/recurrent_1802.py
-better-colab session ensure spider-v02-rec-r1802 --gpu A100 --format json
+sha256sum scripts/colab_spider_v0_2_specs/pooled_1802.py
+better-colab session ensure spider-v02-pool-p1802 --gpu A100 --format json
 better-colab execution start \
-  --session spider-v02-rec-r1802 \
-  --file scripts/colab_spider_v0_2_specs/recurrent_1802.py \
+  --session spider-v02-pool-p1802 \
+  --file scripts/colab_spider_v0_2_specs/pooled_1802.py \
   --expected-source-sha256 \
-    sha256:cc6bd0451c6fbefef849459a1933d3651ef071c06efaa03e923c4fe43c687774 \
-  --idempotency-key spider-v02-rec-r1802-6k-v2 \
+    sha256:410d27f2a2554bfd249409afba7ae2610567f73b00b33e3fe3193a203ae4b983 \
+  --idempotency-key spider-v02-pool-p1802-6k-v1 \
   --execution-timeout 18000 \
   --detach \
   --format json
@@ -88,7 +87,6 @@ Repeat the same command shape using the exact spec/hash pairs above and fresh
 idempotency keys:
 
 ```text
-spider-v02-pool-p1802-6k-v1
 spider-v02-rec-r1903-6k-v1
 spider-v02-pool-p1903-6k-v1
 ```

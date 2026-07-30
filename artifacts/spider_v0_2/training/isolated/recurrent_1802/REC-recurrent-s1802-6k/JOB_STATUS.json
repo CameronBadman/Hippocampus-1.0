@@ -1,0 +1,9 @@
+{
+  "error": null,
+  "experiment_id": "REC-recurrent-s1802-6k",
+  "model": "recurrent",
+  "sealed_access_count": 0,
+  "seed": 1802,
+  "state": "packaging",
+  "timestamp": "2026-07-30T16:23:11.893861+00:00"
+}

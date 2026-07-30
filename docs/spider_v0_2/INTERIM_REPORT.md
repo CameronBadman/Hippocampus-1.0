@@ -5,15 +5,16 @@
 This is a post-sealed architectural diagnostic, not a new sealed evaluation.
 The historical Spider v0 and v0.1 results remain unchanged.
 
-One complete matched seed pair is certified. A second recurrent run reached a
-verified 3,000-step checkpoint before being stopped for the user-requested
-handoff. It has no evaluation result and is excluded from comparisons.
+One complete matched seed pair and the recurrent side of the second pair are
+certified. The earlier seed-1802 attempt that stopped at 3,000 steps remains
+excluded; the accepted seed-1802 result is a clean restart from step zero.
 
 | Run | Status | Fixed-horizon structural success | Exact evidence set |
 | --- | --- | ---: | ---: |
 | Recurrent, seed 1701 | accepted, 6,000 steps | 0.3828125 | 0.3828125 |
 | Pooled, seed 1701 | accepted, 6,000 steps | 0.4609375 | 0.4609375 |
-| Recurrent, seed 1802 | excluded, stopped at 3,000 steps | not evaluated | not evaluated |
+| Recurrent, seed 1802 | accepted, 6,000 steps | 0.3750000 | 0.3750000 |
+| Pooled, seed 1802 | pending | not evaluated | not evaluated |
 
 The paired seed-1701 recurrent-minus-pooled delta is `-0.078125`. Pooled also
 has higher evidence average precision (`0.6823` versus `0.4772`) and evidence
@@ -22,21 +23,22 @@ advantage, but it is not the preregistered three-seed conclusion.
 
 ## Is recurrent state being used?
 
-Yes, for the accepted recurrent seed:
+Yes, for both accepted recurrent seeds:
 
-| Intervention | Structural success | Delta from intact |
-| --- | ---: | ---: |
-| Intact | 0.3828125 | 0.0000000 |
-| Detach between rounds | 0.3828125 | 0.0000000 |
-| Reset each round | 0.0000000 | -0.3828125 |
-| Shuffle across hypotheses | 0.0859375 | -0.2968750 |
-| Replace with pooled current node | 0.0625000 | -0.3203125 |
+| Intervention | Seed 1701 | Seed 1802 | Seed 1701 delta | Seed 1802 delta |
+| --- | ---: | ---: | ---: | ---: |
+| Intact | 0.3828125 | 0.3750000 | 0.0000000 | 0.0000000 |
+| Detach between rounds | 0.3828125 | 0.3750000 | 0.0000000 | 0.0000000 |
+| Reset each round | 0.0000000 | 0.0000000 | -0.3828125 | -0.3750000 |
+| Shuffle across hypotheses | 0.0859375 | 0.1484375 | -0.2968750 | -0.2265625 |
+| Replace with pooled current node | 0.0625000 | 0.0859375 | -0.3203125 | -0.2890625 |
 
 Detach is a gradient intervention and therefore should not alter a pure
 forward evaluation. Resetting, shuffling, and replacing state do alter the
-forward computation, and their large degradation shows that this checkpoint
-uses its recurrent path state. It does **not** show that recurrence is better
-than pooling: the matched pooled model still wins this seed.
+forward computation, and their large degradation across two seeds shows that
+both checkpoints use their recurrent path state. It does **not** show that
+recurrence is better than pooling: the only completed matched pair still
+favours pooling.
 
 ## Integrity
 
@@ -60,12 +62,14 @@ The verified backup folder is
 ## Current scientific position
 
 The manifold substrate continues to support deterministic, exchangeable, and
-differentiable graph execution. The fixed-horizon diagnostic establishes, for
-one seed, that recurrent state carries long-horizon information when premature
-termination is suppressed. It has not established that the recurrent
+differentiable graph execution. The fixed-horizon diagnostic establishes,
+across two independently trained seeds, that recurrent state carries
+long-horizon information when premature termination is suppressed. It has not
+established that the recurrent
 processor earns its additional complexity: the matched pooled control is
 better on the first complete seed pair despite having fewer parameters
 (`200,549` versus `297,049`).
 
-Do not claim a final architecture result until seeds 1802 and 1903 are rerun
-and the fail-closed six-run aggregator accepts the complete matrix.
+Do not claim a final architecture result until the remaining pooled seed 1802
+and both seed-1903 runs complete and the fail-closed six-run aggregator accepts
+the complete matrix.

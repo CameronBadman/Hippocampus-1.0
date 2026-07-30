@@ -1,0 +1,1 @@
+{"checkpoint_sha256": "058ccbe735eb03f7949b81f67eaca5a46270dd60d05eae3c277c85ac34312f50", "experiment_id": "REC-recurrent-s1802-6k", "final_autonomous_success": 0.0, "runtime_seconds": 9172.634420658, "status": "accepted", "structural_success": 0.375}
