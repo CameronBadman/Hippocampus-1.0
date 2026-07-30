@@ -1,0 +1,51 @@
+{
+  "checkpoint_sha256": "c214db2922ff1b154e0ef79b8d8b8e7746120b670d6183199c38bdc02c9acf1d",
+  "checkpoints": {
+    "checkpoint.pt": {
+      "bytes": 2362258,
+      "sha256": "c214db2922ff1b154e0ef79b8d8b8e7746120b670d6183199c38bdc02c9acf1d"
+    },
+    "checkpoint_step_001000.pt": {
+      "bytes": 2365542,
+      "sha256": "9ac3df2100e15a363eadc33a40ed841a4bf59169bb3083aa2f03400eba2b6454"
+    },
+    "checkpoint_step_002000.pt": {
+      "bytes": 2365542,
+      "sha256": "af50d8f53d03ff42adef3d124fbef685d04fd720791eabdaf92e2220ac6b316f"
+    },
+    "checkpoint_step_003000.pt": {
+      "bytes": 2365542,
+      "sha256": "5eb82dd5eb6fb2d9c0f97b3abb28be67bc84d66b27731c0a48f20483590ad490"
+    },
+    "checkpoint_step_004000.pt": {
+      "bytes": 2365542,
+      "sha256": "1d54538412ee761761b26e0e286494a589c752d0f4d6bde34a276ccb52a386ca"
+    },
+    "checkpoint_step_005000.pt": {
+      "bytes": 2365542,
+      "sha256": "f0602700c8fadb8e15e7662c7fe85bd27b620db53236e61acb7102516b05cba7"
+    }
+  },
+  "experiment_id": "REC-pooled-s1802-6k",
+  "failure_reason": null,
+  "model": "pooled",
+  "parameter_count": 200549,
+  "peak_cuda_memory_bytes": 32535552,
+  "primary_final_autonomous_success": 0.0,
+  "primary_structural_success": 0.4453125,
+  "published_checkpoints": {
+    "checkpoint.pt": "c214db2922ff1b154e0ef79b8d8b8e7746120b670d6183199c38bdc02c9acf1d",
+    "checkpoint_step_001000.pt": "9ac3df2100e15a363eadc33a40ed841a4bf59169bb3083aa2f03400eba2b6454",
+    "checkpoint_step_002000.pt": "af50d8f53d03ff42adef3d124fbef685d04fd720791eabdaf92e2220ac6b316f",
+    "checkpoint_step_003000.pt": "5eb82dd5eb6fb2d9c0f97b3abb28be67bc84d66b27731c0a48f20483590ad490",
+    "checkpoint_step_004000.pt": "1d54538412ee761761b26e0e286494a589c752d0f4d6bde34a276ccb52a386ca",
+    "checkpoint_step_005000.pt": "f0602700c8fadb8e15e7662c7fe85bd27b620db53236e61acb7102516b05cba7"
+  },
+  "runtime_seconds": 5186.336257108001,
+  "sealed_access_count": 0,
+  "seed": 1802,
+  "source_commit": "acb533666d481daf9b6fb56562d69a5dd78c5e0e",
+  "status": "accepted",
+  "steps": 6000,
+  "training_runtime_seconds": 4992.2542926020005
+}

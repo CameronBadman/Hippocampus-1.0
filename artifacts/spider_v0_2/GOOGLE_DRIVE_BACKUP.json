@@ -244,6 +244,17 @@
       }
     },
     "REC-pooled-s1802-6k": {
+      "checkpoint.pt": {
+        "bytes": 2362258,
+        "drive_created_time": "2026-07-30T17:58:09.678Z",
+        "drive_id": "1dqVesuEvUr2a22Q-4vrkhpTQ9P5jm5E-",
+        "drive_mime_type": "application/x-pytorch",
+        "drive_parent_id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1dqVesuEvUr2a22Q-4vrkhpTQ9P5jm5E-/view?usp=drivesdk",
+        "sha256": "c214db2922ff1b154e0ef79b8d8b8e7746120b670d6183199c38bdc02c9acf1d"
+      },
       "checkpoint_step_001000.pt": {
         "bytes": 2365542,
         "drive_created_time": "2026-07-30T16:48:27.259Z",
@@ -298,6 +309,17 @@
         "drive_size_verified": true,
         "drive_url": "https://drive.google.com/file/d/1_-gwp1jmZrhquWbU_tYoXK9Jn8cORKDI/view?usp=drivesdk",
         "sha256": "f0602700c8fadb8e15e7662c7fe85bd27b620db53236e61acb7102516b05cba7"
+      },
+      "REC-pooled-s1802-6k-result.zip": {
+        "bytes": 12175095,
+        "drive_created_time": "2026-07-30T17:58:22.596Z",
+        "drive_id": "1IPJvFsDP7qwZaAOTwfeGOj7_OuBnU3H3",
+        "drive_mime_type": "application/zip",
+        "drive_parent_id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+        "drive_parent_verified": true,
+        "drive_size_verified": true,
+        "drive_url": "https://drive.google.com/file/d/1IPJvFsDP7qwZaAOTwfeGOj7_OuBnU3H3/view?usp=drivesdk",
+        "sha256": "276c86ed839badcbdfda6599af74874acef1ceeab89e040fc6b7f75754a4bfae"
       }
     }
   },

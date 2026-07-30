@@ -3,9 +3,9 @@
 ## Resume point
 
 Repository `main` contains all implementation, tests, the accepted seed-1701
-pair, the accepted recurrent seed-1802 restart, plots tooling, and verified
-Drive records. The recurrent seed-1802 A100 session was released after its
-artifacts were verified; it is no longer consuming Colab credits.
+and seed-1802 pairs, plots tooling, and verified Drive records. The seed-1802
+A100 sessions were released after their artifacts were verified; they are no
+longer consuming Colab credits.
 
 The cancelled 3,000-step seed-1802 attempt remains preserved as excluded audit
 evidence. Its replacement restarted from step zero and completed all 6,000
@@ -13,9 +13,8 @@ steps as `REC-recurrent-s1802-6k`.
 
 Remaining accepted-run order:
 
-1. pooled seed 1802;
-2. recurrent seed 1903;
-3. pooled seed 1903.
+1. recurrent seed 1903;
+2. pooled seed 1903.
 
 Do not overlap these runs, tune between them, change the fixed horizon, or read
 historical sealed artifacts.
@@ -42,7 +41,7 @@ Launch-source hashes:
 | `recurrent_1903.py` | `7ad2b6dccde3f16ea0ce05e58d2ca377aaeeb7ddad3386e1e0d3509d204f9b58` |
 | `pooled_1903.py` | `3b6e5d46a9ab27d2d5809c3429d495e98203ac3c1240991151defde6b95d576e` |
 
-## Launch pooled seed 1802
+## Launch recurrent seed 1903
 
 From the repository root:
 
@@ -51,14 +50,14 @@ git switch main
 git pull --ff-only
 .venv/bin/pytest -q
 
-sha256sum scripts/colab_spider_v0_2_specs/pooled_1802.py
-better-colab session ensure spider-v02-pool-p1802 --gpu A100 --format json
+sha256sum scripts/colab_spider_v0_2_specs/recurrent_1903.py
+better-colab session ensure spider-v02-rec-r1903 --gpu A100 --format json
 better-colab execution start \
-  --session spider-v02-pool-p1802 \
-  --file scripts/colab_spider_v0_2_specs/pooled_1802.py \
+  --session spider-v02-rec-r1903 \
+  --file scripts/colab_spider_v0_2_specs/recurrent_1903.py \
   --expected-source-sha256 \
-    sha256:410d27f2a2554bfd249409afba7ae2610567f73b00b33e3fe3193a203ae4b983 \
-  --idempotency-key spider-v02-pool-p1802-6k-v1 \
+    sha256:7ad2b6dccde3f16ea0ce05e58d2ca377aaeeb7ddad3386e1e0d3509d204f9b58 \
+  --idempotency-key spider-v02-rec-r1903-6k-v1 \
   --execution-timeout 18000 \
   --detach \
   --format json
@@ -87,7 +86,6 @@ Repeat the same command shape using the exact spec/hash pairs above and fresh
 idempotency keys:
 
 ```text
-spider-v02-rec-r1903-6k-v1
 spider-v02-pool-p1903-6k-v1
 ```
 
