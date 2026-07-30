@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 680" role="img" aria-label="Spider v0.2 fixed-horizon structural comparison">
+<style>text{font-family:ui-sans-serif,system-ui,sans-serif;fill:#18212b}.title{font-size:24px;font-weight:700}.subtitle{font-size:14px;fill:#52606d}.axis{stroke:#51606f;stroke-width:1}.grid{stroke:#d9e1e8;stroke-width:1}.tick{font-size:12px;fill:#52606d}.legend{font-size:12px}</style>
+<title>Spider v0.2 fixed-horizon structural comparison</title>
+<rect width="1120" height="680" fill="#ffffff"/>
+<text class="title" x="56" y="38">Fixed-horizon structural success</text>
+<text class="subtitle" x="56" y="59">Paired architecture comparison and direct state-use degradation</text>
+<text x="78" y="92" font-size="16" font-weight="650">Architecture comparison</text>
+<text x="650" y="92" font-size="16" font-weight="650">Direct state-use degradation</text>
+<line class="grid" x1="78" y1="540.00" x2="570" y2="540.00"/>
+<text class="tick" x="69" y="544.00" text-anchor="end">0.0</text>
+<line class="grid" x1="78" y1="454.40" x2="570" y2="454.40"/>
+<text class="tick" x="69" y="458.40" text-anchor="end">0.2</text>
+<line class="grid" x1="78" y1="368.80" x2="570" y2="368.80"/>
+<text class="tick" x="69" y="372.80" text-anchor="end">0.4</text>
+<line class="grid" x1="78" y1="283.20" x2="570" y2="283.20"/>
+<text class="tick" x="69" y="287.20" text-anchor="end">0.6</text>
+<line class="grid" x1="78" y1="197.60" x2="570" y2="197.60"/>
+<text class="tick" x="69" y="201.60" text-anchor="end">0.8</text>
+<line class="grid" x1="78" y1="112.00" x2="570" y2="112.00"/>
+<text class="tick" x="69" y="116.00" text-anchor="end">1.0</text>
+<rect x="139.00" y="376.16" width="42.00" height="163.84" fill="#1769aa"/>
+<rect x="181.00" y="342.72" width="42.00" height="197.28" fill="#e56b2f"/>
+<text class="tick" x="160.00" y="562" text-anchor="middle">1701</text>
+<rect x="303.00" y="379.50" width="42.00" height="160.50" fill="#1769aa"/>
+<rect x="345.00" y="349.41" width="42.00" height="190.59" fill="#e56b2f"/>
+<text class="tick" x="324.00" y="562" text-anchor="middle">1802</text>
+<rect x="467.00" y="369.47" width="42.00" height="170.53" fill="#1769aa"/>
+<rect x="509.00" y="346.06" width="42.00" height="193.94" fill="#e56b2f"/>
+<text class="tick" x="488.00" y="562" text-anchor="middle">1903</text>
+<rect x="164" y="575" width="14" height="14" fill="#1769aa"/>
+<text class="legend" x="184" y="587">recurrent</text>
+<rect x="286" y="575" width="14" height="14" fill="#e56b2f"/>
+<text class="legend" x="306" y="587">pooled</text>
+<text class="tick" x="650" y="142">reset</text>
+<rect x="650" y="155" width="408" height="28" fill="#edf1f5"/>
+<rect x="650" y="155" width="157.25" height="28" fill="#6f42c1"/>
+<text class="tick" x="814.25" y="175">+0.385</text>
+<text class="tick" x="650" y="236">detach</text>
+<rect x="650" y="249" width="408" height="28" fill="#edf1f5"/>
+<rect x="650" y="249" width="0.00" height="28" fill="#6f42c1"/>
+<text class="tick" x="657.00" y="269">+0.000</text>
+<text class="tick" x="650" y="330">shuffle</text>
+<rect x="650" y="343" width="408" height="28" fill="#edf1f5"/>
+<rect x="650" y="343" width="109.44" height="28" fill="#6f42c1"/>
+<text class="tick" x="766.44" y="363">+0.268</text>
+<text class="tick" x="650" y="424">pooled current node</text>
+<rect x="650" y="437" width="408" height="28" fill="#edf1f5"/>
+<rect x="650" y="437" width="126.44" height="28" fill="#6f42c1"/>
+<text class="tick" x="783.44" y="457">+0.310</text>
+</svg>

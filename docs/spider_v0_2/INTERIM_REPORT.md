@@ -1,5 +1,8 @@
 # Spider v0.2 Interim Result
 
+Status: superseded by `FINAL_REPORT.md` after completion of the registered
+six-run matrix. Retained as chronological evidence.
+
 ## Status
 
 This is a post-sealed architectural diagnostic, not a new sealed evaluation.

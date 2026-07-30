@@ -1,0 +1,175 @@
+{
+  "analysis_status": "post-sealed architectural diagnostic; no selection effect",
+  "completed_at": "2026-07-30T22:35:57.247290+00:00",
+  "dataset_version": "spider-programs-v0.3-recurrence-dev",
+  "decision": {
+    "material_state_use": true,
+    "recurrent_advantage": false,
+    "required_mean_paired_delta": 0.02,
+    "required_seed_wins": 2
+  },
+  "drive_backup": {
+    "folder_id": "1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+    "folder_url": "https://drive.google.com/drive/folders/1A8QnvZKDSWeiTXvi6RwYx76LFVAcDZRw",
+    "verified_artifact_count": 42
+  },
+  "groups": {
+    "pooled": {
+      "evidence_exact_set_accuracy_mean": 0.453125,
+      "evidence_recall_mean": 0.7161458333333334,
+      "final_state_by_seed": {
+        "1701": 0.0,
+        "1802": 0.0,
+        "1903": 0.0
+      },
+      "final_state_mean": 0.0,
+      "mean_arcs_scored": 17.90625,
+      "mean_rounds": 5.96875,
+      "structural_by_seed": {
+        "1701": 0.4609375,
+        "1802": 0.4453125,
+        "1903": 0.453125
+      },
+      "structural_mean": 0.453125,
+      "structural_population_stddev": 0.00637887953849786,
+      "valid_path_rate_mean": 1.0
+    },
+    "recurrent": {
+      "evidence_exact_set_accuracy_mean": 0.3854166666666667,
+      "evidence_recall_mean": 0.6197916666666666,
+      "final_state_by_seed": {
+        "1701": 0.0078125,
+        "1802": 0.0,
+        "1903": 0.0
+      },
+      "final_state_mean": 0.0026041666666666665,
+      "mean_arcs_scored": 17.90625,
+      "mean_rounds": 5.96875,
+      "structural_by_seed": {
+        "1701": 0.3828125,
+        "1802": 0.375,
+        "1903": 0.3984375
+      },
+      "structural_mean": 0.3854166666666667,
+      "structural_population_stddev": 0.009743899444723805,
+      "valid_path_rate_mean": 1.0
+    }
+  },
+  "guards": {
+    "deterministic_replay_mismatches": 0,
+    "row_permutation_mismatches": 0,
+    "sealed_access_count": 0
+  },
+  "paired": {
+    "by_seed": {
+      "1701": {
+        "final_state_delta": 0.0078125,
+        "pooled_final_state": 0.0,
+        "pooled_structural": 0.4609375,
+        "recurrent_final_state": 0.0078125,
+        "recurrent_structural": 0.3828125,
+        "structural_delta": -0.078125
+      },
+      "1802": {
+        "final_state_delta": 0.0,
+        "pooled_final_state": 0.0,
+        "pooled_structural": 0.4453125,
+        "recurrent_final_state": 0.0,
+        "recurrent_structural": 0.375,
+        "structural_delta": -0.0703125
+      },
+      "1903": {
+        "final_state_delta": 0.0,
+        "pooled_final_state": 0.0,
+        "pooled_structural": 0.453125,
+        "recurrent_final_state": 0.0,
+        "recurrent_structural": 0.3984375,
+        "structural_delta": -0.0546875
+      }
+    },
+    "mean_final_state_delta": 0.0026041666666666665,
+    "mean_structural_delta": -0.06770833333333333,
+    "pooled_seed_wins": 3,
+    "population_stddev_structural_delta": 0.009743899444723805,
+    "recurrent_seed_wins": 0,
+    "ties": 0
+  },
+  "run_count": 6,
+  "sealed_access_count": 0,
+  "source_commit": "acb533666d481daf9b6fb56562d69a5dd78c5e0e",
+  "state_use": {
+    "by_intervention": {
+      "detach": {
+        "causal_forward_ablation": false,
+        "material": false,
+        "mean_degradation": 0.0,
+        "seed_degradations": {
+          "1701": 0.0,
+          "1802": 0.0,
+          "1903": 0.0
+        },
+        "seeds_at_or_above_0_05": 0
+      },
+      "pooled_current_node": {
+        "causal_forward_ablation": false,
+        "material": false,
+        "mean_degradation": 0.3098958333333333,
+        "seed_degradations": {
+          "1701": 0.3203125,
+          "1802": 0.2890625,
+          "1903": 0.3203125
+        },
+        "seeds_at_or_above_0_05": 3
+      },
+      "reset": {
+        "causal_forward_ablation": true,
+        "material": true,
+        "mean_degradation": 0.3854166666666667,
+        "seed_degradations": {
+          "1701": 0.3828125,
+          "1802": 0.375,
+          "1903": 0.3984375
+        },
+        "seeds_at_or_above_0_05": 3
+      },
+      "shuffle": {
+        "causal_forward_ablation": true,
+        "material": true,
+        "mean_degradation": 0.2682291666666667,
+        "seed_degradations": {
+          "1701": 0.296875,
+          "1802": 0.2265625,
+          "1903": 0.28125
+        },
+        "seeds_at_or_above_0_05": 3
+      }
+    },
+    "material_state_use": true,
+    "scores_by_seed": {
+      "1701": {
+        "detach": 0.3828125,
+        "none": 0.3828125,
+        "pooled_current_node": 0.0625,
+        "reset": 0.0,
+        "shuffle": 0.0859375
+      },
+      "1802": {
+        "detach": 0.375,
+        "none": 0.375,
+        "pooled_current_node": 0.0859375,
+        "reset": 0.0,
+        "shuffle": 0.1484375
+      },
+      "1903": {
+        "detach": 0.3984375,
+        "none": 0.3984375,
+        "pooled_current_node": 0.078125,
+        "reset": 0.0,
+        "shuffle": 0.1171875
+      }
+    }
+  },
+  "steps_per_run": 6000,
+  "total_optimizer_steps": 36000,
+  "total_runtime_seconds": 43648.615518403
+}
