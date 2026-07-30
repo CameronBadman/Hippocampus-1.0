@@ -3,18 +3,15 @@
 ## Resume point
 
 Repository `main` contains all implementation, tests, the accepted seed-1701
-and seed-1802 pairs, plots tooling, and verified Drive records. The seed-1802
-A100 sessions were released after their artifacts were verified; they are no
-longer consuming Colab credits.
+and seed-1802 pairs, accepted recurrent seed 1903, plots tooling, and verified
+Drive records. The completed A100 sessions were released after their artifacts
+were verified; they are no longer consuming Colab credits.
 
 The cancelled 3,000-step seed-1802 attempt remains preserved as excluded audit
 evidence. Its replacement restarted from step zero and completed all 6,000
 steps as `REC-recurrent-s1802-6k`.
 
-Remaining accepted-run order:
-
-1. recurrent seed 1903;
-2. pooled seed 1903.
+The only remaining accepted run is pooled seed 1903.
 
 Do not overlap these runs, tune between them, change the fixed horizon, or read
 historical sealed artifacts.
@@ -41,7 +38,7 @@ Launch-source hashes:
 | `recurrent_1903.py` | `7ad2b6dccde3f16ea0ce05e58d2ca377aaeeb7ddad3386e1e0d3509d204f9b58` |
 | `pooled_1903.py` | `3b6e5d46a9ab27d2d5809c3429d495e98203ac3c1240991151defde6b95d576e` |
 
-## Launch recurrent seed 1903
+## Launch pooled seed 1903
 
 From the repository root:
 
@@ -50,14 +47,14 @@ git switch main
 git pull --ff-only
 .venv/bin/pytest -q
 
-sha256sum scripts/colab_spider_v0_2_specs/recurrent_1903.py
-better-colab session ensure spider-v02-rec-r1903 --gpu A100 --format json
+sha256sum scripts/colab_spider_v0_2_specs/pooled_1903.py
+better-colab session ensure spider-v02-pool-p1903 --gpu A100 --format json
 better-colab execution start \
-  --session spider-v02-rec-r1903 \
-  --file scripts/colab_spider_v0_2_specs/recurrent_1903.py \
+  --session spider-v02-pool-p1903 \
+  --file scripts/colab_spider_v0_2_specs/pooled_1903.py \
   --expected-source-sha256 \
-    sha256:7ad2b6dccde3f16ea0ce05e58d2ca377aaeeb7ddad3386e1e0d3509d204f9b58 \
-  --idempotency-key spider-v02-rec-r1903-6k-v1 \
+    sha256:3b6e5d46a9ab27d2d5809c3429d495e98203ac3c1240991151defde6b95d576e \
+  --idempotency-key spider-v02-pool-p1903-6k-v1 \
   --execution-timeout 18000 \
   --detach \
   --format json
@@ -80,18 +77,10 @@ size/parent metadata, add it to
 `artifacts/spider_v0_2/GOOGLE_DRIVE_BACKUP.json`, and commit/push a meaningful
 checkpoint record.
 
-## Launch the other remaining runs
-
-Repeat the same command shape using the exact spec/hash pairs above and fresh
-idempotency keys:
-
-```text
-spider-v02-pool-p1903-6k-v1
-```
-
-Do not launch the next run until the preceding result ZIP and standalone final
-checkpoint have been downloaded, deeply verified, uploaded to Drive, recorded,
-committed, and pushed. Stop each session after its artifacts are safe.
+Do not change the frozen spec, dataset, source commit, or evaluation policy.
+Download and verify each checkpoint as it is published, back it up to Drive,
+and commit its registry record. Stop the session after the final checkpoint and
+result ZIP are safe.
 
 ## Accept and report the complete matrix
 

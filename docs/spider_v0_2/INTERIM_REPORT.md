@@ -5,9 +5,9 @@
 This is a post-sealed architectural diagnostic, not a new sealed evaluation.
 The historical Spider v0 and v0.1 results remain unchanged.
 
-Two complete matched seed pairs are certified. The earlier recurrent seed-1802
-attempt that stopped at 3,000 steps remains excluded; its accepted replacement
-is a clean restart from step zero.
+Two complete matched seed pairs and the third recurrent run are certified. The
+earlier recurrent seed-1802 attempt that stopped at 3,000 steps remains
+excluded; its accepted replacement is a clean restart from step zero.
 
 | Run | Status | Fixed-horizon structural success | Exact evidence set |
 | --- | --- | ---: | ---: |
@@ -15,32 +15,35 @@ is a clean restart from step zero.
 | Pooled, seed 1701 | accepted, 6,000 steps | 0.4609375 | 0.4609375 |
 | Recurrent, seed 1802 | accepted, 6,000 steps | 0.3750000 | 0.3750000 |
 | Pooled, seed 1802 | accepted, 6,000 steps | 0.4453125 | 0.4453125 |
+| Recurrent, seed 1903 | accepted, 6,000 steps | 0.3984375 | 0.3984375 |
 
 The recurrent-minus-pooled structural deltas are `-0.0781250` for seed 1701
 and `-0.0703125` for seed 1802. Across these two pairs, recurrent averages
 `0.37890625`, pooled averages `0.45312500`, and the mean delta is
 `-0.07421875`. Pooled also has higher evidence average precision and F1 in both
 pairs: `0.6823` versus `0.4772` and `0.6667` versus `0.6190` for seed 1701;
-`0.5553` versus `0.4961` and `0.6764` versus `0.6721` for seed 1802. This is
-evidence against a recurrent advantage, but it is not the preregistered
-three-seed conclusion.
+`0.5553` versus `0.4961` and `0.6764` versus `0.6721` for seed 1802. Recurrent
+seed 1903 contributes structural success `0.3984`, evidence AP `0.5769`, and
+evidence F1 `0.6553`; the recurrent three-seed structural mean is `0.3854`.
+This is evidence against a recurrent advantage, but it is not the
+preregistered three-seed conclusion until pooled seed 1903 completes.
 
 ## Is recurrent state being used?
 
-Yes, for both accepted recurrent seeds:
+Yes, for all three accepted recurrent seeds:
 
-| Intervention | Seed 1701 | Seed 1802 | Seed 1701 delta | Seed 1802 delta |
-| --- | ---: | ---: | ---: | ---: |
-| Intact | 0.3828125 | 0.3750000 | 0.0000000 | 0.0000000 |
-| Detach between rounds | 0.3828125 | 0.3750000 | 0.0000000 | 0.0000000 |
-| Reset each round | 0.0000000 | 0.0000000 | -0.3828125 | -0.3750000 |
-| Shuffle across hypotheses | 0.0859375 | 0.1484375 | -0.2968750 | -0.2265625 |
-| Replace with pooled current node | 0.0625000 | 0.0859375 | -0.3203125 | -0.2890625 |
+| Intervention | Seed 1701 | Seed 1802 | Seed 1903 |
+| --- | ---: | ---: | ---: |
+| Intact | 0.3828125 | 0.3750000 | 0.3984375 |
+| Detach between rounds | 0.3828125 | 0.3750000 | 0.3984375 |
+| Reset each round | 0.0000000 | 0.0000000 | 0.0000000 |
+| Shuffle across hypotheses | 0.0859375 | 0.1484375 | 0.1171875 |
+| Replace with pooled current node | 0.0625000 | 0.0859375 | 0.0781250 |
 
 Detach is a gradient intervention and therefore should not alter a pure
 forward evaluation. Resetting, shuffling, and replacing state do alter the
-forward computation, and their large degradation across two seeds shows that
-both checkpoints use their recurrent path state. It does **not** show that
+forward computation, and their large degradation across three seeds shows that
+every recurrent checkpoint uses its path state. It does **not** show that
 recurrence is better than pooling: both completed matched pairs favour
 pooling.
 
@@ -67,11 +70,11 @@ The verified backup folder is
 
 The manifold substrate continues to support deterministic, exchangeable, and
 differentiable graph execution. The fixed-horizon diagnostic establishes,
-across two independently trained seeds, that recurrent state carries
+across three independently trained seeds, that recurrent state carries
 long-horizon information when premature termination is suppressed. It has not
 established that the recurrent processor earns its additional complexity: the
 matched pooled control is better on both complete seed pairs despite having
 fewer parameters (`200,549` versus `297,049`).
 
-Do not claim a final architecture result until both seed-1903 runs complete and
+Do not claim a final architecture result until pooled seed 1903 completes and
 the fail-closed six-run aggregator accepts the complete matrix.

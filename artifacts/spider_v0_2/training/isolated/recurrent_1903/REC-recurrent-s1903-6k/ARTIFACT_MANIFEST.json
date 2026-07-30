@@ -1,0 +1,68 @@
+{
+  "experiment_id": "REC-recurrent-s1903-6k",
+  "file_count_excluding_manifest": 15,
+  "files": {
+    "ENVIRONMENT.json": {
+      "bytes": 319,
+      "sha256": "c14d675f6608ce84e11a4502848041f5069e379d0149389bb0a8462f9a565465"
+    },
+    "JOB_STATUS.json": {
+      "bytes": 208,
+      "sha256": "69b954158697add3ec5be45e048b8992046fc021e161b7528f3c9f852f2ec53a"
+    },
+    "experiment_record.json": {
+      "bytes": 2111,
+      "sha256": "bfe873a6ad268320002f430c7187245ba8960260e41b1add9c03fa5225343b1b"
+    },
+    "run/checkpoint.manifest.json": {
+      "bytes": 560,
+      "sha256": "afea7c4e4350e7d362655decc5b3642bf4ac0018395d55fea9102b56568017b5"
+    },
+    "run/checkpoint.pt": {
+      "bytes": 3738411,
+      "sha256": "4b91a50e5f4178da9acf24c9a936aa21caa7ec607fa086988711d9d30f474fca"
+    },
+    "run/checkpoint_step_001000.pt": {
+      "bytes": 3750143,
+      "sha256": "93f4f519736ef76bb01f6a8774ac8260f79eb2ff30e9a8579749b340a0db2f97"
+    },
+    "run/checkpoint_step_002000.pt": {
+      "bytes": 3750143,
+      "sha256": "56f5f83525739f0ab0fb6766ae761fda31a8687470fdbbe22bc12abb6577d707"
+    },
+    "run/checkpoint_step_003000.pt": {
+      "bytes": 3750143,
+      "sha256": "06b7ea5ab58874b12b2ff56d60d139db450012a9769f27d7888b4f3d2c18269b"
+    },
+    "run/checkpoint_step_004000.pt": {
+      "bytes": 3750143,
+      "sha256": "98914bac7a9c281b3264e86ac94394175e8b08a4a09a487d13912d4030b731d1"
+    },
+    "run/checkpoint_step_005000.pt": {
+      "bytes": 3750143,
+      "sha256": "43def347a0b56b5342f3e75664241eab0dae4c2ddb966d30663add27f3947f0c"
+    },
+    "run/evidence_calibration.json": {
+      "bytes": 156529,
+      "sha256": "85f8dd2b6034cfe17b70132c1f6f7f696466212cd2dba07384f922dc18a03ee3"
+    },
+    "run/history.jsonl": {
+      "bytes": 7129,
+      "sha256": "9e0f308cf3a5712f80b6c9ad775fbbcc25de6a676f16885f52c8c0a5e49a5a80"
+    },
+    "run/metrics.json": {
+      "bytes": 395226,
+      "sha256": "b169466f3af9fbbf0a50f4296b3b5812b0d87db8148216c304ed4c2f9b2f84d4"
+    },
+    "run/resolved_config.json": {
+      "bytes": 2107,
+      "sha256": "76fc366e202c02eb9241cb46e5ebba498b12d869d15503fca4ca38864568e75a"
+    },
+    "training.log": {
+      "bytes": 259,
+      "sha256": "74a5381e14602e9be7dc28320167b1bb45faafd431895282302818ef1518d89b"
+    }
+  },
+  "sealed_access_count": 0,
+  "source_commit": "acb533666d481daf9b6fb56562d69a5dd78c5e0e"
+}
