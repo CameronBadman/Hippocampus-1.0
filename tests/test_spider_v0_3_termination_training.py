@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import torch
 
 from hippocampus import GraphSchema
@@ -193,3 +196,27 @@ def test_null_training_changes_only_branch_null_head() -> None:
         else:
             assert torch.equal(value, before[name]), name
     assert changed_null
+
+
+def test_registered_termination_arms_change_only_the_tested_mechanism() -> None:
+    configs = {
+        arm: json.loads(
+            Path(
+                f"configs/spider_v0_3/termination_{arm}.json"
+            ).read_text()
+        )
+        for arm in ("T0", "T1", "T2")
+    }
+
+    for config in configs.values():
+        assert config["dataset"]["protocol"] == "spider-v0.3-evidence-dev"
+        assert "sealed" not in json.dumps(config).lower()
+        assert config["model"]["kind"] == "pooled"
+        assert config["loss"]["termination"] == 1.0
+        assert config["loss"]["evidence"] == 0.0
+    assert configs["T0"]["model"]["termination_mode"] == "hierarchical"
+    assert configs["T1"]["model"]["termination_mode"] == "factorized"
+    assert configs["T1"]["controller"]["expansion_policy"] == "threshold"
+    assert configs["T2"]["model"]["termination_mode"] == "factorized"
+    assert configs["T2"]["model"]["use_null_expansion"]
+    assert configs["T2"]["controller"]["expansion_policy"] == "learned_null"
