@@ -554,13 +554,18 @@ def controller_rollout(
                 dtype=torch.int64,
                 device=batch.device,
             ),
+            factor_targets=(
+                oracle.termination_factor_targets(transition)
+                if termination_output.evidence_sufficient_logits is not None
+                else None
+            ),
             config=config,
         )
         null_expansion_term = null_expansion_loss_term(
             proposal.null_expansion_logits,
             supervision.candidates.acceptable,
             proposal.depth_eligible,
-            proposal.candidate_graph_ids,
+            proposal.expansion.frontier_positions,
             config=config,
         )
         reports.append(

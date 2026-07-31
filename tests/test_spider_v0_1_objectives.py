@@ -9,12 +9,14 @@ from hippocampus.spider import (
     SpiderLossConfig,
     SpiderModel,
     SpiderModelConfig,
+    TerminationFactorTargets,
     binary_average_precision,
     calibrate_evidence_threshold,
     candidate_loss_report,
     null_expansion_loss_term,
     termination_loss_report,
 )
+from hippocampus.spider.terminator import TerminationOutput
 
 
 def _outputs(evidence_logits: torch.Tensor) -> CandidateOutputs:
@@ -169,6 +171,21 @@ def test_factorized_termination_supervises_each_decision_boundary() -> None:
     report = termination_loss_report(
         output,
         torch.arange(6),
+        factor_targets=TerminationFactorTargets(
+            evidence_sufficient=torch.tensor(
+                [False, True, False, True, False, False]
+            ),
+            useful_work_remaining=torch.tensor(
+                [True, False, False, False, False, False]
+            ),
+            answer_supported=torch.tensor(
+                [False, True, False, False, False, False]
+            ),
+            unknown_reason=torch.tensor([0, 0, 0, 1, 2, 3]),
+            unknown_mask=torch.tensor(
+                [False, False, True, True, True, True]
+            ),
+        ),
         config=SpiderLossConfig(),
     )
 
@@ -181,7 +198,7 @@ def test_factorized_termination_supervises_each_decision_boundary() -> None:
     }
     assert report.terms["termination_evidence_sufficient"].target_count == 6
     assert report.terms["termination_useful_work"].target_count == 6
-    assert report.terms["termination_answer_supported"].target_count == 2
+    assert report.terms["termination_answer_supported"].target_count == 6
     assert report.terms["termination_unknown"].target_count == 4
     report.total.backward()
     assert any(
@@ -190,29 +207,72 @@ def test_factorized_termination_supervises_each_decision_boundary() -> None:
     )
 
 
+def test_factorized_termination_requires_direct_state_labels() -> None:
+    output = TerminationOutput(
+        logits=torch.zeros((1, 6)),
+        evidence_sufficient_logits=torch.zeros(1),
+        useful_work_remaining_logits=torch.zeros(1),
+        answer_supported_logits=torch.zeros(1),
+        unknown_logits=torch.zeros((1, 4)),
+    )
+
+    with pytest.raises(ValueError, match="direct state labels"):
+        termination_loss_report(
+            output,
+            torch.tensor([1]),
+            config=SpiderLossConfig(),
+        )
+
+
+def test_factorized_loss_does_not_reconstruct_factors_from_six_way_class() -> None:
+    sufficient = torch.tensor([2.0], requires_grad=True)
+    useful = torch.tensor([-2.0], requires_grad=True)
+    answer = torch.tensor([2.0], requires_grad=True)
+    unknown = torch.zeros((1, 4), requires_grad=True)
+    output = TerminationOutput(
+        logits=torch.zeros((1, 6)),
+        evidence_sufficient_logits=sufficient,
+        useful_work_remaining_logits=useful,
+        answer_supported_logits=answer,
+        unknown_logits=unknown,
+    )
+    direct = TerminationFactorTargets(
+        evidence_sufficient=torch.tensor([False]),
+        useful_work_remaining=torch.tensor([True]),
+        answer_supported=torch.tensor([False]),
+        unknown_reason=torch.tensor([0]),
+        unknown_mask=torch.tensor([False]),
+    )
+
+    report = termination_loss_report(
+        output,
+        # Deliberately contradictory: reconstruction from ANSWER would make
+        # evidence sufficiency and answer support true.
+        torch.tensor([1]),
+        factor_targets=direct,
+        config=SpiderLossConfig(),
+    )
+    report.total.backward()
+
+    assert report.terms["termination_unknown"].target_count == 0
+    assert sufficient.grad is not None and sufficient.grad.item() > 0
+    assert useful.grad is not None and useful.grad.item() < 0
+    assert answer.grad is not None and answer.grad.item() > 0
+    assert unknown.grad is not None
+    assert torch.equal(unknown.grad, torch.zeros_like(unknown.grad))
+
+
 def test_null_expansion_loss_changes_direction_with_reachable_work() -> None:
-    reject_logit = torch.tensor([0.0], requires_grad=True)
+    null_logits = torch.tensor([0.0, 0.0], requires_grad=True)
     reject = null_expansion_loss_term(
-        reject_logit,
-        torch.tensor([True, False]),
-        torch.tensor([True, True]),
-        torch.tensor([0, 0], dtype=torch.int32),
+        null_logits,
+        torch.tensor([True, False, False]),
+        torch.tensor([True, True, True]),
+        torch.tensor([0, 0, 1], dtype=torch.int32),
         config=SpiderLossConfig(),
     )
     assert reject is not None
     reject.weighted.backward()
-    assert reject_logit.grad is not None
-    assert reject_logit.grad.item() > 0
-
-    accept_logit = torch.tensor([0.0], requires_grad=True)
-    accept = null_expansion_loss_term(
-        accept_logit,
-        torch.tensor([False, False]),
-        torch.tensor([True, True]),
-        torch.tensor([0, 0], dtype=torch.int32),
-        config=SpiderLossConfig(),
-    )
-    assert accept is not None
-    accept.weighted.backward()
-    assert accept_logit.grad is not None
-    assert accept_logit.grad.item() < 0
+    assert null_logits.grad is not None
+    assert null_logits.grad[0].item() > 0
+    assert null_logits.grad[1].item() < 0

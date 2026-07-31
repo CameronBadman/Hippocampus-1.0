@@ -20,6 +20,55 @@ class TerminationOutput:
     answer_supported_logits: torch.Tensor | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class TerminationFactorTargets:
+    """Direct exact-state labels for the factorized termination heads."""
+
+    evidence_sufficient: torch.Tensor
+    useful_work_remaining: torch.Tensor
+    answer_supported: torch.Tensor
+    unknown_reason: torch.Tensor
+    unknown_mask: torch.Tensor
+
+    def validate(
+        self,
+        *,
+        batch_size: int,
+        device: torch.device,
+    ) -> "TerminationFactorTargets":
+        boolean_names = (
+            "evidence_sufficient",
+            "useful_work_remaining",
+            "answer_supported",
+            "unknown_mask",
+        )
+        for name in boolean_names:
+            value = getattr(self, name)
+            if value.shape != (batch_size,) or value.dtype != torch.bool:
+                raise ValueError(
+                    f"{name} must be bool[{batch_size}]"
+                )
+            if value.device != device:
+                raise ValueError(f"{name} must share the output device")
+        if (
+            self.unknown_reason.shape != (batch_size,)
+            or self.unknown_reason.dtype != torch.int64
+        ):
+            raise ValueError(
+                f"unknown_reason must be int64[{batch_size}]"
+            )
+        if self.unknown_reason.device != device:
+            raise ValueError("unknown_reason must share the output device")
+        if bool(
+            (
+                (self.unknown_reason[self.unknown_mask] < 0)
+                | (self.unknown_reason[self.unknown_mask] >= 4)
+            ).any().item()
+        ):
+            raise ValueError("unknown reasons must be in [0, 4)")
+        return self
+
+
 class TerminationHead(nn.Module):
     def __init__(self, d_model: int, control_width: int) -> None:
         super().__init__()

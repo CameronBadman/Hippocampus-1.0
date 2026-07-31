@@ -892,7 +892,7 @@ class SparseWavefrontController:
                     )
                 choose_null = (
                     proposal.null_expansion_logits[
-                        proposal.candidate_graph_ids.to(torch.int64)
+                        proposal.expansion.frontier_positions.to(torch.int64)
                     ]
                     >= 0
                 )

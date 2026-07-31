@@ -8,7 +8,7 @@ from torch.nn import functional as F
 
 from ..segmented import segment_logsumexp, segment_sum
 from .types import CandidateOutputs
-from .terminator import TerminationOutput
+from .terminator import TerminationFactorTargets, TerminationOutput
 
 
 EvidenceLossMode = Literal["plain", "balanced", "focal"]
@@ -421,7 +421,7 @@ def null_expansion_loss_term(
     null_logits: torch.Tensor | None,
     acceptable: torch.Tensor,
     depth_eligible: torch.Tensor,
-    candidate_graph_ids: torch.Tensor,
+    candidate_parent_positions: torch.Tensor,
     *,
     config: SpiderLossConfig,
 ) -> LossTerm | None:
@@ -432,18 +432,21 @@ def null_expansion_loss_term(
     if not (
         acceptable.shape
         == depth_eligible.shape
-        == candidate_graph_ids.shape
+        == candidate_parent_positions.shape
     ):
         raise ValueError("null-expansion supervision must align with candidates")
     targets = torch.ones_like(null_logits, dtype=torch.bool)
     preserving = acceptable.bool() & depth_eligible.bool()
     if bool(preserving.any().item()):
-        targets[
-            candidate_graph_ids[preserving].to(
-                device=null_logits.device,
-                dtype=torch.int64,
-            )
-        ] = False
+        parents = candidate_parent_positions[preserving].to(
+            device=null_logits.device,
+            dtype=torch.int64,
+        )
+        if bool((parents < 0).any().item()) or bool(
+            (parents >= null_logits.numel()).any().item()
+        ):
+            raise IndexError("candidate parent position is out of range")
+        targets[parents] = False
     raw = F.binary_cross_entropy_with_logits(
         null_logits.float(),
         targets.float(),
@@ -459,6 +462,7 @@ def termination_loss_report(
     output: TerminationOutput,
     targets: torch.Tensor,
     *,
+    factor_targets: TerminationFactorTargets | None = None,
     config: SpiderLossConfig,
 ) -> SpiderLossReport:
     """Return flat or masked hierarchical termination objectives."""
@@ -471,8 +475,16 @@ def termination_loss_report(
             or output.unknown_logits is None
         ):
             raise ValueError("factorized termination output is incomplete")
-        sufficient_targets = (resolved == 1) | (resolved == 3)
-        useful_targets = resolved == 0
+        if factor_targets is None:
+            raise ValueError(
+                "factorized termination requires direct state labels"
+            )
+        direct = factor_targets.validate(
+            batch_size=int(resolved.numel()),
+            device=output.logits.device,
+        )
+        sufficient_targets = direct.evidence_sufficient
+        useful_targets = direct.useful_work_remaining
         sufficient_raw = F.binary_cross_entropy_with_logits(
             output.evidence_sufficient_logits.float(),
             sufficient_targets.float(),
@@ -481,20 +493,16 @@ def termination_loss_report(
             output.useful_work_remaining_logits.float(),
             useful_targets.float(),
         )
-        if bool(sufficient_targets.any().item()):
-            answer_raw = F.binary_cross_entropy_with_logits(
-                output.answer_supported_logits[sufficient_targets].float(),
-                (resolved[sufficient_targets] == 1).float(),
-            )
-            answer_count = int(sufficient_targets.sum().item())
-        else:
-            answer_raw = _zero(output.answer_supported_logits)
-            answer_count = 0
-        unknown_mask = resolved >= 2
+        answer_raw = F.binary_cross_entropy_with_logits(
+            output.answer_supported_logits.float(),
+            direct.answer_supported.float(),
+        )
+        answer_count = int(resolved.numel())
+        unknown_mask = direct.unknown_mask
         if bool(unknown_mask.any().item()):
             unknown_raw = F.cross_entropy(
                 output.unknown_logits[unknown_mask].float(),
-                resolved[unknown_mask] - 2,
+                direct.unknown_reason[unknown_mask],
             )
             unknown_count = int(unknown_mask.sum().item())
         else:

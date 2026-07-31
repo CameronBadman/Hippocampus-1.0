@@ -223,3 +223,48 @@ def test_learned_null_action_is_distinct_from_global_termination() -> None:
     assert null_actions.frontier_candidate_indices.numel() == 0
     assert candidate_actions.frontier_candidate_indices.numel() > 0
     assert null_actions.termination_source is ActionSource.MODEL
+
+
+def test_learned_null_removes_only_its_parent_hypothesis() -> None:
+    batch, model, controller = _fixture(learned_null=True)
+    initial = model.initial_hypotheses(batch)
+    hypotheses = initial.repeat_occurrences(
+        torch.tensor([0, 0], dtype=torch.int64)
+    )
+    state = ControllerState.initial()
+    proposal = controller.propose(
+        model,
+        batch,
+        hypotheses,
+        model.initial_evidence(batch),
+        state,
+    )
+    assert proposal.expansion.total_arcs > 0
+    proposal = replace(
+        proposal,
+        candidate_outputs=replace(
+            proposal.candidate_outputs,
+            expand_logits=torch.full_like(
+                proposal.candidate_outputs.expand_logits,
+                10.0,
+            ),
+        ),
+        null_expansion_logits=torch.tensor(
+            [10.0, -10.0],
+            device=batch.device,
+        ),
+    )
+
+    actions = controller.choose_actions(
+        proposal,
+        supervision=None,
+        state=state,
+        schedule=ActionSchedule.model_only(),
+        randomizer=random.Random(3),
+    )
+
+    selected_parents = proposal.expansion.frontier_positions[
+        actions.frontier_candidate_indices
+    ]
+    assert selected_parents.numel() > 0
+    assert torch.all(selected_parents == 1)

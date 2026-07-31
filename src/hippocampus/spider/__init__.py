@@ -94,6 +94,7 @@ from .protocol_v0_3 import (
     verify_grouped_development_manifest,
 )
 from .state_oracle import EvidenceRequirement, StateOracle, StateSupervision
+from .terminator import TerminationFactorTargets
 from .set_attention import (
     AttentionBackendStatus,
     PositionFreeCrossAttention,
@@ -172,6 +173,7 @@ __all__ = [
     "SpiderLossReport",
     "StateOracle",
     "StateSupervision",
+    "TerminationFactorTargets",
     "TraceLedgerEntry",
     "TemperatureScalingResult",
     "TrainingLoopConfig",

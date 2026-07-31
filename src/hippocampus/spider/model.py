@@ -390,19 +390,33 @@ class CandidateScorerBase(nn.Module, ABC):
         evidence: torch.Tensor,
         controller_features: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        """Score the explicit per-graph action that selects no candidate."""
+        """Score one explicit NULL action for every active hypothesis."""
 
         if self.null_expansion_head is None:
             raise RuntimeError(
                 "null expansion was not enabled in SpiderModelConfig"
             )
-        inputs = self._global_state_inputs(
-            batch,
-            hypotheses,
-            evidence,
-            controller_features,
+        if hypotheses.count == 0:
+            return evidence.new_empty((0,))
+        graph_ids = hypotheses.graph_ids.to(torch.int64)
+        query_set = self._queries(batch, graph_ids)
+        query = masked_mean(query_set.values, query_set.mask)
+        evidence_pool = (
+            evidence[graph_ids].mean(dim=1)
+            if self.config.use_global_evidence
+            else query.new_zeros((hypotheses.count, self.config.d_model))
         )
-        return self.null_expansion_head(torch.cat(inputs, dim=-1)).squeeze(-1)
+        path = hypotheses.path_state.mean(dim=1)
+        control = (
+            query.new_zeros(
+                (hypotheses.count, self.config.control_width)
+            )
+            if controller_features is None
+            else controller_features[graph_ids]
+        )
+        return self.null_expansion_head(
+            torch.cat((query, evidence_pool, path, control), dim=-1)
+        ).squeeze(-1)
 
     def termination_output(
         self,

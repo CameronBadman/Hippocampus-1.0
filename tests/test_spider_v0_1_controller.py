@@ -424,6 +424,11 @@ def test_state_oracle_continues_recoverable_off_oracle_frontier() -> None:
     )
 
     assert oracle.termination_target(transition).decision.value == "continue"
+    factors = oracle.termination_factor_targets(transition)
+    assert not factors.evidence_sufficient.item()
+    assert factors.useful_work_remaining.item()
+    assert not factors.answer_supported.item()
+    assert not factors.unknown_mask.item()
 
 
 def test_state_oracle_handles_partial_and_duplicate_frontiers() -> None:
@@ -483,3 +488,9 @@ def test_state_oracle_marks_unrecoverable_budget_state_incomplete() -> None:
         oracle.termination_target(transition).decision.value
         == "unknown_incomplete"
     )
+    factors = oracle.termination_factor_targets(transition)
+    assert not factors.evidence_sufficient.item()
+    assert not factors.useful_work_remaining.item()
+    assert not factors.answer_supported.item()
+    assert factors.unknown_mask.item()
+    assert factors.unknown_reason.item() == 2

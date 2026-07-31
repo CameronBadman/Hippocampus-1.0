@@ -16,6 +16,7 @@ from .config import SparseControllerConfig
 from .controller import ControllerProposal, ControllerState, ControllerTransition
 from .hypothesis import HypothesisBatch
 from .losses import CandidateSupervision
+from .terminator import TerminationFactorTargets
 
 
 @dataclass(frozen=True, slots=True)
@@ -582,3 +583,76 @@ class StateOracle:
         if expected is TerminationDecision.UNKNOWN_ABSENT:
             return TerminationTarget(TerminationDecision.UNKNOWN_ABSENT)
         return TerminationTarget(TerminationDecision.UNKNOWN_INCOMPLETE)
+
+    def termination_factor_targets(
+        self,
+        transition: ControllerTransition,
+    ) -> TerminationFactorTargets:
+        """Derive factor labels directly from exact post-transition state.
+
+        These labels intentionally do not decode or reconstruct the six-way
+        termination target. Each factor comes from the accumulated evidence,
+        reachable productive work, latent answer predicate, and exact program
+        failure condition.
+        """
+
+        state = transition.next_controller_state
+        required = set(self.required_evidence)
+        accumulated = self._accumulated_requirements(state)
+        requirements_satisfied = required.issubset(accumulated)
+        expected = self.case.termination.decision
+        answer_supported = (
+            self.case.answerable and requirements_satisfied
+        )
+        conflict_sufficient = (
+            expected is TerminationDecision.UNKNOWN_CONFLICT
+            and requirements_satisfied
+        )
+        evidence_sufficient = answer_supported or conflict_sufficient
+        useful_work_remaining = (
+            not evidence_sufficient
+            and expected is not TerminationDecision.UNKNOWN_UNSUPPORTED
+            and self._completion_is_reachable(
+                transition.next_hypotheses,
+                state,
+            )
+        )
+        unknown_mask = (
+            not answer_supported and not useful_work_remaining
+        )
+        if expected is TerminationDecision.UNKNOWN_UNSUPPORTED:
+            unknown_reason = 3
+        elif expected is TerminationDecision.UNKNOWN_ABSENT:
+            unknown_reason = 0
+        elif conflict_sufficient:
+            unknown_reason = 1
+        else:
+            unknown_reason = 2
+        device = self.batch.device
+        return TerminationFactorTargets(
+            evidence_sufficient=torch.tensor(
+                [evidence_sufficient],
+                dtype=torch.bool,
+                device=device,
+            ),
+            useful_work_remaining=torch.tensor(
+                [useful_work_remaining],
+                dtype=torch.bool,
+                device=device,
+            ),
+            answer_supported=torch.tensor(
+                [answer_supported],
+                dtype=torch.bool,
+                device=device,
+            ),
+            unknown_reason=torch.tensor(
+                [unknown_reason],
+                dtype=torch.int64,
+                device=device,
+            ),
+            unknown_mask=torch.tensor(
+                [unknown_mask],
+                dtype=torch.bool,
+                device=device,
+            ),
+        )
