@@ -67,7 +67,8 @@ changed source under the same idempotency key.
 
 The worker mounts Google Drive and mirrors every file only after it is stable
 across two observations. Final shutdown forces one last verified copy. The
-destination is:
+same single A100 session runs the evidence matrix and then the T0/T1/T2
+termination matrix. The destination is:
 
 ```text
 My Drive/Hippocampus-1.0/Spider-v0.3-Evidence/<source-commit-prefix>/

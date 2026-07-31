@@ -25,18 +25,21 @@ import zipfile
 
 REPOSITORY_URL = "https://github.com/CameronBadman/Hippocampus-1.0.git"
 REPOSITORY = Path("/content/hippocampus-spider-v03-source")
-OUTPUT_ROOT = Path("/content/spider-v03-evidence")
+OUTPUT_ROOT = Path("/content/spider-v03")
+EVIDENCE_OUTPUT = OUTPUT_ROOT / "evidence"
+TERMINATION_OUTPUT = OUTPUT_ROOT / "termination"
 DRIVE_PROJECT_PATH = "Hippocampus-1.0/Spider-v0.3-Evidence"
 REQUIRED_ACCELERATOR = "A100"
 DATASET_SHA256 = (
     "0ed8e27ec44f3773f76b79f1947526f33ba233556b7db91fef04dcb647e5409d"
 )
 HEARTBEAT_SECONDS = 60
-TRAINING_TIMEOUT_SECONDS = 64_800
+TRAINING_TIMEOUT_SECONDS = 82_800
 RUNNER_TIMEOUT_SECONDS = 21_600
 EXPECTED_SCREEN_RUNS = 9
 EXPECTED_MINIMUM_RECORDS = 12
 EXPECTED_MAXIMUM_RECORDS = 15
+EXPECTED_TERMINATION_RECORDS = 9
 
 
 class SyncResult(NamedTuple):
@@ -327,10 +330,16 @@ def monitor_matrix(
     spec: dict[str, str],
     drive_root: Path,
     log_path: Path,
+    phase: str,
+    initial_copied: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, dict[str, Any]]:
     started = time.monotonic()
-    previous: dict[str, tuple[int, int]] = {}
-    copied: dict[str, dict[str, Any]] = {}
+    previous = (
+        observe_files(OUTPUT_ROOT)
+        if initial_copied
+        else {}
+    )
+    copied = dict(initial_copied or {})
     while process.poll() is None:
         elapsed = time.monotonic() - started
         if elapsed > TRAINING_TIMEOUT_SECONDS:
@@ -369,7 +378,7 @@ def monitor_matrix(
         write_status(
             local_root=OUTPUT_ROOT,
             drive_root=drive_root,
-            state="training",
+            state=phase,
             spec=spec,
             extra=heartbeat,
         )
@@ -389,17 +398,17 @@ def monitor_matrix(
             else ""
         )
         raise RuntimeError(
-            f"evidence matrix exited {process.returncode}; log tail:\n{tail}"
+            f"{phase} exited {process.returncode}; log tail:\n{tail}"
         )
     return sync.copied
 
 
-def run_matrix(
+def run_evidence_matrix(
     *,
     spec: dict[str, str],
     drive_root: Path,
 ) -> dict[str, dict[str, Any]]:
-    log_path = OUTPUT_ROOT / "colab_matrix.log"
+    log_path = EVIDENCE_OUTPUT / "colab_matrix.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     command = [
         sys.executable,
@@ -408,7 +417,7 @@ def run_matrix(
         "--phase",
         spec["phase"],
         "--output-root",
-        str(OUTPUT_ROOT),
+        str(EVIDENCE_OUTPUT),
         "--timeout-seconds",
         str(RUNNER_TIMEOUT_SECONDS),
     ]
@@ -425,15 +434,55 @@ def run_matrix(
         spec=spec,
         drive_root=drive_root,
         log_path=log_path,
+        phase="evidence_training",
     )
 
 
-def validate_result(
+def run_termination_matrix(
+    *,
+    spec: dict[str, str],
+    drive_root: Path,
+    copied: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    log_path = TERMINATION_OUTPUT / "colab_matrix.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    command = [
+        sys.executable,
+        "-u",
+        "scripts/run_spider_v0_3_termination_matrix.py",
+        "--evidence-output-root",
+        str(EVIDENCE_OUTPUT),
+        "--output-root",
+        str(TERMINATION_OUTPUT),
+        "--timeout-seconds",
+        str(RUNNER_TIMEOUT_SECONDS),
+        "--device",
+        "cuda",
+    ]
+    with log_path.open("ab") as log:
+        process = subprocess.Popen(
+            command,
+            cwd=REPOSITORY,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    return monitor_matrix(
+        process,
+        spec=spec,
+        drive_root=drive_root,
+        log_path=log_path,
+        phase="termination_training",
+        initial_copied=copied,
+    )
+
+
+def validate_evidence_result(
     *,
     spec: dict[str, str],
     drive_root: Path,
 ) -> dict[str, Any]:
-    ledger_path = OUTPUT_ROOT / "experiments.jsonl"
+    ledger_path = EVIDENCE_OUTPUT / "experiments.jsonl"
     records = [
         json.loads(line)
         for line in ledger_path.read_text().splitlines()
@@ -460,7 +509,7 @@ def validate_result(
                 f"invalid experiment status: {record['experiment_id']}"
             )
     checkpoint_records: dict[str, dict[str, Any]] = {}
-    for checkpoint in sorted(OUTPUT_ROOT.rglob("checkpoint*.pt")):
+    for checkpoint in sorted(EVIDENCE_OUTPUT.rglob("checkpoint*.pt")):
         relative = str(checkpoint.relative_to(OUTPUT_ROOT))
         remote = drive_root / relative
         if not remote.is_file():
@@ -494,9 +543,80 @@ def validate_result(
     }
 
 
+def validate_termination_result(
+    *,
+    spec: dict[str, str],
+    drive_root: Path,
+) -> dict[str, Any]:
+    records = [
+        json.loads(line)
+        for line in (
+            TERMINATION_OUTPUT / "experiments.jsonl"
+        ).read_text().splitlines()
+        if line.strip()
+    ]
+    if len(records) != EXPECTED_TERMINATION_RECORDS:
+        raise RuntimeError(
+            f"expected 9 termination records, found {len(records)}"
+        )
+    for record in records:
+        if record["source_commit"] != spec["source_commit"]:
+            raise RuntimeError("termination source commit drift")
+        if record["dataset_hash"] != DATASET_SHA256:
+            raise RuntimeError("termination dataset hash drift")
+        if record["sealed_access_count"] != 0:
+            raise RuntimeError("termination experiment accessed sealed data")
+        if record["status"] not in {"accepted", "guard_violation"}:
+            raise RuntimeError(
+                f"invalid termination status: {record['experiment_id']}"
+            )
+    decision = json.loads(
+        (
+            TERMINATION_OUTPUT / "TERMINATION_DECISION.json"
+        ).read_text()
+    )
+    checkpoints: dict[str, dict[str, Any]] = {}
+    for checkpoint in sorted(
+        TERMINATION_OUTPUT.rglob("checkpoint*.pt")
+    ):
+        relative = str(checkpoint.relative_to(OUTPUT_ROOT))
+        remote = drive_root / relative
+        if not remote.is_file():
+            raise RuntimeError(
+                f"termination checkpoint missing from Drive: {relative}"
+            )
+        digest = sha256(checkpoint)
+        if sha256(remote) != digest:
+            raise RuntimeError(
+                f"termination Drive hash mismatch: {relative}"
+            )
+        checkpoints[relative] = {
+            "bytes": checkpoint.stat().st_size,
+            "sha256": digest,
+            "drive_path": str(remote),
+        }
+    if len(checkpoints) < EXPECTED_TERMINATION_RECORDS:
+        raise RuntimeError("termination checkpoint set is incomplete")
+    return {
+        "source_commit": spec["source_commit"],
+        "dataset_sha256": DATASET_SHA256,
+        "sealed_access_count": 0,
+        "experiment_record_count": len(records),
+        "accepted_run_count": sum(
+            record["status"] == "accepted" for record in records
+        ),
+        "guard_violation_count": sum(
+            record["status"] == "guard_violation" for record in records
+        ),
+        "decision": decision,
+        "checkpoint_count": len(checkpoints),
+        "checkpoints": checkpoints,
+    }
+
+
 def package_metadata(spec: dict[str, str]) -> tuple[Path, str]:
     archive = Path(
-        f"/content/spider-v03-evidence-{spec['source_commit'][:12]}.zip"
+        f"/content/spider-v03-{spec['source_commit'][:12]}.zip"
     )
     with zipfile.ZipFile(
         archive,
@@ -532,6 +652,7 @@ def publish_archive(archive: Path, archive_sha256: str) -> None:
 def main() -> None:
     spec = validate_spec(globals().get("RUN_SPEC"))
     drive_root: Path | None = None
+    copied: dict[str, dict[str, Any]] = {}
     error: str | None = None
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     write_status(
@@ -560,11 +681,28 @@ def main() -> None:
                 "drive_path": str(drive_root),
             },
         )
-        run_matrix(spec=spec, drive_root=drive_root)
-        drive_manifest = validate_result(
+        copied = run_evidence_matrix(spec=spec, drive_root=drive_root)
+        evidence_manifest = validate_evidence_result(
             spec=spec,
             drive_root=drive_root,
         )
+        copied = run_termination_matrix(
+            spec=spec,
+            drive_root=drive_root,
+            copied=copied,
+        )
+        termination_manifest = validate_termination_result(
+            spec=spec,
+            drive_root=drive_root,
+        )
+        drive_manifest = {
+            "source_commit": spec["source_commit"],
+            "dataset_sha256": DATASET_SHA256,
+            "sealed_access_count": 0,
+            "evidence": evidence_manifest,
+            "termination": termination_manifest,
+            "synced_file_count": len(copied),
+        }
         _atomic_json(
             OUTPUT_ROOT / "GOOGLE_DRIVE_CHECKPOINTS.json",
             drive_manifest,
@@ -572,8 +710,8 @@ def main() -> None:
         sync_stable_files(
             OUTPUT_ROOT,
             drive_root,
-            previous={},
-            copied={},
+            previous=observe_files(OUTPUT_ROOT),
+            copied=copied,
             force=True,
         )
         archive, archive_sha256 = package_metadata(spec)
@@ -587,11 +725,20 @@ def main() -> None:
                 "archive": str(archive),
                 "archive_sha256": archive_sha256,
                 "drive_path": str(drive_root),
-                "checkpoint_count": drive_manifest["checkpoint_count"],
-                "experiment_record_count": drive_manifest[
+                "checkpoint_count": (
+                    evidence_manifest["checkpoint_count"]
+                    + termination_manifest["checkpoint_count"]
+                ),
+                "evidence_record_count": evidence_manifest[
                     "experiment_record_count"
                 ],
-                "accepted_run_count": drive_manifest["accepted_run_count"],
+                "termination_record_count": termination_manifest[
+                    "experiment_record_count"
+                ],
+                "accepted_run_count": (
+                    evidence_manifest["accepted_run_count"]
+                    + termination_manifest["accepted_run_count"]
+                ),
             },
         )
         publish_archive(archive, archive_sha256)
@@ -612,8 +759,8 @@ def main() -> None:
             sync_stable_files(
                 OUTPUT_ROOT,
                 drive_root,
-                previous={},
-                copied={},
+                previous=observe_files(OUTPUT_ROOT),
+                copied=copied,
                 force=True,
             )
         print(json.dumps(status, sort_keys=True), flush=True)

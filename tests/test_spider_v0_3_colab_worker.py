@@ -43,8 +43,12 @@ def test_worker_requires_one_a100_and_pinned_nonsealed_protocol() -> None:
     assert len(str(constants["DATASET_SHA256"])) == 64
     assert constants["HEARTBEAT_SECONDS"] <= 60
     assert constants["TRAINING_TIMEOUT_SECONDS"] >= 21_600
+    assert constants["EXPECTED_TERMINATION_RECORDS"] == 9
     assert "spider-v0.2" not in str(constants["DRIVE_PROJECT_PATH"])
     assert "Spider-v0.3-Evidence" in str(constants["DRIVE_PROJECT_PATH"])
+    source = WORKER.read_text()
+    assert "run_spider_v0_3_autoresearch.py" in source
+    assert "run_spider_v0_3_termination_matrix.py" in source
 
 
 def test_run_spec_requires_exact_commit_and_matrix_protocol() -> None:
