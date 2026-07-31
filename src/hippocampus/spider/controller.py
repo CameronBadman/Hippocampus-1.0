@@ -135,6 +135,7 @@ class ControllerState:
 
 @dataclass(frozen=True, slots=True)
 class ControllerProposal:
+    full_expansion: FrontierExpansion
     expansion: FrontierExpansion
     candidate_control_features: torch.Tensor
     candidate_outputs: CandidateOutputs
@@ -146,6 +147,8 @@ class ControllerProposal:
     search_truncated: bool
     candidate_graph_ids: torch.Tensor
     null_expansion_logits: torch.Tensor | None = None
+    pre_context_outputs: CandidateOutputs | None = None
+    context_refined: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -218,6 +221,14 @@ ControllerStep = ControllerTransition
 
 
 @dataclass(frozen=True, slots=True)
+class ControllerActionSelection:
+    """Context-refined proposal and the actions chosen from it."""
+
+    proposal: ControllerProposal
+    actions: ControllerActions
+
+
+@dataclass(frozen=True, slots=True)
 class ActionDiagnostic:
     round_index: int
     frontier_source: ActionSource
@@ -228,6 +239,19 @@ class ActionDiagnostic:
     context_candidate_indices: tuple[int, ...]
     evidence_candidate_indices: tuple[int, ...]
     executed_termination: TerminationDecision
+
+
+@dataclass(frozen=True, slots=True)
+class ControllerRoundRecord:
+    """One exact model-policy round for evaluator-side observation."""
+
+    hypotheses: HypothesisBatch
+    controller_state: ControllerState
+    proposal: ControllerProposal
+    actions: ControllerActions
+    transition: ControllerTransition
+    termination_output: TerminationOutput | None
+    termination: tuple[TerminationDecision, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -244,6 +268,7 @@ class ControllerResult:
     rounds: int
     arcs_scored: int
     contexts_read: int
+    round_records: tuple[ControllerRoundRecord, ...] = ()
 
 
 class _CandidateTargets(Protocol):
@@ -500,6 +525,75 @@ def _filtered_stable_selection(
     return eligible_indices[selected_local]
 
 
+def _filtered_stable_evidence_selection(
+    proposal: ControllerProposal,
+    eligible_indices: torch.Tensor,
+    priorities: torch.Tensor,
+    *,
+    width: int,
+    state: ControllerState,
+) -> torch.Tensor:
+    """Select unique logical evidence actions without a destination cap."""
+
+    device = proposal.expansion.arc_ids.device
+    eligible = eligible_indices.to(device=device, dtype=torch.int64)
+    if width <= 0 or eligible.numel() == 0:
+        return torch.empty(0, dtype=torch.int64, device=device)
+
+    if state.evidence_ledger:
+        recorded_edges = torch.tensor(
+            sorted({entry.edge_id for entry in state.evidence_ledger}),
+            dtype=proposal.expansion.edge_ids.dtype,
+            device=device,
+        )
+        repeated = (
+            proposal.expansion.edge_ids[eligible, None]
+            == recorded_edges[None, :]
+        ).any(dim=1)
+        eligible = eligible[~repeated]
+        if eligible.numel() == 0:
+            return eligible
+
+    sliced = _slice_expansion(
+        proposal.expansion,
+        eligible,
+        frontier_count=proposal.expansion.arc_offsets.numel() - 1,
+    )
+    local_order = _stable_priority_order(
+        sliced,
+        priorities[eligible],
+    )
+    ordered = eligible[local_order]
+    ordered_edges = proposal.expansion.edge_ids[ordered].to(torch.int64)
+
+    grouped_permutation = torch.argsort(ordered_edges, stable=True)
+    grouped = ordered[grouped_permutation]
+    grouped_edges = ordered_edges[grouped_permutation]
+    first = torch.ones(
+        grouped.numel(),
+        dtype=torch.bool,
+        device=device,
+    )
+    first[1:] = grouped_edges[1:] != grouped_edges[:-1]
+    unique_candidates = grouped[first]
+
+    priority_rank = torch.full(
+        (proposal.expansion.total_arcs,),
+        ordered.numel(),
+        dtype=torch.int64,
+        device=device,
+    )
+    priority_rank[ordered] = torch.arange(
+        ordered.numel(),
+        dtype=torch.int64,
+        device=device,
+    )
+    unique_candidates = unique_candidates[
+        torch.argsort(priority_rank[unique_candidates], stable=True)
+    ]
+    return unique_candidates[:width]
+
+
 class SparseWavefrontController:
     """One packed controller transition shared by training and inference."""
 
@@ -648,6 +742,7 @@ class SparseWavefrontController:
                 device=batch.device,
             )
         return ControllerProposal(
+            full_expansion=full_expansion,
             expansion=expansion,
             candidate_control_features=controls,
             candidate_outputs=outputs,
@@ -669,16 +764,29 @@ class SparseWavefrontController:
         state: ControllerState,
         schedule: ActionSchedule,
         randomizer: random.Random,
+        resolved_sources: dict[str, ActionSource] | None = None,
+        context_candidate_indices: torch.Tensor | None = None,
     ) -> ControllerActions:
         """Choose four independently scheduled action sources."""
 
         candidates = None if supervision is None else supervision.candidates
-        sources = {
-            "frontier": _source(schedule.frontier, randomizer),
-            "context": _source(schedule.context, randomizer),
-            "evidence": _source(schedule.evidence, randomizer),
-            "termination": _source(schedule.termination, randomizer),
-        }
+        sources = (
+            {
+                "frontier": _source(schedule.frontier, randomizer),
+                "context": _source(schedule.context, randomizer),
+                "evidence": _source(schedule.evidence, randomizer),
+                "termination": _source(schedule.termination, randomizer),
+            }
+            if resolved_sources is None
+            else dict(resolved_sources)
+        )
+        if set(sources) != {
+            "frontier",
+            "context",
+            "evidence",
+            "termination",
+        }:
+            raise ValueError("resolved action sources are incomplete")
         if candidates is None and any(
             source is ActionSource.ORACLE for source in sources.values()
         ):
@@ -695,7 +803,16 @@ class SparseWavefrontController:
             proposal.evidence_limit - state.evidence_selected,
         )
 
-        if sources["context"] is ActionSource.ORACLE:
+        if context_candidate_indices is not None:
+            context = _validate_action_indices(
+                "context",
+                context_candidate_indices,
+                count=proposal.expansion.total_arcs,
+                device=device,
+            )
+            if context.numel() > remaining_context:
+                raise ValueError("context actions exceed the remaining budget")
+        elif sources["context"] is ActionSource.ORACLE:
             assert candidates is not None
             context = torch.nonzero(
                 candidates.context_has_value,
@@ -726,12 +843,12 @@ class SparseWavefrontController:
                 candidates.include_as_evidence,
                 as_tuple=False,
             ).flatten()
-            evidence = _filtered_stable_selection(
+            evidence = _filtered_stable_evidence_selection(
                 proposal,
                 evidence_eligible,
                 -candidates.remaining_cost,
                 width=remaining_evidence,
-                per_node=1,
+                state=state,
             )
         else:
             evidence_eligible = torch.nonzero(
@@ -739,12 +856,12 @@ class SparseWavefrontController:
                 >= self.config.evidence_threshold,
                 as_tuple=False,
             ).flatten()
-            evidence = _filtered_stable_selection(
+            evidence = _filtered_stable_evidence_selection(
                 proposal,
                 evidence_eligible,
                 outputs.evidence_logits,
                 width=remaining_evidence,
-                per_node=1,
+                state=state,
             )
 
         if sources["frontier"] is ActionSource.ORACLE:
@@ -805,6 +922,60 @@ class SparseWavefrontController:
             termination_source=sources["termination"],
         )
 
+    def select_actions(
+        self,
+        model: CandidateScorerBase,
+        batch: PackedProgramBatch,
+        proposal: ControllerProposal,
+        *,
+        supervision: _StateSupervision | None,
+        state: ControllerState,
+        schedule: ActionSchedule,
+        randomizer: random.Random,
+    ) -> ControllerActionSelection:
+        """Choose context first, then use refined outputs for later actions."""
+
+        preliminary = self.choose_actions(
+            proposal,
+            supervision=supervision,
+            state=state,
+            schedule=schedule,
+            randomizer=randomizer,
+        )
+        refined_outputs = model.refine_with_context(
+            batch,
+            proposal.expansion,
+            proposal.candidate_outputs,
+            preliminary.context_candidate_indices,
+        )
+        refined_proposal = replace(
+            proposal,
+            candidate_outputs=refined_outputs,
+            pre_context_outputs=proposal.candidate_outputs,
+            context_refined=True,
+        )
+        resolved_sources = {
+            "frontier": preliminary.frontier_source,
+            "context": preliminary.context_source,
+            "evidence": preliminary.evidence_source,
+            "termination": preliminary.termination_source,
+        }
+        actions = self.choose_actions(
+            refined_proposal,
+            supervision=supervision,
+            state=state,
+            schedule=schedule,
+            randomizer=randomizer,
+            resolved_sources=resolved_sources,
+            context_candidate_indices=(
+                preliminary.context_candidate_indices
+            ),
+        )
+        return ControllerActionSelection(
+            proposal=refined_proposal,
+            actions=actions,
+        )
+
     def apply(
         self,
         model: CandidateScorerBase,
@@ -855,11 +1026,15 @@ class SparseWavefrontController:
         ):
             raise ValueError("frontier actions include a depth-ineligible candidate")
 
-        refined = model.refine_with_context(
-            batch,
-            proposal.expansion,
-            proposal.candidate_outputs,
-            context_indices,
+        refined = (
+            proposal.candidate_outputs
+            if proposal.context_refined
+            else model.refine_with_context(
+                batch,
+                proposal.expansion,
+                proposal.candidate_outputs,
+                context_indices,
+            )
         )
         context_flags = torch.zeros(
             count,
@@ -1080,7 +1255,9 @@ class SparseWavefrontController:
         randomizer: random.Random,
     ) -> ControllerTransition:
         proposal = self.propose(model, batch, hypotheses, evidence, state)
-        actions = self.choose_actions(
+        selection = self.select_actions(
+            model,
+            batch,
             proposal,
             supervision=supervision,
             state=state,
@@ -1093,8 +1270,8 @@ class SparseWavefrontController:
             hypotheses,
             evidence,
             state,
-            proposal,
-            actions,
+            selection.proposal,
+            selection.actions,
         )
 
     def step(
@@ -1208,6 +1385,7 @@ class SparseWavefrontController:
         state = ControllerState.initial()
         arc_trace: list[tuple[int, ...]] = []
         diagnostics: list[ActionDiagnostic] = []
+        round_records: list[ControllerRoundRecord] = []
         termination = tuple(
             TerminationDecision.CONTINUE for _ in range(batch.graph_count)
         )
@@ -1222,14 +1400,20 @@ class SparseWavefrontController:
                 round_index=state.round_index,
                 seed=policy.intervention_seed,
             )
+            round_hypotheses = hypotheses
+            round_state = state
             proposal = self.propose(model, batch, hypotheses, evidence, state)
-            actions = self.choose_actions(
+            selection = self.select_actions(
+                model,
+                batch,
                 proposal,
                 supervision=None,
                 state=state,
                 schedule=ActionSchedule.model_only(),
                 randomizer=randomizer,
             )
+            proposal = selection.proposal
+            actions = selection.actions
             transition = self.apply(
                 model,
                 batch,
@@ -1253,6 +1437,7 @@ class SparseWavefrontController:
                 policy.horizon_mode is HorizonMode.LEARNED
                 or round_offset == round_limit - 1
             )
+            final_output: TerminationOutput | None = None
             if evaluate_termination:
                 final_output = model.termination_output(
                     batch,
@@ -1270,6 +1455,17 @@ class SparseWavefrontController:
                     TerminationDecision.CONTINUE
                     for _ in range(batch.graph_count)
                 )
+            round_records.append(
+                ControllerRoundRecord(
+                    hypotheses=round_hypotheses,
+                    controller_state=round_state,
+                    proposal=proposal,
+                    actions=actions,
+                    transition=transition,
+                    termination_output=final_output,
+                    termination=termination,
+                )
+            )
             diagnostics.append(
                 ActionDiagnostic(
                     round_index=state.round_index - 1,
@@ -1320,4 +1516,5 @@ class SparseWavefrontController:
             rounds=state.round_index,
             arcs_scored=state.arcs_scored,
             contexts_read=state.contexts_read,
+            round_records=tuple(round_records),
         )

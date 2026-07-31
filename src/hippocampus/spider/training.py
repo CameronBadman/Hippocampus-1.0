@@ -493,13 +493,17 @@ def controller_rollout(
             state,
         )
         supervision = oracle.label(proposal, hypotheses, state)
-        actions = controller.choose_actions(
+        selection = controller.select_actions(
+            model,
+            batch,
             proposal,
             supervision=supervision,
             state=state,
             schedule=action_schedule,
             randomizer=randomizer,
         )
+        proposal = selection.proposal
+        actions = selection.actions
         transition = controller.apply(
             model,
             batch,
@@ -518,13 +522,18 @@ def controller_rollout(
             transition.termination_control,
         )
         termination_logits = termination_output.logits
+        context_logits = (
+            proposal.pre_context_outputs.context_logits
+            if proposal.pre_context_outputs is not None
+            else proposal.candidate_outputs.context_logits
+        )
         candidate_report = candidate_loss_report(
             transition.refined_outputs,
             supervision.candidates,
             proposal.expansion.frontier_positions,
             frontier_count=hypotheses.count,
             config=config,
-            context_logits=proposal.candidate_outputs.context_logits,
+            context_logits=context_logits,
         )
         termination_report = termination_loss_report(
             termination_output,
@@ -557,7 +566,7 @@ def controller_rollout(
         )
         metrics = metrics + _round_metrics(
             transition.refined_outputs,
-            proposal.candidate_outputs.context_logits,
+            context_logits,
             supervision.candidates,
             proposal.expansion.frontier_positions,
             termination_logits,

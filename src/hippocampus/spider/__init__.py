@@ -14,9 +14,11 @@ from .controller import (
     ActionSchedule,
     ActionSource,
     ContextLedgerEntry,
+    ControllerActionSelection,
     ControllerActions,
     ControllerProposal,
     ControllerResult,
+    ControllerRoundRecord,
     ControllerState,
     ControllerStep,
     ControllerTransition,
@@ -41,6 +43,13 @@ from .experiment import (
     parameter_count,
 )
 from .evaluation import EvaluationReport, evaluate_batches
+from .evidence_diagnostics import (
+    EvidenceCandidateObservation,
+    EvidencePipelineCaseReport,
+    EvidenceRequirementObservation,
+    aggregate_evidence_pipeline,
+    observe_evidence_pipeline,
+)
 from .evaluation_v0_1 import (
     ClosedLoopEvaluationReport,
     calibrate_on_development_batches,
@@ -67,7 +76,7 @@ from .protocol_v0_1 import (
     validate_v0_1_artifact_input,
     validate_v0_1_split_access,
 )
-from .state_oracle import StateOracle, StateSupervision
+from .state_oracle import EvidenceRequirement, StateOracle, StateSupervision
 from .set_attention import (
     AttentionBackendStatus,
     PositionFreeCrossAttention,
@@ -100,15 +109,21 @@ __all__ = [
     "CandidateSupervision",
     "ClosedLoopEvaluationReport",
     "ContextLedgerEntry",
+    "ControllerActionSelection",
     "ControllerActions",
     "ControllerExecutionPolicy",
     "ControllerProposal",
     "ControllerResult",
+    "ControllerRoundRecord",
     "ControllerState",
     "ControllerStep",
     "ControllerTransition",
     "DATASET_VERSION_V0_2",
     "EvidenceCalibration",
+    "EvidenceCandidateObservation",
+    "EvidencePipelineCaseReport",
+    "EvidenceRequirement",
+    "EvidenceRequirementObservation",
     "EvidenceLedgerEntry",
     "EvaluationReport",
     "FlatTransformerScorer",
@@ -139,6 +154,7 @@ __all__ = [
     "TrainingRecord",
     "TrainingResult",
     "attention_backend_status",
+    "aggregate_evidence_pipeline",
     "apply_path_state_intervention",
     "authorize_v0_2_sealed_evaluation",
     "behavioural_consistency_loss",
@@ -157,6 +173,7 @@ __all__ = [
     "multi_positive_priority_loss",
     "mixed_rollout",
     "null_expansion_loss_term",
+    "observe_evidence_pipeline",
     "load_experiment",
     "oracle_rollout",
     "parameter_count",

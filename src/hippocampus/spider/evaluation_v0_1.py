@@ -26,11 +26,12 @@ from .controller import (
     EvidenceLedgerEntry,
     SparseWavefrontController,
 )
-from .execution import (
-    ControllerExecutionPolicy,
-    HorizonMode,
-    apply_path_state_intervention,
+from .evidence_diagnostics import (
+    EvidencePipelineCaseReport,
+    aggregate_evidence_pipeline,
+    observe_evidence_pipeline,
 )
+from .execution import ControllerExecutionPolicy
 from .hypothesis import HypothesisBatch
 from .model import CandidateScorerBase
 from .state_oracle import StateOracle
@@ -65,6 +66,7 @@ class ClosedLoopCaseExecution:
     scored_positive_nodes: tuple[int, ...]
     frontier_selected_nodes: tuple[int, ...]
     round_termination: tuple[RoundTerminationObservation, ...]
+    evidence_pipeline: EvidencePipelineCaseReport
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +81,7 @@ class ClosedLoopEvaluationReport:
     teacher_forced: dict[str, float | int]
     rollout: dict[str, object]
     evidence: dict[str, object]
+    evidence_pipeline: dict[str, object]
     termination: dict[str, object]
     efficiency: dict[str, float | int]
     invariance: dict[str, float | int]
@@ -100,124 +103,68 @@ def _execute_case(
         raise ValueError("closed-loop evaluation requires singleton batches")
     controller = SparseWavefrontController(controller_config)
     policy = execution_policy or ControllerExecutionPolicy.learned()
-    round_limit = policy.resolve_round_limit(
-        batch,
-        configured_max_rounds=controller_config.max_rounds,
-    )
     oracle = StateOracle(batch.cases[0], batch, controller_config)
-    hypotheses = model.initial_hypotheses(batch)
-    evidence = model.initial_evidence(batch)
-    state = ControllerState.initial()
-    randomizer = random.Random(0)
+    result = controller.run(
+        model,
+        batch,
+        execution_policy=policy,
+    )
     evidence_logits: list[torch.Tensor] = []
     evidence_labels: list[torch.Tensor] = []
     scored_positive_nodes: set[int] = set()
     frontier_selected_nodes: set[int] = set()
     round_observations: list[RoundTerminationObservation] = []
-    final_logits = evidence.new_zeros((1, len(_DECISIONS)))
-    prediction = TerminationDecision.CONTINUE
-
-    for round_offset in range(round_limit):
-        hypotheses = apply_path_state_intervention(
-            model,
-            batch,
-            hypotheses,
-            intervention=policy.path_state_intervention,
-            round_index=state.round_index,
-            seed=policy.intervention_seed,
+    node_offset = int(batch.graph.topology.graph_node_ptr[0].item())
+    for record in result.round_records:
+        supervision = oracle.label(
+            record.proposal,
+            record.hypotheses,
+            record.controller_state,
         )
-        proposal = controller.propose(
-            model,
-            batch,
-            hypotheses,
-            evidence,
-            state,
-        )
-        supervision = oracle.label(proposal, hypotheses, state)
-        actions = controller.choose_actions(
-            proposal,
-            supervision=None,
-            state=state,
-            schedule=ActionSchedule.model_only(),
-            randomizer=randomizer,
-        )
-        transition = controller.apply(
-            model,
-            batch,
-            hypotheses,
-            evidence,
-            state,
-            proposal,
-            actions,
-        )
-        termination_target = oracle.termination_target(transition).decision
-        evaluate_termination = (
-            policy.horizon_mode is HorizonMode.LEARNED
-            or round_offset == round_limit - 1
-        )
-        if evaluate_termination:
-            final_output = model.termination_output(
-                batch,
-                transition.next_hypotheses,
-                transition.next_evidence,
-                transition.termination_control,
-            )
-            final_logits = final_output.logits
-            prediction = controller.execute_termination(
-                final_output,
-                transition,
-            )[0]
+        termination_target = oracle.termination_target(
+            record.transition
+        ).decision
+        if record.termination_output is not None:
             round_observations.append(
                 RoundTerminationObservation(
-                    round_index=state.round_index,
+                    round_index=record.controller_state.round_index,
                     target=termination_target,
-                    prediction=prediction,
+                    prediction=record.termination[0],
                 )
             )
         evidence_logits.append(
-            transition.refined_outputs.evidence_logits.detach()
+            record.transition.refined_outputs.evidence_logits.detach()
         )
         evidence_labels.append(
             supervision.candidates.include_as_evidence.detach()
         )
         destinations = (
-            proposal.expansion.destination_node_ids
-            - int(batch.graph.topology.graph_node_ptr[0].item())
+            record.proposal.expansion.destination_node_ids - node_offset
         )
         positive_destinations = destinations[
             supervision.candidates.include_as_evidence
         ]
         scored_positive_nodes.update(positive_destinations.tolist())
-        if actions.frontier_candidate_indices.numel():
+        if record.actions.frontier_candidate_indices.numel():
             frontier_selected_nodes.update(
                 destinations[
-                    actions.frontier_candidate_indices
+                    record.actions.frontier_candidate_indices
                 ].tolist()
             )
-        hypotheses = transition.next_hypotheses
-        evidence = transition.next_evidence
-        state = transition.next_controller_state
-        if (
-            policy.horizon_mode is HorizonMode.LEARNED
-            and prediction is not TerminationDecision.CONTINUE
-        ):
-            break
-    if prediction is TerminationDecision.CONTINUE:
-        prediction = TerminationDecision.UNKNOWN_INCOMPLETE
 
     return ClosedLoopCaseExecution(
-        prediction=prediction,
-        final_logits=final_logits,
-        trace_ledger=state.trace_ledger,
-        context_ledger=state.context_ledger,
-        evidence_ledger=state.evidence_ledger,
-        rounds=state.round_index,
-        arcs_scored=state.arcs_scored,
-        contexts_read=state.contexts_read,
+        prediction=result.termination[0],
+        final_logits=result.final_termination_logits,
+        trace_ledger=result.trace_ledger,
+        context_ledger=result.context_ledger,
+        evidence_ledger=result.evidence_ledger,
+        rounds=result.rounds,
+        arcs_scored=result.arcs_scored,
+        contexts_read=result.contexts_read,
         candidate_evidence_logits=(
             torch.cat(evidence_logits)
             if evidence_logits
-            else evidence.new_empty((0,))
+            else result.evidence.new_empty((0,))
         ),
         candidate_evidence_labels=(
             torch.cat(evidence_labels)
@@ -227,6 +174,11 @@ def _execute_case(
         scored_positive_nodes=tuple(sorted(scored_positive_nodes)),
         frontier_selected_nodes=tuple(sorted(frontier_selected_nodes)),
         round_termination=tuple(round_observations),
+        evidence_pipeline=observe_evidence_pipeline(
+            batch,
+            result,
+            oracle,
+        ),
     )
 
 
@@ -405,13 +357,17 @@ def evaluate_rollout_stress_states(
                 state,
             )
             supervision = oracle.label(proposal, hypotheses, state)
-            actions = controller.choose_actions(
+            selection = controller.select_actions(
+                model,
+                batch,
                 proposal,
                 supervision=None,
                 state=state,
                 schedule=ActionSchedule.model_only(),
                 randomizer=random.Random(0),
             )
+            proposal = selection.proposal
+            actions = selection.actions
             transition = controller.apply(
                 model,
                 batch,
@@ -648,9 +604,6 @@ def evaluate_closed_loop_batches(
     evidence_fp = 0
     evidence_fn = 0
     evidence_exact = 0
-    evidence_scored_recovered = 0
-    evidence_frontier_recovered = 0
-    evidence_required = 0
     context_tp = 0
     context_fp = 0
     context_fn = 0
@@ -671,6 +624,7 @@ def evaluate_closed_loop_batches(
     family_success = {family.value: 0 for family in ProgramFamily}
     family_evidence_tp = {family.value: 0 for family in ProgramFamily}
     family_evidence_total = {family.value: 0 for family in ProgramFamily}
+    pipeline_reports: list[EvidencePipelineCaseReport] = []
 
     with torch.no_grad():
         for batch in batches:
@@ -716,39 +670,23 @@ def evaluate_closed_loop_batches(
             node_offset = int(
                 batch.graph.topology.graph_node_ptr[0].item()
             )
-            predicted_evidence = {
-                entry.node_id - node_offset
-                for entry in execution.evidence_ledger
-            }
             edge_offset = int(
                 batch.graph.topology.graph_edge_ptr[0].item()
             )
-            predicted_evidence_edges = {
-                entry.edge_id - edge_offset
-                for entry in execution.evidence_ledger
-            }
-            expected_evidence = set(case.evidence_nodes)
-            exact_evidence_match = (
-                predicted_evidence_edges == set(case.evidence_edge_ids)
-                if case.evidence_edge_ids
-                else predicted_evidence == expected_evidence
-            )
-            tp = len(predicted_evidence & expected_evidence)
-            fp = len(predicted_evidence - expected_evidence)
-            fn = len(expected_evidence - predicted_evidence)
+            pipeline = execution.evidence_pipeline
+            pipeline_reports.append(pipeline)
+            exact_evidence_match = bool(pipeline.exact_set_accuracy)
+            tp = pipeline.true_positives
+            fp = pipeline.false_positives
+            fn = pipeline.false_negatives
             evidence_tp += tp
             evidence_fp += fp
             evidence_fn += fn
             evidence_exact += int(exact_evidence_match)
-            evidence_required += len(expected_evidence)
-            evidence_scored_recovered += len(
-                set(execution.scored_positive_nodes) & expected_evidence
-            )
-            evidence_frontier_recovered += len(
-                set(execution.frontier_selected_nodes) & expected_evidence
-            )
             family_evidence_tp[case.family.value] += tp
-            family_evidence_total[case.family.value] += len(expected_evidence)
+            family_evidence_total[case.family.value] += (
+                pipeline.required_cardinality
+            )
 
             predicted_context = {
                 entry.node_id - node_offset
@@ -786,7 +724,7 @@ def evaluate_closed_loop_batches(
             case_success = (
                 prediction is TerminationDecision.ANSWER
                 and valid_path
-                and expected_evidence.issubset(predicted_evidence)
+                and pipeline.false_negatives == 0
                 if case.answerable
                 else prediction is expected
                 and prediction is not TerminationDecision.ANSWER
@@ -816,6 +754,8 @@ def evaluate_closed_loop_batches(
 
     evidence_scores = torch.cat(all_evidence_scores)
     evidence_labels = torch.cat(all_evidence_labels)
+    pipeline_report = aggregate_evidence_pipeline(pipeline_reports)
+    pipeline_overall = pipeline_report["overall"]
     evidence_precision = evidence_tp / max(1, evidence_tp + evidence_fp)
     evidence_recall = evidence_tp / max(1, evidence_tp + evidence_fn)
     evidence_f1 = (
@@ -835,10 +775,10 @@ def evaluate_closed_loop_batches(
         ),
         "exact_set_accuracy": evidence_exact / len(batches),
         "recall_conditioned_on_scored": (
-            evidence_scored_recovered / max(1, evidence_required)
+            pipeline_overall["selection_recall_conditioned_on_scored"]
         ),
         "recall_conditioned_on_frontier_selection": (
-            evidence_frontier_recovered / max(1, evidence_required)
+            pipeline_overall["frontier_selection_recall"]
         ),
         "operating_threshold": threshold,
         "precision_recall_curve": [
@@ -985,6 +925,7 @@ def evaluate_closed_loop_batches(
         teacher_forced=teacher_forced,
         rollout=rollout,
         evidence=evidence_report,
+        evidence_pipeline=pipeline_report,
         termination=termination_report,
         efficiency={
             "mean_rounds": rounds / len(batches),
