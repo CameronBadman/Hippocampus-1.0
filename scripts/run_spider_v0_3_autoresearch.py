@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import statistics
 import subprocess
 import sys
 import time
@@ -374,6 +375,86 @@ def _screen_decision(
     }
 
 
+def _final_evidence_selection(
+    full: dict[tuple[str, int], dict[str, Any]],
+    *,
+    experimental_arm: str | None,
+) -> dict[str, Any]:
+    candidate_seed_gates: dict[str, dict[str, float | bool]] = {}
+    full_candidate_passes = False
+    if experimental_arm is not None:
+        candidate_seed_gates = {
+            str(seed): _seed_gate(
+                _gate_metrics(full[("E0", seed)]),
+                _gate_metrics(full[(experimental_arm, seed)]),
+            )
+            for seed in SEEDS
+        }
+        full_candidate_passes = (
+            sum(
+                bool(result["passed"])
+                for result in candidate_seed_gates.values()
+            )
+            >= 2
+        )
+    selected_arm = (
+        experimental_arm if full_candidate_passes else "E0"
+    )
+    selected_metrics = {
+        seed: _gate_metrics(full[(selected_arm, seed)])
+        for seed in SEEDS
+    }
+    median_exact = statistics.median(
+        metrics["exact_set_accuracy"]
+        for metrics in selected_metrics.values()
+    )
+    median_recall = statistics.median(
+        metrics["recall"] for metrics in selected_metrics.values()
+    )
+    selected_seed = min(
+        SEEDS,
+        key=lambda seed: (
+            abs(
+                selected_metrics[seed]["exact_set_accuracy"]
+                - median_exact
+            )
+            + abs(selected_metrics[seed]["recall"] - median_recall),
+            seed,
+        ),
+    )
+    selected = full[(selected_arm, selected_seed)]
+    return {
+        "timestamp": _now(),
+        "arm_rule": (
+            "candidate must pass the registered matched-seed gate again "
+            "on full runs"
+        ),
+        "checkpoint_rule": (
+            "minimum L1 distance to median exact-set accuracy and recall; "
+            "ascending-seed tie break"
+        ),
+        "experimental_arm": experimental_arm,
+        "experimental_full_seed_gates": candidate_seed_gates,
+        "experimental_full_passed": full_candidate_passes,
+        "selected_arm": selected_arm,
+        "selected_seed": selected_seed,
+        "selected_experiment_id": selected["experiment_id"],
+        "selected_checkpoint_path": selected["checkpoint_path"],
+        "selected_checkpoint_sha256": selected["checkpoint_sha256"],
+        "selected_evidence_threshold": selected["calibration"][
+            "selected"
+        ]["raw_probability_threshold"],
+        "selected_metrics": selected_metrics[selected_seed],
+        "selected_arm_medians": {
+            "exact_set_accuracy": median_exact,
+            "recall": median_recall,
+        },
+        "dataset_hash": selected["dataset_hash"],
+        "source_commit": selected["source_commit"],
+        "sealed_access_count": 0,
+    }
+
+
 def _write_summary(output_root: Path) -> None:
     ledger_path = output_root / "experiments.jsonl"
     records = (
@@ -419,6 +500,17 @@ def _write_summary(output_root: Path) -> None:
                 "",
                 "Registered screen decision: "
                 f"`{decision['experimental_winner']}`.",
+            )
+        )
+    selection_path = output_root / "FINAL_EVIDENCE_SELECTION.json"
+    if selection_path.exists():
+        selection = _load(selection_path)
+        lines.extend(
+            (
+                "",
+                "Frozen evidence finalist: "
+                f"`{selection['selected_arm']}` seed "
+                f"`{selection['selected_seed']}`.",
             )
         )
     (output_root / "EXPERIMENTS.md").write_text("\n".join(lines) + "\n")
@@ -580,6 +672,25 @@ def main() -> None:
                     config_path=CONFIGS[arm],
                 ),
             )
+        full = {
+            (arm, seed): _load(
+                output_root
+                / "runs"
+                / f"V03-full-{arm}-s{seed}-6k"
+                / "metrics.json"
+            )
+            for arm in full_arms
+            for seed in SEEDS
+        }
+        selection = _final_evidence_selection(
+            full,
+            experimental_arm=(
+                str(winner) if winner is not None else None
+            ),
+        )
+        (output_root / "FINAL_EVIDENCE_SELECTION.json").write_text(
+            json.dumps(selection, indent=2, sort_keys=True) + "\n"
+        )
     _write_summary(output_root)
 
 

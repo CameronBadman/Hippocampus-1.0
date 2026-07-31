@@ -186,18 +186,13 @@ def _transfer_evidence_model(
 ) -> tuple[str, ...]:
     source.load_state_dict(source_state, strict=True)
     target_state = target.state_dict()
-    same_terminator = (
-        target.config.termination_mode == source.config.termination_mode
-        and target.config.use_null_expansion
-        == source.config.use_null_expansion
-    )
     copied: list[str] = []
     missing_backbone: list[str] = []
     for name, target_value in target_state.items():
         is_head = name.startswith(
             ("termination_head.", "null_expansion_head.")
         )
-        if is_head and not same_terminator:
+        if is_head:
             continue
         source_value = source_state.get(name)
         if source_value is None or source_value.shape != target_value.shape:

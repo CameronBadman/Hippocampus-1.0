@@ -208,3 +208,86 @@ def test_recovery_prefers_latest_periodic_checkpoint(tmp_path) -> None:
     assert recovered is not None
     assert recovered.name == "checkpoint_step_004000.pt"
     assert recovered.read_bytes() == b"step-4k"
+
+
+def test_full_selection_uses_gate_then_representative_seed() -> None:
+    module = _module()
+    full = {}
+    exact_by_seed = {1701: 0.40, 1802: 0.50, 1903: 0.90}
+    for seed in module.SEEDS:
+        baseline = _metrics(recall=0.60, exact=exact_by_seed[seed])
+        baseline.update(
+            {
+                "experiment_id": f"E0-{seed}",
+                "checkpoint_path": f"/runs/E0-{seed}/checkpoint.pt",
+                "checkpoint_sha256": str(seed) * 16,
+                "calibration": {
+                    "selected": {
+                        "raw_probability_threshold": 0.4,
+                    }
+                },
+                "dataset_hash": "d" * 64,
+                "source_commit": "c" * 40,
+            }
+        )
+        candidate = _metrics(
+            recall=0.66 if seed != 1903 else 0.61,
+            exact=exact_by_seed[seed] + 0.01,
+        )
+        candidate.update(
+            {
+                "experiment_id": f"E1-{seed}",
+                "checkpoint_path": f"/runs/E1-{seed}/checkpoint.pt",
+                "checkpoint_sha256": str(seed + 1) * 16,
+                "calibration": {
+                    "selected": {
+                        "raw_probability_threshold": 0.45,
+                    }
+                },
+                "dataset_hash": "d" * 64,
+                "source_commit": "c" * 40,
+            }
+        )
+        full[("E0", seed)] = baseline
+        full[("E1", seed)] = candidate
+
+    decision = module._final_evidence_selection(
+        full,
+        experimental_arm="E1",
+    )
+
+    assert decision["experimental_full_passed"]
+    assert decision["selected_arm"] == "E1"
+    # 1802 is the median-performing seed, not the cherry-picked best seed.
+    assert decision["selected_seed"] == 1802
+
+
+def test_failed_full_gate_falls_back_to_e0() -> None:
+    module = _module()
+    full = {}
+    for seed in module.SEEDS:
+        for arm, recall in (("E0", 0.60), ("E2", 0.61)):
+            metrics = _metrics(recall=recall, exact=0.4)
+            metrics.update(
+                {
+                    "experiment_id": f"{arm}-{seed}",
+                    "checkpoint_path": f"/{arm}-{seed}.pt",
+                    "checkpoint_sha256": "a" * 64,
+                    "calibration": {
+                        "selected": {
+                            "raw_probability_threshold": 0.5,
+                        }
+                    },
+                    "dataset_hash": "d" * 64,
+                    "source_commit": "c" * 40,
+                }
+            )
+            full[(arm, seed)] = metrics
+
+    decision = module._final_evidence_selection(
+        full,
+        experimental_arm="E2",
+    )
+
+    assert not decision["experimental_full_passed"]
+    assert decision["selected_arm"] == "E0"

@@ -1,0 +1,22 @@
+{
+  "arm_selection": {
+    "baseline": "E0",
+    "candidate": "the sole experimental arm advanced by the registered screen",
+    "full_run_gate": {
+      "maximum_scored_coverage_degradation": 0.01,
+      "maximum_precision_degradation": 0.02,
+      "minimum_exact_set_gain": 0.03,
+      "minimum_recall_gain": 0.05,
+      "minimum_seed_wins": 2
+    },
+    "rule": "Select the candidate only if it passes the same matched-seed gate on the full runs; otherwise select E0."
+  },
+  "checkpoint_selection": {
+    "rule": "Within the selected arm, choose the seed minimizing L1 distance to the three-seed medians of exact-set accuracy and evidence recall; break ties by ascending seed.",
+    "rationale": "Use a representative finalist rather than cherry-picking the best development seed."
+  },
+  "created_before_accepted_runs": true,
+  "dataset_hash": "0ed8e27ec44f3773f76b79f1947526f33ba233556b7db91fef04dcb647e5409d",
+  "sealed_access_allowed": false,
+  "status": "frozen"
+}
