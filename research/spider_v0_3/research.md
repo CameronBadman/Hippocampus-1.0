@@ -80,4 +80,5 @@ development evidence and cannot alter the certified v0.2 conclusion.
 
 | Iteration | Hypothesis | Status | Score | Notes |
 |---:|---|---|---:|---|
-| 0 | Freeze history and instrument before changing objectives. | in_progress | 0.0 | Implementation baseline. |
+| 0 | Freeze history and instrument before changing objectives. | pass | 1.0 | v0.2 tagged; exact edge-aware funnel and independent evidence action tested. |
+| 1 | Candidate coverage, rather than scorer selection, is the preserved-run bottleneck. | fail | 0.7031 | Reachable/scored coverage was 1.0; pooled conditional selection recall averaged 0.7031, so the coverage hypothesis was falsified. |
