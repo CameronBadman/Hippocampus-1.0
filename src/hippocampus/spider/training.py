@@ -895,7 +895,12 @@ def train_oracle_batches(
     else:
         payload = torch.load(
             resume_checkpoint,
-            map_location=next(model.parameters()).device,
+            # PyTorch's process-wide CPU RNG can only be restored from a CPU
+            # ByteTensor. Loading the whole checkpoint onto CUDA also moves
+            # ``torch_rng_state`` and makes ``torch.set_rng_state`` reject it.
+            # Model and optimiser loaders copy their tensors to the parameter
+            # device, while both CPU and CUDA RNG APIs expect CPU state bytes.
+            map_location="cpu",
             weights_only=False,
         )
         if payload.get("format") != "spider-training-v2":

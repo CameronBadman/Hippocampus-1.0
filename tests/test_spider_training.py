@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import random
+import pytest
 import torch
 
-from hippocampus import GraphSchema
+from hippocampus import GraphSchema, PackConfig
 from hippocampus.programs import (
     GeneratorConfig,
     SyntheticManifoldRenderer,
@@ -27,7 +28,11 @@ from hippocampus.spider import (
 )
 
 
-def _training_fixture(case_count: int = 8):
+def _training_fixture(
+    case_count: int = 8,
+    *,
+    pack_config: PackConfig | None = None,
+):
     schema = GraphSchema(summary_dim=8, context_dim=8, edge_dim=8)
     cases = make_tiny_cases(
         case_count=case_count,
@@ -40,6 +45,7 @@ def _training_fixture(case_count: int = 8):
             (case,),
             (renderer.render(case, row_permutation_seed=index),),
             schema=schema,
+            pack_config=pack_config,
         )
         for index, case in enumerate(cases)
     )
@@ -57,6 +63,11 @@ def _training_fixture(case_count: int = 8):
             dropout=0.0,
         )
     )
+    if pack_config is not None and pack_config.device is not None:
+        model = model.to(
+            device=pack_config.device,
+            dtype=pack_config.value_dtype or torch.float32,
+        )
     return model, batches
 
 
@@ -284,3 +295,42 @@ def test_paused_training_resumes_to_identical_model_state(tmp_path) -> None:
         == resumed_result.action_source_counts
     )
     assert full.training_examples == resumed_result.training_examples
+
+
+@pytest.mark.cuda
+def test_cuda_checkpoint_restores_cpu_and_cuda_rng_states(tmp_path) -> None:
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA is not visible to this test process")
+    torch.manual_seed(31)
+    model, batches = _training_fixture(
+        case_count=8,
+        pack_config=PackConfig.cuda_fp32(),
+    )
+    checkpoint = tmp_path / "cuda_resumable.pt"
+    loop = TrainingLoopConfig(
+        steps=2,
+        batch_size=1,
+        learning_rate=0.001,
+        seed=23,
+        log_every=1,
+    )
+
+    partial = train_oracle_batches(
+        model,
+        batches,
+        loop_config=loop,
+        checkpoint_path=checkpoint,
+        stop_after_steps=1,
+    )
+    resumed = SpiderModel(model.config).to(device="cuda")
+    completed = train_oracle_batches(
+        resumed,
+        batches,
+        loop_config=loop,
+        checkpoint_path=checkpoint,
+        resume_checkpoint=checkpoint,
+    )
+
+    assert partial.completed_steps == 1
+    assert completed.resumed_from_step == 1
+    assert completed.completed_steps == 2
