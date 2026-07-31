@@ -435,6 +435,7 @@ class StateOracle:
         remaining: list[float] = []
         support: list[float] = []
         conflict: list[float] = []
+        plausible_negative: list[bool] = []
         scored_evidence: set[int] = set()
         scored_requirements: set[EvidenceRequirement] = set()
         for target, edge_id, source, destination_global in zip(
@@ -477,6 +478,15 @@ class StateOracle:
             remaining.append(target.remaining_cost)
             support.append(target.support)
             conflict.append(target.conflict)
+            plausible_negative.append(
+                not include
+                and (
+                    preserves_completion
+                    or destination in missing
+                    or target.support > 0
+                    or target.conflict > 0
+                )
+            )
 
         device = self.batch.device
         candidates = CandidateSupervision(
@@ -508,6 +518,11 @@ class StateOracle:
             conflict=torch.tensor(
                 conflict,
                 dtype=torch.float32,
+                device=device,
+            ),
+            evidence_plausible_negative=torch.tensor(
+                plausible_negative,
+                dtype=torch.bool,
                 device=device,
             ),
         )

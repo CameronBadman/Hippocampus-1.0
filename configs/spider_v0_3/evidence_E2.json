@@ -1,0 +1,78 @@
+{
+  "name": "v0_3_evidence_E2_plausible_ranked",
+  "schema": {
+    "summary_dim": 16,
+    "context_dim": 16,
+    "edge_dim": 16,
+    "query_dim": 16
+  },
+  "dataset": {
+    "version": "spider-programs-v0.2",
+    "protocol": "spider-v0.3-evidence-dev",
+    "manifest_dir": "artifacts/spider_v0_3/splits"
+  },
+  "model": {
+    "kind": "pooled",
+    "d_model": 64,
+    "num_heads": 4,
+    "num_blocks": 1,
+    "tied_recurrence": true,
+    "path_rows": 4,
+    "evidence_rows": 4,
+    "edge_mode": "standard",
+    "edge_transforms": 0,
+    "adapter_rank": 0,
+    "dropout": 0.0,
+    "termination_mode": "hierarchical"
+  },
+  "controller": {
+    "max_rounds": 8,
+    "frontier_width": 32,
+    "hypotheses_per_node": 2,
+    "context_read_budget": 4,
+    "evidence_selection_budget": 8,
+    "search_budget": 4096,
+    "max_depth": 10,
+    "expand_threshold": 0.5,
+    "context_threshold": 0.5,
+    "evidence_threshold": 0.5
+  },
+  "training": {
+    "steps": 6000,
+    "batch_size": 4,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "seed": 1701,
+    "device": "cuda",
+    "dtype": "float32",
+    "log_every": 100,
+    "checkpoint_every": 1000,
+    "action_schedule": [
+      {"frontier": 1.0, "context": 1.0, "evidence": 1.0, "termination": 0.0},
+      {"frontier": 0.75, "context": 0.75, "evidence": 0.75, "termination": 0.0},
+      {"frontier": 0.5, "context": 0.5, "evidence": 0.5, "termination": 0.0},
+      {"frontier": 0.25, "context": 0.25, "evidence": 0.25, "termination": 0.0},
+      {"frontier": 0.0, "context": 0.0, "evidence": 0.0, "termination": 0.0}
+    ]
+  },
+  "loss": {
+    "priority": 1.0,
+    "expand": 1.0,
+    "context": 0.5,
+    "evidence": 1.0,
+    "evidence_set": 0.0,
+    "evidence_mode": "balanced",
+    "evidence_positive_weight": 4.0,
+    "evidence_false_positive_penalty": 0.1,
+    "evidence_ranking": 0.5,
+    "evidence_plausible_ranking": 0.5,
+    "evidence_ranking_margin": 0.2,
+    "evidence_hard_negative_count": 4,
+    "support_conflict": 0.5,
+    "remaining_cost": 0.25,
+    "termination": 0.0,
+    "consistency": 0.0,
+    "search_cost": 0.01,
+    "context_cost": 0.01
+  }
+}

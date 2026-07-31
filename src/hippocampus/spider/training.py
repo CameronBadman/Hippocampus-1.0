@@ -284,6 +284,8 @@ class TrainingResult:
     action_source_counts: dict[str, int]
     unique_cases_seen: int
     training_examples: int
+    completed_steps: int
+    resumed_from_step: int
 
 
 def _round_metrics(
@@ -809,11 +811,30 @@ def train_oracle_batches(
     checkpoint_path: Path | None = None,
     checkpoint_every: int | None = None,
     execution_policy: ControllerExecutionPolicy | None = None,
+    resume_checkpoint: Path | None = None,
+    stop_after_steps: int | None = None,
 ) -> TrainingResult:
+    """Train or exactly resume a controller rollout experiment.
+
+    ``loop_config.steps`` is always the pre-registered total schedule length.
+    ``stop_after_steps`` may pause an otherwise longer run without changing
+    schedule phase boundaries. Checkpoints retain data-order, action-policy,
+    optimiser, and PyTorch RNG state.
+    """
+
     if not batches:
         raise ValueError("training requires at least one packed batch")
     if checkpoint_every is not None and checkpoint_every <= 0:
         raise ValueError("checkpoint_every must be positive")
+    target_step = (
+        loop_config.steps
+        if stop_after_steps is None
+        else stop_after_steps
+    )
+    if target_step <= 0 or target_step > loop_config.steps:
+        raise ValueError(
+            "stop_after_steps must be in [1, loop_config.steps]"
+        )
     loss_settings = loss_config or SpiderLossConfig()
     randomizer = random.Random(loop_config.seed)
     optimizer = torch.optim.AdamW(
@@ -821,41 +842,111 @@ def train_oracle_batches(
         lr=loop_config.learning_rate,
         weight_decay=loop_config.weight_decay,
     )
-    initial_loss, initial_metrics = evaluate_oracle_batches(
-        model,
-        batches,
-        loss_config=loss_settings,
-        controller_config=controller_config,
-        execution_policy=execution_policy,
-    )
-    records = [
-        TrainingRecord(
-            step=0,
-            loss=initial_loss,
-            gradient_norm=0.0,
-            elapsed_seconds=0.0,
-        )
-    ]
-    started = time.perf_counter()
-    model.train()
-    epoch_order = list(range(len(batches)))
-    randomizer.shuffle(epoch_order)
-    epoch_cursor = 0
-    seen_case_ids: set[str] = set()
-    training_examples = 0
-    action_source_counts = {
+    expected_action_source_counts = {
         f"{action}/{source.value}": 0
         for action in ("frontier", "context", "evidence", "termination")
         for source in ActionSource
     }
+    training_case_ids = tuple(batch.cases[0].case_id for batch in batches)
+    resolved_execution_policy = (
+        execution_policy or ControllerExecutionPolicy.learned()
+    )
+    start_step = 0
+    resumed_from_step = 0
+    elapsed_before = 0.0
+
+    if resume_checkpoint is None:
+        initial_loss, initial_metrics = evaluate_oracle_batches(
+            model,
+            batches,
+            loss_config=loss_settings,
+            controller_config=controller_config,
+            execution_policy=execution_policy,
+        )
+        records = [
+            TrainingRecord(
+                step=0,
+                loss=initial_loss,
+                gradient_norm=0.0,
+                elapsed_seconds=0.0,
+            )
+        ]
+        epoch_order = list(range(len(batches)))
+        randomizer.shuffle(epoch_order)
+        epoch_cursor = 0
+        seen_case_ids: set[str] = set()
+        training_examples = 0
+        action_source_counts = expected_action_source_counts
+    else:
+        payload = torch.load(
+            resume_checkpoint,
+            map_location=next(model.parameters()).device,
+            weights_only=False,
+        )
+        if payload.get("format") != "spider-training-v2":
+            raise ValueError("checkpoint is not exactly resumable")
+        expected = {
+            "loop_config": asdict(loop_config),
+            "loss_config": asdict(loss_settings),
+            "controller_config": (
+                asdict(controller_config)
+                if controller_config is not None
+                else None
+            ),
+            "execution_policy": asdict(resolved_execution_policy),
+            "training_case_ids": training_case_ids,
+        }
+        for name, value in expected.items():
+            if payload.get(name) != value:
+                raise ValueError(
+                    f"resume checkpoint {name} does not match this run"
+                )
+        start_step = int(payload["step"])
+        resumed_from_step = start_step
+        if start_step >= target_step:
+            raise ValueError(
+                "resume checkpoint is not earlier than the target step"
+            )
+        model.load_state_dict(payload["model"], strict=True)
+        optimizer.load_state_dict(payload["optimizer"])
+        randomizer.setstate(payload["python_random_state"])
+        torch.set_rng_state(payload["torch_rng_state"])
+        cuda_rng_state = payload.get("cuda_rng_state")
+        if cuda_rng_state is not None:
+            if not torch.cuda.is_available():
+                raise ValueError(
+                    "CUDA RNG checkpoint cannot resume without CUDA"
+                )
+            torch.cuda.set_rng_state_all(cuda_rng_state)
+        epoch_order = list(payload["epoch_order"])
+        epoch_cursor = int(payload["epoch_cursor"])
+        seen_case_ids = set(payload["seen_case_ids"])
+        training_examples = int(payload["training_examples"])
+        action_source_counts = dict(payload["action_source_counts"])
+        if set(action_source_counts) != set(expected_action_source_counts):
+            raise ValueError("checkpoint action-source counters are invalid")
+        initial_metrics = OracleMetrics(
+            **payload["initial_metrics_state"]
+        )
+        records = [
+            TrainingRecord(**record) for record in payload["records"]
+        ]
+        elapsed_before = float(payload["elapsed_seconds"])
+
+    started = time.perf_counter()
+    model.train()
 
     def checkpoint_payload(
         *,
         step: int,
         final_metrics: OracleMetrics | None,
+        elapsed_seconds: float,
     ) -> dict[str, object]:
         return {
+            "format": "spider-training-v2",
             "step": step,
+            "planned_steps": loop_config.steps,
+            "paused": step < loop_config.steps,
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict(),
             "model_config": asdict(model.config),
@@ -866,18 +957,34 @@ def train_oracle_batches(
                 if controller_config is not None
                 else None
             ),
-            "execution_policy": asdict(
-                execution_policy
-                or ControllerExecutionPolicy.learned()
-            ),
+            "execution_policy": asdict(resolved_execution_policy),
+            "training_case_ids": training_case_ids,
+            "initial_metrics_state": asdict(initial_metrics),
             "final_metrics": (
                 final_metrics.as_dict()
                 if final_metrics is not None
                 else None
             ),
+            "final_metrics_state": (
+                asdict(final_metrics)
+                if final_metrics is not None
+                else None
+            ),
             "action_source_counts": action_source_counts,
             "unique_cases_seen": len(seen_case_ids),
+            "seen_case_ids": tuple(sorted(seen_case_ids)),
             "training_examples": training_examples,
+            "epoch_order": tuple(epoch_order),
+            "epoch_cursor": epoch_cursor,
+            "python_random_state": randomizer.getstate(),
+            "torch_rng_state": torch.get_rng_state(),
+            "cuda_rng_state": (
+                torch.cuda.get_rng_state_all()
+                if torch.cuda.is_available()
+                else None
+            ),
+            "records": [asdict(record) for record in records],
+            "elapsed_seconds": elapsed_seconds,
         }
 
     def draw_batch() -> PackedProgramBatch:
@@ -889,7 +996,7 @@ def train_oracle_batches(
         epoch_cursor += 1
         return batch
 
-    for step in range(1, loop_config.steps + 1):
+    for step in range(start_step + 1, target_step + 1):
         optimizer.zero_grad(set_to_none=True)
         selected = [
             draw_batch()
@@ -955,19 +1062,29 @@ def train_oracle_batches(
                 f"{checkpoint_path.suffix}"
             )
             torch.save(
-                checkpoint_payload(step=step, final_metrics=None),
+                checkpoint_payload(
+                    step=step,
+                    final_metrics=None,
+                    elapsed_seconds=(
+                        elapsed_before
+                        + time.perf_counter()
+                        - started
+                    ),
+                ),
                 intermediate,
             )
-        if step % loop_config.log_every == 0 or step == loop_config.steps:
+        if step % loop_config.log_every == 0 or step == target_step:
             records.append(
                 TrainingRecord(
                     step=step,
                     loss=float(loss.detach().item()),
                     gradient_norm=float(gradient_norm.detach().item()),
-                    elapsed_seconds=time.perf_counter() - started,
+                    elapsed_seconds=(
+                        elapsed_before + time.perf_counter() - started
+                    ),
                 )
             )
-    runtime = time.perf_counter() - started
+    runtime = elapsed_before + time.perf_counter() - started
     final_loss, final_metrics = evaluate_oracle_batches(
         model,
         batches,
@@ -977,7 +1094,7 @@ def train_oracle_batches(
     )
     records.append(
         TrainingRecord(
-            step=loop_config.steps,
+            step=target_step,
             loss=final_loss,
             gradient_norm=records[-1].gradient_norm,
             elapsed_seconds=runtime,
@@ -987,8 +1104,9 @@ def train_oracle_batches(
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(
             checkpoint_payload(
-                step=loop_config.steps,
+                step=target_step,
                 final_metrics=final_metrics,
+                elapsed_seconds=runtime,
             ),
             checkpoint_path,
         )
@@ -1000,4 +1118,6 @@ def train_oracle_batches(
         action_source_counts=action_source_counts,
         unique_cases_seen=len(seen_case_ids),
         training_examples=training_examples,
+        completed_steps=target_step,
+        resumed_from_step=resumed_from_step,
     )

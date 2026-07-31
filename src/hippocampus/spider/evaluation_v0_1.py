@@ -93,7 +93,7 @@ class ClosedLoopEvaluationReport:
         return asdict(self)
 
 
-def _execute_case(
+def execute_closed_loop_case(
     model: CandidateScorerBase,
     batch: PackedProgramBatch,
     controller_config: SparseControllerConfig,
@@ -203,7 +203,7 @@ def calibrate_on_development_batches(
     model.eval()
     with torch.no_grad():
         for batch in batches:
-            execution = _execute_case(
+            execution = execute_closed_loop_case(
                 model,
                 batch,
                 controller_config,
@@ -629,7 +629,7 @@ def evaluate_closed_loop_batches(
     with torch.no_grad():
         for batch in batches:
             case_started = time.perf_counter()
-            execution = _execute_case(
+            execution = execute_closed_loop_case(
                 model,
                 batch,
                 resolved_controller,

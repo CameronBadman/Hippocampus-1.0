@@ -8,6 +8,13 @@ from .calibration import (
     calibrate_evidence_threshold,
     precision_recall_curve,
 )
+from .calibration_v0_3 import (
+    ClosedLoopEvidenceCalibration,
+    ExactSetOperatingPoint,
+    TemperatureScalingResult,
+    calibrate_closed_loop_evidence,
+    fit_temperature_scaling,
+)
 from .config import SparseControllerConfig, SpiderModelConfig
 from .controller import (
     ActionDiagnostic,
@@ -53,6 +60,7 @@ from .evidence_diagnostics import (
 from .evaluation_v0_1 import (
     ClosedLoopEvaluationReport,
     calibrate_on_development_batches,
+    execute_closed_loop_case,
     evaluate_closed_loop_batches,
     evaluate_rollout_stress_states,
 )
@@ -63,6 +71,7 @@ from .losses import (
     SpiderLossReport,
     behavioural_consistency_loss,
     candidate_loss_report,
+    multi_positive_evidence_ranking_loss,
     multi_positive_priority_loss,
     null_expansion_loss_term,
     termination_loss_report,
@@ -75,6 +84,14 @@ from .protocol_v0_1 import (
     authorize_v0_2_sealed_evaluation,
     validate_v0_1_artifact_input,
     validate_v0_1_split_access,
+)
+from .protocol_v0_3 import (
+    EVIDENCE_DEVELOPMENT_PROTOCOL,
+    DevelopmentPartitionManifest,
+    GroupedDevelopmentCases,
+    GroupedDevelopmentManifest,
+    build_grouped_development_cases,
+    verify_grouped_development_manifest,
 )
 from .state_oracle import EvidenceRequirement, StateOracle, StateSupervision
 from .set_attention import (
@@ -108,6 +125,7 @@ __all__ = [
     "CandidateScorerBase",
     "CandidateSupervision",
     "ClosedLoopEvaluationReport",
+    "ClosedLoopEvidenceCalibration",
     "ContextLedgerEntry",
     "ControllerActionSelection",
     "ControllerActions",
@@ -119,14 +137,19 @@ __all__ = [
     "ControllerStep",
     "ControllerTransition",
     "DATASET_VERSION_V0_2",
+    "DevelopmentPartitionManifest",
+    "EVIDENCE_DEVELOPMENT_PROTOCOL",
     "EvidenceCalibration",
     "EvidenceCandidateObservation",
     "EvidencePipelineCaseReport",
     "EvidenceRequirement",
     "EvidenceRequirementObservation",
+    "ExactSetOperatingPoint",
     "EvidenceLedgerEntry",
     "EvaluationReport",
     "FlatTransformerScorer",
+    "GroupedDevelopmentCases",
+    "GroupedDevelopmentManifest",
     "HypothesisBatch",
     "HorizonMode",
     "LossTerm",
@@ -150,6 +173,7 @@ __all__ = [
     "StateOracle",
     "StateSupervision",
     "TraceLedgerEntry",
+    "TemperatureScalingResult",
     "TrainingLoopConfig",
     "TrainingRecord",
     "TrainingResult",
@@ -160,7 +184,9 @@ __all__ = [
     "behavioural_consistency_loss",
     "binary_average_precision",
     "build_model",
+    "build_grouped_development_cases",
     "calibrate_evidence_threshold",
+    "calibrate_closed_loop_evidence",
     "calibrate_on_development_batches",
     "candidate_control_features",
     "candidate_loss_report",
@@ -168,8 +194,11 @@ __all__ = [
     "evaluate_oracle_batches",
     "evaluate_batches",
     "evaluate_closed_loop_batches",
+    "execute_closed_loop_case",
     "evaluate_rollout_stress_states",
+    "fit_temperature_scaling",
     "make_tiny_cases",
+    "multi_positive_evidence_ranking_loss",
     "multi_positive_priority_loss",
     "mixed_rollout",
     "null_expansion_loss_term",
@@ -185,4 +214,5 @@ __all__ = [
     "train_oracle_batches",
     "validate_v0_1_artifact_input",
     "validate_v0_1_split_access",
+    "verify_grouped_development_manifest",
 ]

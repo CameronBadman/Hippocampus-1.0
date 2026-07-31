@@ -31,6 +31,10 @@ class SpiderLossConfig:
     evidence_positive_weight: float | None = None
     evidence_focal_gamma: float = 2.0
     evidence_false_positive_penalty: float = 0.1
+    evidence_ranking: float = 0.0
+    evidence_plausible_ranking: float = 0.0
+    evidence_ranking_margin: float = 0.2
+    evidence_hard_negative_count: int = 4
     null_expansion: float = 1.0
 
     def __post_init__(self) -> None:
@@ -40,6 +44,13 @@ class SpiderLossConfig:
                 raise ValueError(f"{field.name} loss setting must be non-negative")
         if self.evidence_mode not in {"plain", "balanced", "focal"}:
             raise ValueError("evidence_mode must be plain, balanced, or focal")
+        if (
+            self.evidence_ranking > 0
+            or self.evidence_plausible_ranking > 0
+        ) and self.evidence_hard_negative_count <= 0:
+            raise ValueError(
+                "ranked evidence loss requires a hard-negative count"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +68,7 @@ class CandidateSupervision:
     remaining_cost: torch.Tensor
     support: torch.Tensor
     conflict: torch.Tensor
+    evidence_plausible_negative: torch.Tensor | None = None
 
     @property
     def count(self) -> int:
@@ -142,6 +154,43 @@ def multi_positive_priority_loss(
         - positive_lse.values.squeeze(-1)[valid]
     ).mean()
     return loss, count
+
+
+def multi_positive_evidence_ranking_loss(
+    logits: torch.Tensor,
+    positive_mask: torch.Tensor,
+    negative_mask: torch.Tensor,
+    *,
+    margin: float,
+    max_negatives: int,
+) -> tuple[torch.Tensor, int]:
+    """Make every required item outrank the hardest invalid candidates."""
+
+    if not (
+        logits.shape == positive_mask.shape == negative_mask.shape
+    ):
+        raise ValueError("evidence ranking masks must align with logits")
+    if margin < 0:
+        raise ValueError("evidence ranking margin must be non-negative")
+    if max_negatives <= 0:
+        raise ValueError("max_negatives must be positive")
+    positive_logits = logits.float()[positive_mask.bool()]
+    negative_logits = logits.float()[negative_mask.bool()]
+    if positive_logits.numel() == 0 or negative_logits.numel() == 0:
+        return _zero(logits), 0
+    hard_negatives = torch.topk(
+        negative_logits,
+        k=min(max_negatives, negative_logits.numel()),
+        sorted=True,
+    ).values
+    pairwise = (
+        hard_negatives.unsqueeze(0)
+        - positive_logits.unsqueeze(1)
+        + margin
+    )
+    zeros = pairwise.new_zeros((pairwise.shape[0], 1))
+    loss = torch.logsumexp(torch.cat((zeros, pairwise), dim=1), dim=1).mean()
+    return loss, int(positive_logits.numel())
 
 
 def candidate_loss_report(
@@ -243,6 +292,29 @@ def candidate_loss_report(
             + 0.5 * soft_recall
             + config.evidence_false_positive_penalty * false_positive
         )
+        evidence_ranking, evidence_ranking_count = (
+            multi_positive_evidence_ranking_loss(
+                evidence_logits,
+                supervision.include_as_evidence,
+                ~supervision.include_as_evidence,
+                margin=config.evidence_ranking_margin,
+                max_negatives=config.evidence_hard_negative_count,
+            )
+        )
+        plausible_mask = supervision.evidence_plausible_negative
+        if plausible_mask is None:
+            plausible_mask = torch.zeros_like(
+                supervision.include_as_evidence
+            )
+        evidence_plausible_ranking, plausible_ranking_count = (
+            multi_positive_evidence_ranking_loss(
+                evidence_logits,
+                supervision.include_as_evidence,
+                plausible_mask,
+                margin=config.evidence_ranking_margin,
+                max_negatives=config.evidence_hard_negative_count,
+            )
+        )
         support = F.binary_cross_entropy_with_logits(
             outputs.support_logits.float(),
             supervision.support.float(),
@@ -263,6 +335,10 @@ def candidate_loss_report(
         context = _zero(outputs.context_logits)
         evidence = _zero(outputs.evidence_logits)
         evidence_set = _zero(outputs.evidence_logits)
+        evidence_ranking = _zero(outputs.evidence_logits)
+        evidence_ranking_count = 0
+        evidence_plausible_ranking = _zero(outputs.evidence_logits)
+        plausible_ranking_count = 0
         support_conflict = _zero(outputs.support_logits)
         remaining = _zero(outputs.remaining_cost)
         search_cost = _zero(outputs.expand_logits)
@@ -289,6 +365,16 @@ def candidate_loss_report(
                     if count
                     else 0
                 ),
+            ),
+            "evidence_ranking": _term(
+                evidence_ranking,
+                weight=config.evidence_ranking,
+                target_count=evidence_ranking_count,
+            ),
+            "evidence_plausible_ranking": _term(
+                evidence_plausible_ranking,
+                weight=config.evidence_plausible_ranking,
+                target_count=plausible_ranking_count,
             ),
             "support_conflict": _term(
                 support_conflict,

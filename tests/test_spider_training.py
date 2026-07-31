@@ -10,6 +10,7 @@ from hippocampus.programs import (
     pack_rendered_cases,
 )
 from hippocampus.spider import (
+    ActionSchedule,
     SparseControllerConfig,
     SpiderLossConfig,
     SpiderModel,
@@ -221,3 +222,63 @@ def test_evaluation_reports_rollout_costs_and_invariance() -> None:
     assert report.efficiency["mean_arcs_scored"] > 0
     assert report.invariance["deterministic_replay_mismatches"] == 0
     assert report.invariance["row_permutation_decision_mismatches"] == 0
+
+
+def test_paused_training_resumes_to_identical_model_state(tmp_path) -> None:
+    torch.manual_seed(29)
+    uninterrupted, batches = _training_fixture()
+    initial_state = {
+        name: value.detach().clone()
+        for name, value in uninterrupted.state_dict().items()
+    }
+    initial_rng = torch.get_rng_state()
+    loop = TrainingLoopConfig(
+        steps=6,
+        batch_size=2,
+        learning_rate=0.001,
+        seed=17,
+        log_every=3,
+        action_schedule=(
+            ActionSchedule.oracle_only(),
+            ActionSchedule.model_only(),
+        ),
+    )
+
+    torch.set_rng_state(initial_rng)
+    full = train_oracle_batches(
+        uninterrupted,
+        batches,
+        loop_config=loop,
+    )
+
+    paused = SpiderModel(uninterrupted.config)
+    paused.load_state_dict(initial_state)
+    checkpoint = tmp_path / "resumable.pt"
+    torch.set_rng_state(initial_rng)
+    partial = train_oracle_batches(
+        paused,
+        batches,
+        loop_config=loop,
+        checkpoint_path=checkpoint,
+        stop_after_steps=3,
+    )
+    resumed = SpiderModel(uninterrupted.config)
+    resumed_result = train_oracle_batches(
+        resumed,
+        batches,
+        loop_config=loop,
+        checkpoint_path=checkpoint,
+        resume_checkpoint=checkpoint,
+    )
+
+    assert full.completed_steps == 6
+    assert partial.completed_steps == 3
+    assert resumed_result.completed_steps == 6
+    assert resumed_result.resumed_from_step == 3
+    for name, expected in uninterrupted.state_dict().items():
+        assert torch.equal(expected, resumed.state_dict()[name]), name
+    assert (
+        full.action_source_counts
+        == resumed_result.action_source_counts
+    )
+    assert full.training_examples == resumed_result.training_examples
