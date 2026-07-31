@@ -396,8 +396,29 @@ class CandidateScorerBase(nn.Module, ABC):
             raise RuntimeError(
                 "null expansion was not enabled in SpiderModelConfig"
             )
+        inputs = self.null_expansion_inputs(
+            batch,
+            hypotheses,
+            evidence,
+            controller_features,
+        )
+        return self.null_expansion_head(
+            torch.cat(inputs, dim=-1)
+        ).squeeze(-1)
+
+    def null_expansion_inputs(
+        self,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        controller_features: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return frozen, per-hypothesis inputs to the branch NULL head."""
+
         if hypotheses.count == 0:
-            return evidence.new_empty((0,))
+            empty = evidence.new_empty((0, self.config.d_model))
+            control = evidence.new_empty((0, self.config.control_width))
+            return empty, empty, empty, control
         graph_ids = hypotheses.graph_ids.to(torch.int64)
         query_set = self._queries(batch, graph_ids)
         query = masked_mean(query_set.values, query_set.mask)
@@ -414,9 +435,23 @@ class CandidateScorerBase(nn.Module, ABC):
             if controller_features is None
             else controller_features[graph_ids]
         )
-        return self.null_expansion_head(
-            torch.cat((query, evidence_pool, path, control), dim=-1)
-        ).squeeze(-1)
+        return query, evidence_pool, path, control
+
+    def termination_inputs(
+        self,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        controller_features: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return pooled inputs at the canonical post-transition boundary."""
+
+        return self._global_state_inputs(
+            batch,
+            hypotheses,
+            evidence,
+            controller_features,
+        )
 
     def termination_output(
         self,
@@ -425,7 +460,7 @@ class CandidateScorerBase(nn.Module, ABC):
         evidence: torch.Tensor,
         controller_features: torch.Tensor | None = None,
     ) -> TerminationOutput:
-        query, evidence_pool, frontier, control = self._global_state_inputs(
+        query, evidence_pool, frontier, control = self.termination_inputs(
             batch,
             hypotheses,
             evidence,

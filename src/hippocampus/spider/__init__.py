@@ -95,6 +95,17 @@ from .protocol_v0_3 import (
 )
 from .state_oracle import EvidenceRequirement, StateOracle, StateSupervision
 from .terminator import TerminationFactorTargets
+from .termination_training import (
+    HeadTrainingRecord,
+    HeadTrainingResult,
+    NullExpansionStateDataset,
+    TerminationStateDataset,
+    TerminationStateEvaluation,
+    collect_termination_state_dataset,
+    evaluate_termination_state_dataset,
+    train_frozen_null_head,
+    train_frozen_termination_head,
+)
 from .set_attention import (
     AttentionBackendStatus,
     PositionFreeCrossAttention,
@@ -174,6 +185,11 @@ __all__ = [
     "StateOracle",
     "StateSupervision",
     "TerminationFactorTargets",
+    "TerminationStateDataset",
+    "TerminationStateEvaluation",
+    "HeadTrainingRecord",
+    "HeadTrainingResult",
+    "NullExpansionStateDataset",
     "TraceLedgerEntry",
     "TemperatureScalingResult",
     "TrainingLoopConfig",
@@ -193,11 +209,13 @@ __all__ = [
     "candidate_control_features",
     "candidate_loss_report",
     "controller_rollout",
+    "collect_termination_state_dataset",
     "evaluate_oracle_batches",
     "evaluate_batches",
     "evaluate_closed_loop_batches",
     "execute_closed_loop_case",
     "evaluate_rollout_stress_states",
+    "evaluate_termination_state_dataset",
     "fit_temperature_scaling",
     "make_tiny_cases",
     "multi_positive_evidence_ranking_loss",
@@ -214,6 +232,8 @@ __all__ = [
     "termination_control_features",
     "termination_loss_report",
     "train_oracle_batches",
+    "train_frozen_null_head",
+    "train_frozen_termination_head",
     "validate_v0_1_artifact_input",
     "validate_v0_1_split_access",
     "verify_grouped_development_manifest",
