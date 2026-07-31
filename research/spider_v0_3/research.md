@@ -82,3 +82,14 @@ development evidence and cannot alter the certified v0.2 conclusion.
 |---:|---|---|---:|---|
 | 0 | Freeze history and instrument before changing objectives. | pass | 1.0 | v0.2 tagged; exact edge-aware funnel and independent evidence action tested. |
 | 1 | Candidate coverage, rather than scorer selection, is the preserved-run bottleneck. | fail | 0.7031 | Reachable/scored coverage was 1.0; pooled conditional selection recall averaged 0.7031, so the coverage hypothesis was falsified. |
+| 2 | Weighted BCE plus multi-positive hard-negative ranking improves evidence recall without losing precision. | fail | 0.5139 | E1 lost 0.1111 recall and 0.0521 exact-set accuracy versus E0 across three matched 1k screens. |
+| 3 | Additional structurally plausible negatives improve over ordinary hard negatives. | invalid | 0.5139 | E2 received no additional plausible-negative targets; its model tensors were byte-identical to E1, so it is non-informative. |
+| 4 | Longer E0 training improves the calibrated evidence operating point. | fail | 0.5764 | Three 6k continuations averaged lower recall and exact-set accuracy than the 1k E0 screens; calibration exposed overconfident logits. |
+| 5 | Direct factor labels restore autonomous continuation while retaining fixed-horizon success. | fail | 0.3490 | T1 matched T0 autonomous success, with 0.6574 continuation recall and 0.5726 retention. |
+| 6 | Per-hypothesis NULL reduces false answers without harming structural success. | fail | 0.3021 | T2 lowered false answers to 0.1042 but also reduced fixed-horizon and autonomous success. |
+
+The termination gate failed, so T3 joint fine-tuning and the conditional
+multi-binding architecture comparison were not opened. All scores above are
+non-sealed development results from the local RTX 5070 Ti contingency; the
+registered A100 execution remains unavailable because Colab rejected the
+accelerator allocation.

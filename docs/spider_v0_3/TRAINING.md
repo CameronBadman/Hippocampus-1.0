@@ -4,6 +4,11 @@ Spider v0.3 isolates evidence selection first, then termination. The v0.2
 source, six accepted runs, reports, tags, and Drive folder are immutable. No
 v0/v0.2 sealed case is available to these commands.
 
+The completed local CUDA contingency result is reported in
+[FINAL_REPORT.md](FINAL_REPORT.md). Google Colab authenticated successfully but
+rejected both A100 and H100 allocation, so this run is hardware-qualified as an
+RTX 5070 Ti contingency and does not replace the registered A100 experiment.
+
 ## Evidence matrix
 
 The registered development data has 512 training cases, 64 grouped
@@ -105,3 +110,20 @@ training uses direct oracle-state labels for evidence sufficiency, useful work
 remaining, answer support, and unknown reason. Traversal and evidence scoring
 remain frozen for T0–T2. T2 adds a per-hypothesis NULL action; NULL kills one
 branch and never implies global termination.
+
+## Completed result
+
+The nine evidence screens rejected E1 and E2 on every matched seed. E2
+received no additional plausible-negative targets and was byte-identical to
+E1. E0 alone resumed from 1,000 to 6,000 steps at three seeds. The frozen
+representative is seed 1903 with evidence recall 0.6042, exact-set accuracy
+0.6250, precision 0.7838, and threshold 0.9995837.
+
+T0, T1, and T2 each ran at three seeds against that frozen evidence model.
+No arm passed the termination gate. T3 and the multi-binding architecture
+comparison were therefore not run.
+
+The exact machine records are under
+`artifacts/spider_v0_3/local_rtx5070ti_2d54286/`. All 21 checkpoints are backed
+up in the new
+[Spider v0.3 Drive folder](https://drive.google.com/drive/folders/1fDeph0FQhW5fwV6V8Jn4CDJC6BmLFpWE).

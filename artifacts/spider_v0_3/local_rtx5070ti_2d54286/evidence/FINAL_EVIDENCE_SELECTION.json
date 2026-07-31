@@ -1,0 +1,29 @@
+{
+  "arm_rule": "candidate must pass the registered matched-seed gate again on full runs",
+  "checkpoint_rule": "minimum L1 distance to median exact-set accuracy and recall; ascending-seed tie break",
+  "dataset_hash": "0ed8e27ec44f3773f76b79f1947526f33ba233556b7db91fef04dcb647e5409d",
+  "experimental_arm": null,
+  "experimental_full_passed": false,
+  "experimental_full_seed_gates": {},
+  "sealed_access_count": 0,
+  "selected_arm": "E0",
+  "selected_arm_medians": {
+    "exact_set_accuracy": 0.625,
+    "recall": 0.6041666666666666
+  },
+  "selected_checkpoint_path": "/tmp/spider-v03-local-contingency-2d54286/runs/V03-full-E0-s1903-6k/checkpoint.pt",
+  "selected_checkpoint_sha256": "253ef92ca2242003e78460d6a1beb16796619c4dd6638336cf062d9c63b782cf",
+  "selected_evidence_threshold": 0.9995836802664446,
+  "selected_experiment_id": "V03-full-E0-s1903-6k",
+  "selected_metrics": {
+    "conditional_selection_recall": 0.6170212765957447,
+    "exact_set_accuracy": 0.625,
+    "false_positives_per_case": 0.125,
+    "precision": 0.7837837837837838,
+    "recall": 0.6041666666666666,
+    "scored_positive_coverage": 0.9791666666666666
+  },
+  "selected_seed": 1903,
+  "source_commit": "2d542860af20bfe6ef2ab64e2950df1d07ceb2da",
+  "timestamp": "2026-07-31T02:06:05.958692+00:00"
+}

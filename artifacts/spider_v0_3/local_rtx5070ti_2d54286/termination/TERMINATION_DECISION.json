@@ -1,0 +1,159 @@
+{
+  "arms": {
+    "T0": {
+      "eligible": false,
+      "mean_autonomous_retention": 0.5726495726495727,
+      "mean_autonomous_success": 0.3489583333333333,
+      "seed_passes": 0,
+      "seeds": {
+        "1701": {
+          "autonomous_retention": 0.5641025641025641,
+          "autonomous_success": 0.34375,
+          "continuation_recall": 0.6666666865348816,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.171875,
+          "fixed_horizon_success": 0.609375,
+          "passed": false,
+          "premature_stop_rate": 0.3333333134651184,
+          "risk_among_answered": 0.4583333333333333,
+          "risk_delta_vs_T0": 0.0,
+          "unknown_macro_recall": 0.3130827471613884
+        },
+        "1802": {
+          "autonomous_retention": 0.5384615384615384,
+          "autonomous_success": 0.328125,
+          "continuation_recall": 0.6666666865348816,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.171875,
+          "fixed_horizon_success": 0.609375,
+          "passed": false,
+          "premature_stop_rate": 0.3333333134651184,
+          "risk_among_answered": 0.4583333333333333,
+          "risk_delta_vs_T0": 0.0,
+          "unknown_macro_recall": 0.3007432892918587
+        },
+        "1903": {
+          "autonomous_retention": 0.6153846153846154,
+          "autonomous_success": 0.375,
+          "continuation_recall": 0.6388888955116272,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.15625,
+          "fixed_horizon_success": 0.609375,
+          "passed": false,
+          "premature_stop_rate": 0.3611111044883728,
+          "risk_among_answered": 0.43478260869565216,
+          "risk_delta_vs_T0": 0.0,
+          "unknown_macro_recall": 0.35047928988933563
+        }
+      }
+    },
+    "T1": {
+      "eligible": false,
+      "mean_autonomous_retention": 0.5726495726495727,
+      "mean_autonomous_success": 0.3489583333333333,
+      "seed_passes": 0,
+      "seeds": {
+        "1701": {
+          "autonomous_retention": 0.5641025641025641,
+          "autonomous_success": 0.34375,
+          "continuation_recall": 0.6666666865348816,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.15625,
+          "fixed_horizon_success": 0.609375,
+          "passed": false,
+          "premature_stop_rate": 0.3333333134651184,
+          "risk_among_answered": 0.45454545454545453,
+          "risk_delta_vs_T0": -0.0037878787878787845,
+          "unknown_macro_recall": 0.27773893252015114
+        },
+        "1802": {
+          "autonomous_retention": 0.5641025641025641,
+          "autonomous_success": 0.34375,
+          "continuation_recall": 0.6666666865348816,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.15625,
+          "fixed_horizon_success": 0.609375,
+          "passed": false,
+          "premature_stop_rate": 0.3333333134651184,
+          "risk_among_answered": 0.43478260869565216,
+          "risk_delta_vs_T0": -0.023550724637681153,
+          "unknown_macro_recall": 0.29847056046128273
+        },
+        "1903": {
+          "autonomous_retention": 0.5897435897435898,
+          "autonomous_success": 0.359375,
+          "continuation_recall": 0.6388888955116272,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.15625,
+          "fixed_horizon_success": 0.609375,
+          "passed": false,
+          "premature_stop_rate": 0.3611111044883728,
+          "risk_among_answered": 0.43478260869565216,
+          "risk_delta_vs_T0": 0.0,
+          "unknown_macro_recall": 0.3101731687784195
+        }
+      }
+    },
+    "T2": {
+      "eligible": false,
+      "mean_autonomous_retention": 0.5981691919191919,
+      "mean_autonomous_success": 0.3020833333333333,
+      "seed_passes": 0,
+      "seeds": {
+        "1701": {
+          "autonomous_retention": 0.5757575757575758,
+          "autonomous_success": 0.296875,
+          "continuation_recall": 0.6666666865348816,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.109375,
+          "fixed_horizon_success": 0.515625,
+          "passed": false,
+          "premature_stop_rate": 0.3333333134651184,
+          "risk_among_answered": 0.4666666666666667,
+          "risk_delta_vs_T0": 0.00833333333333336,
+          "unknown_macro_recall": 0.27773893252015114
+        },
+        "1802": {
+          "autonomous_retention": 0.59375,
+          "autonomous_success": 0.296875,
+          "continuation_recall": 0.6666666865348816,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.109375,
+          "fixed_horizon_success": 0.5,
+          "passed": false,
+          "premature_stop_rate": 0.3333333134651184,
+          "risk_among_answered": 0.5,
+          "risk_delta_vs_T0": 0.041666666666666685,
+          "unknown_macro_recall": 0.29847056046128273
+        },
+        "1903": {
+          "autonomous_retention": 0.625,
+          "autonomous_success": 0.3125,
+          "continuation_recall": 0.6388888955116272,
+          "evidence_recall": 0.5833333333333334,
+          "exact_evidence_set_accuracy": 0.609375,
+          "false_answer_rate": 0.09375,
+          "fixed_horizon_success": 0.5,
+          "passed": false,
+          "premature_stop_rate": 0.3611111044883728,
+          "risk_among_answered": 0.46153846153846156,
+          "risk_delta_vs_T0": 0.026755852842809402,
+          "unknown_macro_recall": 0.3101731687784195
+        }
+      }
+    }
+  },
+  "rule": "at least two seed-level absolute gate passes; maximize mean autonomous success, then retention, then simpler arm",
+  "sealed_access_count": 0,
+  "selected_arm": null,
+  "termination_gate_passed": false,
+  "timestamp": "2026-07-31T02:10:48.841615+00:00"
+}

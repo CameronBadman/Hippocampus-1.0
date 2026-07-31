@@ -1,0 +1,14 @@
+{
+  "dataset_hash": "0ed8e27ec44f3773f76b79f1947526f33ba233556b7db91fef04dcb647e5409d",
+  "full_steps": 6000,
+  "keep_policy": "pass_only",
+  "screen_steps": 1000,
+  "sealed_access_allowed": false,
+  "seeds": [
+    1701,
+    1802,
+    1903
+  ],
+  "source_commit": "2d542860af20bfe6ef2ab64e2950df1d07ceb2da",
+  "timestamp": "2026-07-31T01:26:06.848996+00:00"
+}

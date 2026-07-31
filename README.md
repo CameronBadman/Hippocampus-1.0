@@ -361,7 +361,16 @@ The registered E0/E1/E2 evidence matrix is:
   --phase all --output-root artifacts/spider_v0_3/evidence
 ```
 
-See the [frozen design](docs/spider_v0_3/DESIGN.md), [preserved-checkpoint
+The completed local CUDA contingency rejected both ranking arms and all three
+termination arms. E0 seed 1903 is the frozen evidence representative; no
+termination arm passed the autonomous-retention gate, so T3 and the
+multi-binding architecture benchmark remain closed. All 21 checkpoints are in
+the [Spider v0.3 Drive
+folder](https://drive.google.com/drive/folders/1fDeph0FQhW5fwV6V8Jn4CDJC6BmLFpWE).
+
+Start with the [final report](docs/spider_v0_3/FINAL_REPORT.md), then see the
+[dataset card](docs/spider_v0_3/DATASET_CARD.md), [frozen
+design](docs/spider_v0_3/DESIGN.md), [preserved-checkpoint
 diagnosis](docs/spider_v0_3/EVIDENCE_DIAGNOSTIC.md), and [durable A100/Drive
 training protocol](docs/spider_v0_3/TRAINING.md). No Spider v0 or v0.2 sealed
-data is opened by this work.
+data was opened by this work.

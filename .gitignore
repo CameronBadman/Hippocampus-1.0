@@ -11,3 +11,7 @@ artifacts/**/checkpoint.pt
 artifacts/spider_v0_1/colab_5k/**/*.tar.gz
 artifacts/spider_v0_2/training/isolated/**/*.pt
 artifacts/spider_v0_2/training/isolated/**/*.zip
+artifacts/spider_v0_3/local_*/evidence/logs/
+artifacts/spider_v0_3/local_*/evidence/runs/
+artifacts/spider_v0_3/local_*/termination/logs/
+artifacts/spider_v0_3/local_*/termination/runs/
