@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import random
 import time
 from dataclasses import asdict, dataclass
@@ -52,6 +53,15 @@ TERMINATION_TO_INDEX = {
     TerminationDecision.UNKNOWN_INCOMPLETE: 4,
     TerminationDecision.UNKNOWN_UNSUPPORTED: 5,
 }
+
+
+def _atomic_torch_save(payload: object, destination: Path) -> None:
+    """Write a checkpoint without exposing a partially written target."""
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.tmp")
+    torch.save(payload, temporary)
+    os.replace(temporary, destination)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1061,7 +1071,7 @@ def train_oracle_batches(
                 f"{checkpoint_path.stem}_step_{step:06d}"
                 f"{checkpoint_path.suffix}"
             )
-            torch.save(
+            _atomic_torch_save(
                 checkpoint_payload(
                     step=step,
                     final_metrics=None,
@@ -1102,7 +1112,7 @@ def train_oracle_batches(
     )
     if checkpoint_path is not None:
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(
+        _atomic_torch_save(
             checkpoint_payload(
                 step=target_step,
                 final_metrics=final_metrics,

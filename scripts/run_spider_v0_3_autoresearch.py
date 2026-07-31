@@ -82,6 +82,60 @@ def _append_experiment_once(
         _append_jsonl(path, record)
 
 
+def _archive_incomplete_output(
+    output_dir: Path,
+    *,
+    output_root: Path,
+    experiment_id: str,
+    source_commit: str,
+) -> Path | None:
+    """Preserve a partial attempt and return its exact resume checkpoint.
+
+    Colab runtimes are preemptible. A restored Drive mirror can therefore
+    contain a run directory without final metrics. Never overwrite that
+    evidence: move it to a monotonically numbered recovery directory and
+    resume from its latest atomic checkpoint when one exists.
+    """
+
+    recovery_root = output_root / "recovery"
+    recovery_root.mkdir(parents=True, exist_ok=True)
+    attempt = 1
+    while True:
+        archived = recovery_root / (
+            f"{experiment_id}-attempt-{attempt:03d}"
+        )
+        if not archived.exists():
+            break
+        attempt += 1
+    output_dir.rename(archived)
+    final_checkpoint = archived / "checkpoint.pt"
+    periodic_checkpoints = sorted(
+        archived.glob("checkpoint_step_*.pt")
+    )
+    checkpoint = (
+        final_checkpoint
+        if final_checkpoint.is_file()
+        else periodic_checkpoints[-1]
+        if periodic_checkpoints
+        else None
+    )
+    _append_jsonl(
+        output_root / "attempts.jsonl",
+        {
+            "experiment_id": experiment_id,
+            "timestamp": _now(),
+            "source_commit": source_commit,
+            "status": "recovered",
+            "archived_output": str(archived),
+            "resume_checkpoint": (
+                str(checkpoint) if checkpoint is not None else None
+            ),
+            "sealed_access_count": 0,
+        },
+    )
+    return checkpoint
+
+
 def _gate_metrics(metrics: dict[str, Any]) -> dict[str, float]:
     return {
         key: float(value)
@@ -146,9 +200,14 @@ def _run_or_load(
             )
         return metrics
     if output_dir.exists():
-        raise RuntimeError(
-            f"incomplete output directory requires audit: {output_dir}"
+        recovered_checkpoint = _archive_incomplete_output(
+            output_dir,
+            output_root=output_root,
+            experiment_id=experiment_id,
+            source_commit=source_commit,
         )
+        if recovered_checkpoint is not None:
+            resume_checkpoint = recovered_checkpoint
 
     command = [
         sys.executable,

@@ -332,3 +332,36 @@ state-use interventions, limitations, and next recommendation are in the
 [final report](docs/spider_v0_2/FINAL_REPORT.md); the certified machine-readable
 aggregate is
 [`artifacts/spider_v0_2/training/TRAINING_SUMMARY.json`](artifacts/spider_v0_2/training/TRAINING_SUMMARY.json).
+
+## Spider v0.3 evidence and termination repair
+
+Spider v0.3 preserves the completed v0.2 result and first traces every required
+evidence item through reachability, enumeration, scoring, selection, and exact
+recording. The preserved six-checkpoint diagnostic found 100% reachable and
+scored-positive coverage; the measured bottleneck is evidence ranking and
+selection, not candidate generation.
+
+Regenerate the grouped, non-sealed development protocol and run a CPU smoke
+evaluation with:
+
+```bash
+.venv/bin/python scripts/generate_spider_v0_3_dataset.py
+.venv/bin/python scripts/spider_v0_3_evaluator.py \
+  --config configs/spider_v0_3/evidence_smoke_cpu.json \
+  --experiment-id v03-smoke \
+  --output-dir /tmp/spider-v03-smoke \
+  --stop-after-steps 2 \
+  --train-cases 4 --calibration-cases 4 --evaluation-cases 4
+```
+
+The registered E0/E1/E2 evidence matrix is:
+
+```bash
+.venv/bin/python scripts/run_spider_v0_3_autoresearch.py \
+  --phase all --output-root artifacts/spider_v0_3/evidence
+```
+
+See the [frozen design](docs/spider_v0_3/DESIGN.md), [preserved-checkpoint
+diagnosis](docs/spider_v0_3/EVIDENCE_DIAGNOSTIC.md), and [durable A100/Drive
+training protocol](docs/spider_v0_3/TRAINING.md). No Spider v0 or v0.2 sealed
+data is opened by this work.

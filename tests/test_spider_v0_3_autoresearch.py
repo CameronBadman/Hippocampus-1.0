@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 
@@ -77,3 +78,133 @@ def test_guard_failed_run_cannot_count_as_seed_win() -> None:
 
     assert decision["arms"]["E1"]["seed_wins"] == 1
     assert decision["experimental_winner"] is None
+
+
+def test_incomplete_run_is_archived_and_resumed_from_its_checkpoint(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    module = _module()
+    output_root = tmp_path / "evidence"
+    experiment_id = "V03-screen-E0-s1701-1k"
+    incomplete = output_root / "runs" / experiment_id
+    incomplete.mkdir(parents=True)
+    checkpoint = incomplete / "checkpoint.pt"
+    checkpoint.write_bytes(b"exact-resume-state")
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        output_dir = Path(command[command.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        (output_dir / "metrics.json").write_text(
+            json.dumps(
+                {
+                    "experiment_id": experiment_id,
+                    "source_commit": "a" * 40,
+                }
+            )
+        )
+
+        class Result:
+            returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+
+    metrics = module._run_or_load(
+        arm="E0",
+        seed=1701,
+        phase="screen",
+        output_root=output_root,
+        source_commit="a" * 40,
+        stop_after_steps=1000,
+        timeout_seconds=60,
+        precision_floor=0.0,
+    )
+
+    recovery = output_root / "recovery" / f"{experiment_id}-attempt-001"
+    assert (recovery / "checkpoint.pt").read_bytes() == b"exact-resume-state"
+    command = captured["command"]
+    assert Path(command[command.index("--resume-checkpoint") + 1]) == (
+        recovery / "checkpoint.pt"
+    )
+    assert metrics["source_commit"] == "a" * 40
+    attempt = json.loads(
+        (output_root / "attempts.jsonl").read_text().splitlines()[0]
+    )
+    assert attempt["status"] == "recovered"
+
+
+def test_incomplete_run_without_checkpoint_is_archived_and_restarted(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    module = _module()
+    output_root = tmp_path / "evidence"
+    experiment_id = "V03-screen-E0-s1701-1k"
+    incomplete = output_root / "runs" / experiment_id
+    incomplete.mkdir(parents=True)
+    (incomplete / "partial.log").write_text("setup failed")
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        output_dir = Path(command[command.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        (output_dir / "metrics.json").write_text(
+            json.dumps(
+                {
+                    "experiment_id": experiment_id,
+                    "source_commit": "b" * 40,
+                }
+            )
+        )
+
+        class Result:
+            returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+
+    module._run_or_load(
+        arm="E0",
+        seed=1701,
+        phase="screen",
+        output_root=output_root,
+        source_commit="b" * 40,
+        stop_after_steps=1000,
+        timeout_seconds=60,
+        precision_floor=0.0,
+    )
+
+    assert "--resume-checkpoint" not in captured["command"]
+    assert (
+        output_root
+        / "recovery"
+        / f"{experiment_id}-attempt-001"
+        / "partial.log"
+    ).is_file()
+
+
+def test_recovery_prefers_latest_periodic_checkpoint(tmp_path) -> None:
+    module = _module()
+    output_root = tmp_path / "evidence"
+    experiment_id = "V03-full-E1-s1802-6k"
+    incomplete = output_root / "runs" / experiment_id
+    incomplete.mkdir(parents=True)
+    (incomplete / "checkpoint_step_002000.pt").write_bytes(b"step-2k")
+    (incomplete / "checkpoint_step_004000.pt").write_bytes(b"step-4k")
+
+    recovered = module._archive_incomplete_output(
+        incomplete,
+        output_root=output_root,
+        experiment_id=experiment_id,
+        source_commit="c" * 40,
+    )
+
+    assert recovered is not None
+    assert recovered.name == "checkpoint_step_004000.pt"
+    assert recovered.read_bytes() == b"step-4k"
