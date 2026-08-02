@@ -33,6 +33,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--timeout-seconds", type=int, default=300)
+    parser.add_argument("--arm", choices=ARMS)
+    parser.add_argument("--seed", type=int, choices=SEEDS)
     return parser.parse_args()
 
 
@@ -319,8 +321,10 @@ def main() -> None:
                     raise FileNotFoundError(path)
                 results[(arm, seed)] = _load(path)
     else:
-        for arm in ARMS:
-            for seed in SEEDS:
+        selected_arms = (args.arm,) if args.arm is not None else ARMS
+        selected_seeds = (args.seed,) if args.seed is not None else SEEDS
+        for arm in selected_arms:
+            for seed in selected_seeds:
                 metrics = _run_or_load(
                     arm=arm,
                     seed=seed,
@@ -341,8 +345,16 @@ def main() -> None:
                         ),
                     ),
                 )
-    summary = _write_summary(args.output_root, results)
-    print(json.dumps(summary, sort_keys=True))
+    if len(results) == len(ARMS) * len(SEEDS):
+        output = _write_summary(args.output_root, results)
+    else:
+        output = {
+            "completed_experiments": sorted(
+                metrics["experiment_id"] for metrics in results.values()
+            ),
+            "summary_pending": True,
+        }
+    print(json.dumps(output, sort_keys=True))
 
 
 if __name__ == "__main__":

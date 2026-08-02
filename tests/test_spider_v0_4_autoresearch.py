@@ -105,3 +105,24 @@ def test_only_b1_and_b2_create_new_renderer_training_runs() -> None:
         "shared_additive",
         "orthogonal_aligned",
     }
+
+
+def test_single_experiment_filters_are_available_for_bounded_runs(
+    monkeypatch,
+) -> None:
+    module = _module()
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_spider_v0_4_autoresearch.py",
+            "--arm",
+            "B2",
+            "--seed",
+            "1802",
+        ],
+    )
+
+    args = module.parse_args()
+
+    assert args.arm == "B2"
+    assert args.seed == 1802
