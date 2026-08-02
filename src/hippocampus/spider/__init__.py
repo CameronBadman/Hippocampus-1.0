@@ -62,6 +62,11 @@ from .evidence_diagnostics import (
     aggregate_evidence_pipeline,
     observe_evidence_pipeline,
 )
+from .evidence_decoding import (
+    FrozenEvidencePolicyAudit,
+    FrozenEvidencePolicyMetrics,
+    audit_frozen_evidence_policies,
+)
 from .evaluation_v0_1 import (
     ClosedLoopEvaluationReport,
     calibrate_on_development_batches,
@@ -166,6 +171,8 @@ __all__ = [
     "EvidenceLedgerEntry",
     "EvaluationReport",
     "FlatTransformerScorer",
+    "FrozenEvidencePolicyAudit",
+    "FrozenEvidencePolicyMetrics",
     "GroupedDevelopmentCases",
     "GroupedDevelopmentManifest",
     "HypothesisBatch",
@@ -203,6 +210,7 @@ __all__ = [
     "TrainingResult",
     "attention_backend_status",
     "aggregate_evidence_pipeline",
+    "audit_frozen_evidence_policies",
     "approximate_exact_set_point",
     "apply_path_state_intervention",
     "authorize_v0_2_sealed_evaluation",

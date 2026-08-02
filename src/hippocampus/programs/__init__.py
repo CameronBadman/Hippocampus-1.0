@@ -23,6 +23,7 @@ from .counterfactuals import make_counterfactual
 from .equivalent_views import make_equivalent_view
 from .generator import GeneratorConfig, GraphProgramGenerator
 from .leakage import MetadataLeakageReport, metadata_leakage_report
+from .label_audit import ProgramLabelAudit, audit_aligned_program_labels
 from .oracle import VerificationReport, verify_case
 from .renderer import (
     RenderedCase,
@@ -93,6 +94,7 @@ __all__ = [
     "ProgramEdge",
     "ProgramFamily",
     "ProgramNode",
+    "ProgramLabelAudit",
     "RECURRENCE_DATASET_VERSION",
     "RecurrenceLeakageReport",
     "RecurrenceNecessityManifest",
@@ -110,6 +112,7 @@ __all__ = [
     "V04_DATASET_VERSION",
     "VerificationReport",
     "build_aligned_dev_manifest",
+    "audit_aligned_program_labels",
     "build_split_manifest",
     "build_rollout_stress_manifest",
     "build_recurrence_necessity_manifest",

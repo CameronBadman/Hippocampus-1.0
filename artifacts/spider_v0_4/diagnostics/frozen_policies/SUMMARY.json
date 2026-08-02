@@ -1,0 +1,50 @@
+{
+  "arms": {
+    "B0": {
+      "mean_global_threshold_exact_set_accuracy": 0.5865885416666666,
+      "mean_oracle_cardinality_exact_set_accuracy": 0.9104817708333334,
+      "mean_oracle_cardinality_gain": 0.3238932291666667,
+      "mean_per_case_threshold_exact_set_accuracy": 0.9104817708333334,
+      "seed_branches": [
+        "set_decoding",
+        "set_decoding",
+        "set_decoding"
+      ]
+    },
+    "B1": {
+      "mean_global_threshold_exact_set_accuracy": 0.5035807291666666,
+      "mean_oracle_cardinality_exact_set_accuracy": 0.8860677083333334,
+      "mean_oracle_cardinality_gain": 0.3824869791666667,
+      "mean_per_case_threshold_exact_set_accuracy": 0.8860677083333334,
+      "seed_branches": [
+        "set_decoding",
+        "set_decoding",
+        "set_decoding"
+      ]
+    },
+    "B2": {
+      "mean_global_threshold_exact_set_accuracy": 0.5924479166666666,
+      "mean_oracle_cardinality_exact_set_accuracy": 0.8821614583333334,
+      "mean_oracle_cardinality_gain": 0.2897135416666667,
+      "mean_per_case_threshold_exact_set_accuracy": 0.8821614583333334,
+      "seed_branches": [
+        "set_decoding",
+        "set_decoding",
+        "set_decoding"
+      ]
+    }
+  },
+  "dataset_hash": "54a5a79c701a894a5ba3e048319e62f5cdd4fc2da4e4031a74c123fe4eddef97",
+  "dataset_version": "spider-programs-v0.4-aligned-dev",
+  "decision": {
+    "B2_oracle_cardinality_gains": [
+      0.3447265625,
+      0.1904296875,
+      0.333984375
+    ],
+    "ranking_is_perfect": false,
+    "set_decoding_branch_indicated": true,
+    "strong_ceiling_seed_count": 3
+  },
+  "sealed_access_count": 0
+}

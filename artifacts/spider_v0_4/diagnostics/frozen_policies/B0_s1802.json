@@ -1,0 +1,222 @@
+{
+  "arm": "B0",
+  "by_family": {
+    "corroboration": {
+      "P0_global_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.33203125,
+        "false_positives_per_case": 0.0,
+        "mean_absolute_cardinality_error": 1.16796875,
+        "mean_predicted_cardinality": 0.0,
+        "mean_required_cardinality": 1.16796875,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "P1_oracle_cardinality": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.9921875,
+        "false_positives_per_case": 0.0078125,
+        "mean_absolute_cardinality_error": 0.0,
+        "mean_predicted_cardinality": 1.16796875,
+        "mean_required_cardinality": 1.16796875,
+        "precision": 0.9933110367892977,
+        "recall": 0.9933110367892977
+      },
+      "P2_per_case_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.9921875,
+        "false_positives_per_case": 0.0078125,
+        "mean_absolute_cardinality_error": 0.0078125,
+        "mean_predicted_cardinality": 1.17578125,
+        "mean_required_cardinality": 1.16796875,
+        "precision": 0.9933554817275747,
+        "recall": 1.0
+      },
+      "P3_oracle_null": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.33203125,
+        "false_positives_per_case": 0.0,
+        "mean_absolute_cardinality_error": 1.16796875,
+        "mean_predicted_cardinality": 0.0,
+        "mean_required_cardinality": 1.16796875,
+        "precision": 0.0,
+        "recall": 0.0
+      }
+    },
+    "latest_valid": {
+      "P0_global_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.33203125,
+        "false_positives_per_case": 0.00390625,
+        "mean_absolute_cardinality_error": 0.8359375,
+        "mean_predicted_cardinality": 0.0078125,
+        "mean_required_cardinality": 0.8359375,
+        "precision": 0.5,
+        "recall": 0.004672897196261682
+      },
+      "P1_oracle_cardinality": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.99609375,
+        "false_positives_per_case": 0.00390625,
+        "mean_absolute_cardinality_error": 0.0,
+        "mean_predicted_cardinality": 0.8359375,
+        "mean_required_cardinality": 0.8359375,
+        "precision": 0.9953271028037384,
+        "recall": 0.9953271028037384
+      },
+      "P2_per_case_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.99609375,
+        "false_positives_per_case": 0.0078125,
+        "mean_absolute_cardinality_error": 0.0078125,
+        "mean_predicted_cardinality": 0.84375,
+        "mean_required_cardinality": 0.8359375,
+        "precision": 0.9907407407407407,
+        "recall": 1.0
+      },
+      "P3_oracle_null": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.3359375,
+        "false_positives_per_case": 0.0,
+        "mean_absolute_cardinality_error": 0.83203125,
+        "mean_predicted_cardinality": 0.00390625,
+        "mean_required_cardinality": 0.8359375,
+        "precision": 1.0,
+        "recall": 0.004672897196261682
+      }
+    },
+    "lookup": {
+      "P0_global_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "mean_absolute_cardinality_error": 0.5,
+        "mean_predicted_cardinality": 0.0,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "P1_oracle_cardinality": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.74609375,
+        "false_positives_per_case": 0.25390625,
+        "mean_absolute_cardinality_error": 0.0,
+        "mean_predicted_cardinality": 0.5,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.4921875,
+        "recall": 0.4921875
+      },
+      "P2_per_case_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.74609375,
+        "false_positives_per_case": 0.25390625,
+        "mean_absolute_cardinality_error": 0.25390625,
+        "mean_predicted_cardinality": 0.75390625,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.6632124352331606,
+        "recall": 1.0
+      },
+      "P3_oracle_null": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "mean_absolute_cardinality_error": 0.5,
+        "mean_predicted_cardinality": 0.0,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.0,
+        "recall": 0.0
+      }
+    },
+    "reachability": {
+      "P0_global_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "mean_absolute_cardinality_error": 0.5,
+        "mean_predicted_cardinality": 0.0,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "P1_oracle_cardinality": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.96484375,
+        "false_positives_per_case": 0.03515625,
+        "mean_absolute_cardinality_error": 0.0,
+        "mean_predicted_cardinality": 0.5,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.9296875,
+        "recall": 0.9296875
+      },
+      "P2_per_case_threshold": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.96484375,
+        "false_positives_per_case": 0.03515625,
+        "mean_absolute_cardinality_error": 0.046875,
+        "mean_predicted_cardinality": 0.5234375,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.9328358208955224,
+        "recall": 0.9765625
+      },
+      "P3_oracle_null": {
+        "case_count": 256,
+        "exact_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "mean_absolute_cardinality_error": 0.5,
+        "mean_predicted_cardinality": 0.0,
+        "mean_required_cardinality": 0.5,
+        "precision": 0.0,
+        "recall": 0.0
+      }
+    }
+  },
+  "dataset_hash": "54a5a79c701a894a5ba3e048319e62f5cdd4fc2da4e4031a74c123fe4eddef97",
+  "experiment_id": "V04-phase-B-B0-s1802",
+  "oracle_cardinality_exact_set_gain": 0.5087890625,
+  "overall": {
+    "P0_global_threshold": {
+      "case_count": 1024,
+      "exact_set_accuracy": 0.416015625,
+      "false_positives_per_case": 0.0009765625,
+      "mean_absolute_cardinality_error": 0.7509765625,
+      "mean_predicted_cardinality": 0.001953125,
+      "mean_required_cardinality": 0.7509765625,
+      "precision": 0.5,
+      "recall": 0.0013003901170351106
+    },
+    "P1_oracle_cardinality": {
+      "case_count": 1024,
+      "exact_set_accuracy": 0.9248046875,
+      "false_positives_per_case": 0.0751953125,
+      "mean_absolute_cardinality_error": 0.0,
+      "mean_predicted_cardinality": 0.7509765625,
+      "mean_required_cardinality": 0.7509765625,
+      "precision": 0.8998699609882965,
+      "recall": 0.8998699609882965
+    },
+    "P2_per_case_threshold": {
+      "case_count": 1024,
+      "exact_set_accuracy": 0.9248046875,
+      "false_positives_per_case": 0.076171875,
+      "mean_absolute_cardinality_error": 0.0791015625,
+      "mean_predicted_cardinality": 0.82421875,
+      "mean_required_cardinality": 0.7509765625,
+      "precision": 0.9075829383886256,
+      "recall": 0.9960988296488946
+    },
+    "P3_oracle_null": {
+      "case_count": 1024,
+      "exact_set_accuracy": 0.4169921875,
+      "false_positives_per_case": 0.0,
+      "mean_absolute_cardinality_error": 0.75,
+      "mean_predicted_cardinality": 0.0009765625,
+      "mean_required_cardinality": 0.7509765625,
+      "precision": 1.0,
+      "recall": 0.0013003901170351106
+    }
+  },
+  "recommended_branch": "set_decoding",
+  "sealed_access_count": 0,
+  "seed": 1802,
+  "source_commit": "6ac41ee6b44aa8621de4663fd6fda7f770aced27"
+}
