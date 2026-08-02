@@ -295,6 +295,12 @@ def main() -> None:
             )
     else:
         existing_selection_records: dict[int, dict[str, object]] = {}
+        if args.prior_run is not None:
+            for path in sorted(
+                (args.prior_run / "model_selection").glob("step_*.json")
+            ):
+                record = json.loads(path.read_text())
+                existing_selection_records[int(record["step"])] = record
         if args.resume_selection:
             training_path = args.output_dir / "training.json"
             training_payload = (
@@ -325,7 +331,6 @@ def main() -> None:
             ):
                 record = json.loads(path.read_text())
                 existing_selection_records[int(record["step"])] = record
-            checkpoint_records.extend(existing_selection_records.values())
         elif historical_template is not None:
             checkpoint_paths = [
                 ROOT / str(historical_template).format(seed=args.seed)
@@ -397,6 +402,7 @@ def main() -> None:
             del model, train_source, monitor
             _release_cuda_cache()
 
+        checkpoint_records.extend(existing_selection_records.values())
         selection_batches = _pack_static(
             selection_cases,
             renderer=renderer,

@@ -66,6 +66,12 @@ from checkpoint payloads, and calibration cannot start until the complete set
 has been compared and a pause record has been written. The partial D2 attempt
 also remains in the failure ledger.
 
+Finalist extensions reuse the frozen step-250 through step-1,000
+model-selection reports because the checkpoint hashes, selection partition,
+row-permutation seed, renderer, controller, and evaluator are identical. Only
+new step-1,250 through step-2,000 checkpoints are evaluated. This removes
+redundant computation; it does not approximate or omit any checkpoint.
+
 ```bash
 .venv/bin/python scripts/run_spider_v0_4_readout.py --phase all
 ```
