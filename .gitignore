@@ -19,3 +19,4 @@ artifacts/spider_v0_4/**/*.pt
 artifacts/spider_v0_4/**/runs/
 artifacts/spider_v0_4/**/logs/
 artifacts/spider_v0_4/**/.campaign.lock
+artifacts/spider_v0_4/**/invalid_concurrent/

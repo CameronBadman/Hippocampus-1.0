@@ -374,3 +374,20 @@ design](docs/spider_v0_3/DESIGN.md), [preserved-checkpoint
 diagnosis](docs/spider_v0_3/EVIDENCE_DIAGNOSTIC.md), and [durable A100/Drive
 training protocol](docs/spider_v0_3/TRAINING.md). No Spider v0 or v0.2 sealed
 data was opened by this work.
+
+## Spider v0.4 representation and exact evidence recovery
+
+Run the frozen-logit ceiling audit and the gated learned set-decoder campaign:
+
+```bash
+.venv/bin/python scripts/evaluate_spider_v0_4_phase_e.py
+.venv/bin/python scripts/run_spider_v0_4_set_decoding.py --phase all
+```
+
+The completed three-seed campaign retained the pooled/global-threshold control.
+No learned null or cardinality decoder passed the matched-seed gate, so no A100
+replication or sealed evaluation was run. See the [v0.4 final
+report](docs/spider_v0_4/FINAL_REPORT.md), [Phase F
+result](docs/spider_v0_4/PHASE_F_REPORT.md), and [training
+protocol](docs/spider_v0_4/TRAINING.md). Machine-readable results and the
+generated ledger are under `artifacts/spider_v0_4/phase_f/local_rtx5070ti/`.
