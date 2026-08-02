@@ -86,10 +86,12 @@ and historical-control equivalence check are frozen in
 .venv/bin/python scripts/run_spider_v0_4_set_decoding.py --phase all
 ```
 
-The runner is resumable at both checkpoint-selection and evaluation
-boundaries. F0 is loaded from the Phase D result without re-opening development
-evaluation. F1-F3 contribute nine new training runs to the registered maximum
-of twelve.
+The runner is resumable during training and at both checkpoint-selection and
+evaluation boundaries. An interrupted training process resumes from its latest
+250-step checkpoint with data-source, optimiser, action-RNG, and PyTorch-RNG
+state restored exactly. F0 is loaded from the Phase D result without re-opening
+development evaluation. F1-F3 contribute nine new training runs to the
+registered maximum of twelve.
 
 Every run records its source commit, config and dataset hashes, selected
 checkpoint, calibration policy, complete per-family evidence metrics, runtime,

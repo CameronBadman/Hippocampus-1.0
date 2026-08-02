@@ -143,6 +143,23 @@ def test_phase_f_gate_requires_all_registered_improvements() -> None:
         assert not module._seed_gate(control, failing)["advances"]
 
 
+def test_phase_f_resume_distinguishes_training_selection_and_evaluation(
+    tmp_path: Path,
+) -> None:
+    module = _module()
+    output = tmp_path / "run"
+    output.mkdir()
+    partial = output / "checkpoint_step_001500.pt"
+    partial.touch()
+    assert module._interrupted_stage(output) == ("training", partial)
+
+    (output / "checkpoint.pt").touch()
+    assert module._interrupted_stage(output) == ("selection", None)
+
+    (output / "evaluation_pause.json").touch()
+    assert module._interrupted_stage(output) == ("evaluation", None)
+
+
 def test_pipeline_reports_mean_absolute_cardinality_error() -> None:
     exact = _report("exact", false_positives=0)
     over = _report("over", false_positives=1)

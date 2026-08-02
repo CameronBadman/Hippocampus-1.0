@@ -134,6 +134,19 @@ def _base_command(
     ]
 
 
+def _interrupted_stage(output_dir: Path) -> tuple[str, Path | None]:
+    """Resolve the only valid next action for one interrupted run."""
+
+    if (output_dir / "evaluation_pause.json").is_file():
+        return "evaluation", None
+    if (output_dir / "checkpoint.pt").is_file():
+        return "selection", None
+    partial = sorted(output_dir.glob("checkpoint_step_*.pt"))
+    if partial:
+        return "training", partial[-1]
+    raise RuntimeError(f"incomplete run has no resumable checkpoint: {output_dir}")
+
+
 def _run_or_load(
     *,
     arm: str,
@@ -170,10 +183,20 @@ def _run_or_load(
                 append=False,
             )
         elif not pause_path.is_file():
+            stage, checkpoint = _interrupted_stage(output_dir)
+            resume_arguments = (
+                [
+                    "--resume-training",
+                    "--resume-checkpoint",
+                    str(checkpoint),
+                ]
+                if stage == "training"
+                else ["--resume-selection"]
+            )
             completed = _execute(
                 command
+                + resume_arguments
                 + [
-                    "--resume-selection",
                     "--pause-after-selection",
                     "--training-source-commit",
                     source_commit,

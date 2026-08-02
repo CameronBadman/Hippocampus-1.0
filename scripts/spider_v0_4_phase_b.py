@@ -70,6 +70,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="resume missing checkpoint selections before evaluation",
     )
+    parser.add_argument(
+        "--resume-training",
+        action="store_true",
+        help="resume an interrupted training run in its existing directory",
+    )
     parser.add_argument("--training-source-commit")
     parser.add_argument("--elapsed-before-seconds", type=float)
     return parser.parse_args()
@@ -167,11 +172,16 @@ def _release_cuda_cache() -> None:
 
 def main() -> None:
     args = parse_args()
-    if args.resume_selection and args.resume_evaluation:
-        raise ValueError("cannot resume selection and evaluation together")
+    resume_modes = sum(
+        (args.resume_training, args.resume_selection, args.resume_evaluation)
+    )
+    if resume_modes > 1:
+        raise ValueError("training, selection, and evaluation resumes are exclusive")
+    if args.resume_training and args.resume_checkpoint is None:
+        raise ValueError("training resume requires --resume-checkpoint")
     if args.pause_after_selection and args.resume_evaluation:
         raise ValueError("cannot pause and resume evaluation simultaneously")
-    if args.resume_evaluation or args.resume_selection:
+    if args.resume_training or args.resume_evaluation or args.resume_selection:
         if not args.output_dir.is_dir():
             raise FileNotFoundError(args.output_dir)
         if (args.output_dir / "metrics.json").exists():
@@ -184,7 +194,9 @@ def main() -> None:
     training_source_commit = (
         args.training_source_commit or evaluation_source_commit
     )
-    if not (args.resume_evaluation or args.resume_selection) and (
+    if not (
+        args.resume_training or args.resume_evaluation or args.resume_selection
+    ) and (
         training_source_commit != evaluation_source_commit
     ):
         raise ValueError(
@@ -392,15 +404,7 @@ def main() -> None:
                 if prior_final.is_file():
                     checkpoint_paths.append(prior_final)
             checkpoint_paths.extend(
-                args.output_dir / f"checkpoint_step_{step:06d}.pt"
-                for step in range(
-                    training.resumed_from_step + 250,
-                    stop_after_steps,
-                    250,
-                )
-                if (
-                    args.output_dir / f"checkpoint_step_{step:06d}.pt"
-                ).is_file()
+                sorted(args.output_dir.glob("checkpoint_step_*.pt"))
             )
             checkpoint_paths.append(checkpoint_path)
             del model, train_source, monitor
