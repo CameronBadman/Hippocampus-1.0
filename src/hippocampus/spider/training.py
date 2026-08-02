@@ -580,7 +580,7 @@ def controller_rollout(
         evidence_cardinality_term = evidence_cardinality_loss_term(
             proposal.evidence_cardinality_logits,
             torch.tensor(
-                [min(4, len(case.evidence_nodes)) for case in batch.cases],
+                [min(4, len(oracle.required_evidence))],
                 dtype=torch.int64,
                 device=batch.device,
             ),

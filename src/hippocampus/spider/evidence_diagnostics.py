@@ -487,6 +487,16 @@ def _case_summary(
         "zero_positive_case_count": len(reports) - len(positive_reports),
         "exact_evidence_set_accuracy": exact / max(1, len(reports)),
         "false_positives_per_case": false_positives / max(1, len(reports)),
+        "mean_absolute_cardinality_error": (
+            sum(
+                abs(
+                    report.predicted_cardinality
+                    - report.required_cardinality
+                )
+                for report in reports
+            )
+            / max(1, len(reports))
+        ),
         "mean_predicted_cardinality": (
             sum(report.predicted_cardinality for report in reports)
             / max(1, len(reports))

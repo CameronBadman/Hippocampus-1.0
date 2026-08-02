@@ -195,6 +195,7 @@ def main() -> None:
     if protocol not in {
         "spider-v0.4-renderer-causal",
         "spider-v0.4-readout",
+        "spider-v0.4-set-decoding",
     }:
         raise ValueError("config does not name a registered v0.4 protocol")
     manifest_path = ROOT / experiment.raw["dataset"]["manifest"]
@@ -273,6 +274,9 @@ def main() -> None:
         geometry=str(renderer_data["geometry"]),
     )
     fixed_policy = ControllerExecutionPolicy.oracle_required(seed=args.seed)
+    calibrated_threshold_policy = (
+        experiment.controller_config.evidence_selection_policy == "threshold"
+    )
     checkpoint_records: list[dict[str, object]] = []
     training_payload: dict[str, object] | None = None
     historical_template = experiment.raw.get("historical_checkpoint_template")
@@ -434,7 +438,10 @@ def main() -> None:
                 coverage_floor=COVERAGE_FLOOR,
                 execution_policy=fixed_policy,
                 fit_temperature=False,
-                exact_candidate_count=2,
+                approximate_thresholds=(
+                    (0.5,) if not calibrated_threshold_policy else None
+                ),
+                exact_candidate_count=2 if calibrated_threshold_policy else 1,
             )
             record = {
                 "step": step,
@@ -494,8 +501,11 @@ def main() -> None:
         precision_floor=PRECISION_FLOOR,
         coverage_floor=COVERAGE_FLOOR,
         execution_policy=fixed_policy,
-        fit_temperature=True,
-        exact_candidate_count=3,
+        fit_temperature=calibrated_threshold_policy,
+        approximate_thresholds=(
+            (0.5,) if not calibrated_threshold_policy else None
+        ),
+        exact_candidate_count=3 if calibrated_threshold_policy else 1,
     )
     _write_json(args.output_dir / "calibration.json", calibration.as_dict())
     del calibration_batches
@@ -600,8 +610,14 @@ def main() -> None:
             "mean_worst_positive_rank": overall[
                 "mean_worst_positive_rank"
             ],
+            "mean_absolute_cardinality_error": overall[
+                "mean_absolute_cardinality_error"
+            ],
             "constraint_satisfied": primary_constraint,
         },
+        "evidence_operating_policy": (
+            experiment.controller_config.evidence_selection_policy
+        ),
         "per_family": family_metrics,
         "runtime_seconds": (
             elapsed_before_seconds + time.perf_counter() - started
@@ -628,6 +644,9 @@ def main() -> None:
             "checkpoint_path": str(selected_checkpoint),
             "checkpoint_sha256": _sha256(selected_checkpoint),
             "evidence_threshold": calibration.calibration.threshold,
+            "evidence_selection_policy": (
+                experiment.controller_config.evidence_selection_policy
+            ),
             "temperature": asdict(calibration.calibration.temperature),
             "sealed_access_count": 0,
         },

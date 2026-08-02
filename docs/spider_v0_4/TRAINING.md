@@ -76,6 +76,21 @@ redundant computation; it does not approximate or omit any checkpoint.
 .venv/bin/python scripts/run_spider_v0_4_readout.py --phase all
 ```
 
+Phase E selected the set-decoding branch from immutable Phase D candidate
+observations. Phase F compares the historical threshold control with learned
+null, cardinality, and combined policies. Its exact arms, loss weights, gate,
+and historical-control equivalence check are frozen in
+`PHASE_F_PREREGISTRATION.md`.
+
+```bash
+.venv/bin/python scripts/run_spider_v0_4_set_decoding.py --phase all
+```
+
+The runner is resumable at both checkpoint-selection and evaluation
+boundaries. F0 is loaded from the Phase D result without re-opening development
+evaluation. F1-F3 contribute nine new training runs to the registered maximum
+of twelve.
+
 Every run records its source commit, config and dataset hashes, selected
 checkpoint, calibration policy, complete per-family evidence metrics, runtime,
 peak memory, and mechanical invariance guards in JSON. Crashes and timeouts are
