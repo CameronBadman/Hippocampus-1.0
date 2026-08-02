@@ -49,6 +49,16 @@ pooled and Spider arms resume exactly to step 2,000; data-order, renderer
 presentation counters, optimiser state, action RNG, and PyTorch RNG are
 restored from the pause checkpoint.
 
+The slot-aware D4 evaluator demonstrated that a monolithic train, checkpoint
+selection, calibration, and development-evaluation process can exceed the
+five-minute process guard even though training and every checkpoint are
+complete. Runs therefore use two bounded process stages: train plus checkpoint
+selection, followed by resumable calibration plus development evaluation.
+The pause record binds the selected checkpoint and training-source commit. This
+is an orchestration boundary only; neither the model, data, thresholds, metric,
+nor checkpoint-selection rule changes. The original D4 timeout remains in the
+failure ledger.
+
 ```bash
 .venv/bin/python scripts/run_spider_v0_4_readout.py --phase all
 ```

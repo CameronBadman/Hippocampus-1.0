@@ -55,6 +55,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stop-after-steps", type=int)
     parser.add_argument("--resume-checkpoint", type=Path)
     parser.add_argument("--prior-run", type=Path)
+    parser.add_argument(
+        "--pause-after-selection",
+        action="store_true",
+        help="stop after checkpoint selection so evaluation can be resumed",
+    )
+    parser.add_argument(
+        "--resume-evaluation",
+        action="store_true",
+        help="resume calibration/evaluation in an existing output directory",
+    )
+    parser.add_argument("--training-source-commit")
+    parser.add_argument("--elapsed-before-seconds", type=float)
     return parser.parse_args()
 
 
@@ -150,10 +162,27 @@ def _release_cuda_cache() -> None:
 
 def main() -> None:
     args = parse_args()
-    if args.output_dir.exists():
-        raise FileExistsError(f"refusing to reuse {args.output_dir}")
-    args.output_dir.mkdir(parents=True)
-    source_commit = _source_commit()
+    if args.pause_after_selection and args.resume_evaluation:
+        raise ValueError("cannot pause and resume evaluation simultaneously")
+    if args.resume_evaluation:
+        if not args.output_dir.is_dir():
+            raise FileNotFoundError(args.output_dir)
+        if (args.output_dir / "metrics.json").exists():
+            raise FileExistsError("evaluation has already completed")
+    else:
+        if args.output_dir.exists():
+            raise FileExistsError(f"refusing to reuse {args.output_dir}")
+        args.output_dir.mkdir(parents=True)
+    evaluation_source_commit = _source_commit()
+    training_source_commit = (
+        args.training_source_commit or evaluation_source_commit
+    )
+    if not args.resume_evaluation and (
+        training_source_commit != evaluation_source_commit
+    ):
+        raise ValueError(
+            "a fresh run cannot name a different training source commit"
+        )
     experiment = load_experiment(args.config)
     protocol = experiment.raw["dataset"].get("protocol")
     if protocol not in {
@@ -190,6 +219,17 @@ def main() -> None:
         and stop_after_steps in {1000, 2000}
     )
     started = time.perf_counter()
+    elapsed_before_seconds = float(args.elapsed_before_seconds or 0.0)
+    if args.resume_evaluation:
+        pause_path = args.output_dir / "evaluation_pause.json"
+        if pause_path.is_file():
+            pause = json.loads(pause_path.read_text())
+            elapsed_before_seconds = float(pause["runtime_seconds"])
+            recorded_source = str(pause["training_source_commit"])
+            if recorded_source != training_source_commit:
+                raise ValueError(
+                    "training source does not match the paused evaluation"
+                )
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     torch.cuda.reset_peak_memory_stats(experiment.device)
@@ -229,122 +269,160 @@ def main() -> None:
     checkpoint_records: list[dict[str, object]] = []
     training_payload: dict[str, object] | None = None
     historical_template = experiment.raw.get("historical_checkpoint_template")
-    if historical_template is not None:
-        checkpoint_paths = [
-            ROOT / str(historical_template).format(seed=args.seed)
-        ]
-        if not checkpoint_paths[0].is_file():
-            raise FileNotFoundError(checkpoint_paths[0])
-    else:
-        model = build_model(experiment)
-        train_source = FreshRenderedBatchSource(
-            train_cases,
-            renderer=renderer,
-            schema=experiment.schema,
-            base_row_seed=args.seed * 10_000,
-            pack_config=experiment.pack_config,
+    if args.resume_evaluation:
+        training_path = args.output_dir / "training.json"
+        training_payload = (
+            json.loads(training_path.read_text())
+            if training_path.is_file()
+            else None
         )
-        monitor = _pack_static(
-            train_cases[:8],
+        checkpoint_records = [
+            json.loads(path.read_text())
+            for path in sorted(
+                (args.output_dir / "model_selection").glob("step_*.json")
+            )
+        ]
+        if not checkpoint_records:
+            raise RuntimeError(
+                "resumed evaluation has no completed checkpoint selection"
+            )
+    else:
+        if historical_template is not None:
+            checkpoint_paths = [
+                ROOT / str(historical_template).format(seed=args.seed)
+            ]
+            if not checkpoint_paths[0].is_file():
+                raise FileNotFoundError(checkpoint_paths[0])
+        else:
+            model = build_model(experiment)
+            train_source = FreshRenderedBatchSource(
+                train_cases,
+                renderer=renderer,
+                schema=experiment.schema,
+                base_row_seed=args.seed * 10_000,
+                pack_config=experiment.pack_config,
+            )
+            monitor = _pack_static(
+                train_cases[:8],
+                renderer=renderer,
+                experiment=experiment,
+                row_seed_offset=700_000 + args.seed,
+            )
+            checkpoint_path = args.output_dir / "checkpoint.pt"
+            training = train_oracle_batches(
+                model,
+                train_source,
+                loop_config=training_config,
+                loss_config=experiment.loss_config,
+                controller_config=experiment.controller_config,
+                checkpoint_path=checkpoint_path,
+                checkpoint_every=250,
+                execution_policy=fixed_policy,
+                monitor_batches=monitor,
+                resume_checkpoint=args.resume_checkpoint,
+                stop_after_steps=stop_after_steps,
+            )
+            training_payload = {
+                "runtime_seconds": training.runtime_seconds,
+                "initial_metrics": training.initial_metrics.as_dict(),
+                "final_metrics": training.final_metrics.as_dict(),
+                "action_source_counts": training.action_source_counts,
+                "unique_cases_seen": training.unique_cases_seen,
+                "training_examples": training.training_examples,
+                "presentation_count_total": sum(
+                    train_source.presentation_counts
+                ),
+                "history": [asdict(record) for record in training.records],
+            }
+            _write_json(args.output_dir / "training.json", training_payload)
+            checkpoint_paths = []
+            if args.prior_run is not None:
+                checkpoint_paths.extend(
+                    sorted(args.prior_run.glob("checkpoint_step_*.pt"))
+                )
+                prior_final = args.prior_run / "checkpoint.pt"
+                if prior_final.is_file():
+                    checkpoint_paths.append(prior_final)
+            checkpoint_paths.extend(
+                args.output_dir / f"checkpoint_step_{step:06d}.pt"
+                for step in range(
+                    training.resumed_from_step + 250,
+                    stop_after_steps,
+                    250,
+                )
+                if (
+                    args.output_dir / f"checkpoint_step_{step:06d}.pt"
+                ).is_file()
+            )
+            checkpoint_paths.append(checkpoint_path)
+            del model, train_source, monitor
+            _release_cuda_cache()
+
+        selection_batches = _pack_static(
+            selection_cases,
             renderer=renderer,
             experiment=experiment,
-            row_seed_offset=700_000 + args.seed,
+            row_seed_offset=1_000_000 + args.seed,
         )
-        checkpoint_path = args.output_dir / "checkpoint.pt"
-        training = train_oracle_batches(
-            model,
-            train_source,
-            loop_config=training_config,
-            loss_config=experiment.loss_config,
-            controller_config=experiment.controller_config,
-            checkpoint_path=checkpoint_path,
-            checkpoint_every=250,
-            execution_policy=fixed_policy,
-            monitor_batches=monitor,
-            resume_checkpoint=args.resume_checkpoint,
-            stop_after_steps=stop_after_steps,
-        )
-        training_payload = {
-            "runtime_seconds": training.runtime_seconds,
-            "initial_metrics": training.initial_metrics.as_dict(),
-            "final_metrics": training.final_metrics.as_dict(),
-            "action_source_counts": training.action_source_counts,
-            "unique_cases_seen": training.unique_cases_seen,
-            "training_examples": training.training_examples,
-            "presentation_count_total": sum(
-                train_source.presentation_counts
-            ),
-            "history": [asdict(record) for record in training.records],
-        }
-        _write_json(args.output_dir / "training.json", training_payload)
-        checkpoint_paths = []
-        if args.prior_run is not None:
-            checkpoint_paths.extend(
-                sorted(args.prior_run.glob("checkpoint_step_*.pt"))
+        selected_steps_seen: set[int] = set()
+        for checkpoint_path in checkpoint_paths:
+            model, payload = _load_model_checkpoint(
+                experiment, checkpoint_path
             )
-            prior_final = args.prior_run / "checkpoint.pt"
-            if prior_final.is_file():
-                checkpoint_paths.append(prior_final)
-        checkpoint_paths.extend(
-            args.output_dir / f"checkpoint_step_{step:06d}.pt"
-            for step in range(
-                training.resumed_from_step + 250,
-                stop_after_steps,
-                250,
+            step = int(payload["step"])
+            if step in selected_steps_seen:
+                del model, payload
+                _release_cuda_cache()
+                continue
+            selected_steps_seen.add(step)
+            selection = fast_calibrate_closed_loop_evidence(
+                model,
+                selection_batches,
+                controller_config=experiment.controller_config,
+                split_name="model_selection",
+                dataset_version=dataset_version,
+                precision_floor=PRECISION_FLOOR,
+                coverage_floor=COVERAGE_FLOOR,
+                execution_policy=fixed_policy,
+                fit_temperature=False,
+                exact_candidate_count=2,
             )
-            if (args.output_dir / f"checkpoint_step_{step:06d}.pt").is_file()
-        )
-        checkpoint_paths.append(checkpoint_path)
-        del model, train_source, monitor
+            record = {
+                "step": step,
+                "checkpoint_path": str(checkpoint_path.resolve()),
+                "checkpoint_sha256": _sha256(checkpoint_path),
+                **selection.as_dict(),
+            }
+            checkpoint_records.append(record)
+            _write_json(
+                args.output_dir
+                / "model_selection"
+                / f"step_{step:06d}.json",
+                record,
+            )
+            del model, payload, selection
+            _release_cuda_cache()
+        del selection_batches
         _release_cuda_cache()
 
-    selection_batches = _pack_static(
-        selection_cases,
-        renderer=renderer,
-        experiment=experiment,
-        row_seed_offset=1_000_000 + args.seed,
-    )
-    selected_steps_seen: set[int] = set()
-    for checkpoint_path in checkpoint_paths:
-        model, payload = _load_model_checkpoint(experiment, checkpoint_path)
-        step = int(payload["step"])
-        if step in selected_steps_seen:
-            del model, payload
-            _release_cuda_cache()
-            continue
-        selected_steps_seen.add(step)
-        selection = fast_calibrate_closed_loop_evidence(
-            model,
-            selection_batches,
-            controller_config=experiment.controller_config,
-            split_name="model_selection",
-            dataset_version=dataset_version,
-            precision_floor=PRECISION_FLOOR,
-            coverage_floor=COVERAGE_FLOOR,
-            execution_policy=fixed_policy,
-            fit_temperature=False,
-            exact_candidate_count=2,
-        )
-        record = {
-            "step": step,
-            "checkpoint_path": str(checkpoint_path.resolve()),
-            "checkpoint_sha256": _sha256(checkpoint_path),
-            **selection.as_dict(),
-        }
-        checkpoint_records.append(record)
-        _write_json(
-            args.output_dir / "model_selection" / f"step_{step:06d}.json",
-            record,
-        )
-        del model, payload, selection
-        _release_cuda_cache()
     selected_record = max(
         checkpoint_records,
         key=lambda record: _selection_key(record, int(record["step"])),
     )
     selected_checkpoint = Path(str(selected_record["checkpoint_path"]))
-    del selection_batches
-    _release_cuda_cache()
+    if args.pause_after_selection:
+        pause = {
+            "experiment_id": args.experiment_id,
+            "training_source_commit": training_source_commit,
+            "evaluation_source_commit": evaluation_source_commit,
+            "selected_step": int(selected_record["step"]),
+            "selected_checkpoint": str(selected_checkpoint),
+            "runtime_seconds": time.perf_counter() - started,
+            "sealed_access_count": 0,
+        }
+        _write_json(args.output_dir / "evaluation_pause.json", pause)
+        print(json.dumps({"status": "evaluation_paused", **pause}))
+        return
 
     model, _ = _load_model_checkpoint(
         experiment,
@@ -434,7 +512,8 @@ def main() -> None:
         ),
         "pass": mechanically_valid,
         "full_protocol": full_protocol,
-        "source_commit": source_commit,
+        "source_commit": training_source_commit,
+        "evaluation_source_commit": evaluation_source_commit,
         "config_path": str(args.config),
         "config_sha256": _sha256(args.config),
         "dataset_version": manifest["dataset_version"],
@@ -473,7 +552,10 @@ def main() -> None:
             "constraint_satisfied": primary_constraint,
         },
         "per_family": family_metrics,
-        "runtime_seconds": time.perf_counter() - started,
+        "runtime_seconds": (
+            elapsed_before_seconds + time.perf_counter() - started
+        ),
+        "evaluation_runtime_seconds": time.perf_counter() - started,
         "peak_cuda_memory_bytes": torch.cuda.max_memory_allocated(
             experiment.device
         ),
@@ -488,7 +570,8 @@ def main() -> None:
     _write_json(
         args.output_dir / "checkpoint.manifest.json",
         {
-            "source_commit": source_commit,
+            "source_commit": training_source_commit,
+            "evaluation_source_commit": evaluation_source_commit,
             "dataset_hash": manifest["aggregate_sha256"],
             "selected_step": int(selected_record["step"]),
             "checkpoint_path": str(selected_checkpoint),

@@ -152,17 +152,16 @@ def _run_or_load(
     metrics_path = output_dir / "metrics.json"
     if metrics_path.exists():
         metrics = _load(metrics_path)
-        if metrics["source_commit"] != source_commit:
+        if (
+            metrics["source_commit"] != source_commit
+            and metrics.get("evaluation_source_commit") != source_commit
+        ):
             raise RuntimeError(
                 f"{experiment_id} was produced by another source commit"
             )
         return metrics
-    if output_dir.exists():
-        raise RuntimeError(
-            f"incomplete run requires manual preservation: {output_dir}"
-        )
 
-    command = [
+    base_command = [
         sys.executable,
         str(ROOT / "scripts/spider_v0_4_phase_b.py"),
         "--config",
@@ -190,7 +189,7 @@ def _run_or_load(
             )
         if not screen_checkpoint.is_file():
             raise FileNotFoundError(screen_checkpoint)
-        command.extend(
+        base_command.extend(
             (
                 "--resume-checkpoint",
                 str(screen_checkpoint),
@@ -201,18 +200,36 @@ def _run_or_load(
 
     log_path = output_root / stage / "logs" / f"{experiment_id}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("w") as log:
-        try:
-            completed = subprocess.run(
-                command,
-                cwd=ROOT,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                text=True,
-                timeout=timeout_seconds,
-                check=False,
-            )
-        except subprocess.TimeoutExpired as error:
+
+    def execute(command: list[str], *, append: bool) -> None:
+        with log_path.open("a" if append else "w") as log:
+            try:
+                completed = subprocess.run(
+                    command,
+                    cwd=ROOT,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=timeout_seconds,
+                    check=False,
+                )
+            except subprocess.TimeoutExpired as error:
+                _append_once(
+                    output_root / "failed_experiments.jsonl",
+                    {
+                        "experiment_id": experiment_id,
+                        "timestamp": _now(),
+                        "source_commit": source_commit,
+                        "arm": arm,
+                        "stage": stage,
+                        "status": "timeout",
+                        "timeout_seconds": timeout_seconds,
+                        "failure_reason": str(error),
+                        "sealed_access_count": 0,
+                    },
+                )
+                raise
+        if completed.returncode != 0:
             _append_once(
                 output_root / "failed_experiments.jsonl",
                 {
@@ -222,30 +239,63 @@ def _run_or_load(
                     "arm": arm,
                     "stage": stage,
                     "seed": seed,
-                    "status": "timeout",
-                    "timeout_seconds": timeout_seconds,
-                    "failure_reason": str(error),
+                    "status": "crashed",
+                    "returncode": completed.returncode,
+                    "log_path": str(log_path),
                     "sealed_access_count": 0,
                 },
             )
-            raise
-    if completed.returncode != 0 or not metrics_path.exists():
-        _append_once(
-            output_root / "failed_experiments.jsonl",
-            {
-                "experiment_id": experiment_id,
-                "timestamp": _now(),
-                "source_commit": source_commit,
-                "arm": arm,
-                "stage": stage,
-                "seed": seed,
-                "status": "crashed",
-                "returncode": completed.returncode,
-                "log_path": str(log_path),
-                "sealed_access_count": 0,
-            },
+            raise RuntimeError(f"{experiment_id} failed; inspect {log_path}")
+
+    if not output_dir.exists():
+        execute(base_command + ["--pause-after-selection"], append=False)
+        pause_path = output_dir / "evaluation_pause.json"
+        if not pause_path.is_file():
+            raise RuntimeError(
+                f"{experiment_id} did not produce an evaluation pause"
+            )
+        training_source_commit = source_commit
+    else:
+        pause_path = output_dir / "evaluation_pause.json"
+        if pause_path.is_file():
+            training_source_commit = str(
+                _load(pause_path)["training_source_commit"]
+            )
+        else:
+            failures = (
+                [
+                    json.loads(line)
+                    for line in (
+                        output_root / "failed_experiments.jsonl"
+                    ).read_text().splitlines()
+                    if line.strip()
+                ]
+                if (output_root / "failed_experiments.jsonl").is_file()
+                else []
+            )
+            matching = [
+                failure
+                for failure in failures
+                if failure["experiment_id"] == experiment_id
+            ]
+            if not matching:
+                raise RuntimeError(
+                    f"incomplete run has no provenance: {output_dir}"
+                )
+            training_source_commit = str(matching[-1]["source_commit"])
+
+    evaluation_command = base_command + [
+        "--resume-evaluation",
+        "--training-source-commit",
+        training_source_commit,
+    ]
+    if not pause_path.is_file():
+        evaluation_command.extend(
+            ("--elapsed-before-seconds", str(timeout_seconds))
         )
-        raise RuntimeError(f"{experiment_id} failed; inspect {log_path}")
+    execute(evaluation_command, append=True)
+    if not metrics_path.exists():
+        raise RuntimeError(f"{experiment_id} produced no metrics")
     return _load(metrics_path)
 
 
