@@ -10,7 +10,7 @@ from .hypothesis import HypothesisBatch
 from .model import CandidateScorerBase
 from .multiset import IdentityBiasedResidual
 from .set_attention import masked_max, masked_mean
-from .types import CandidateOutputs, PaddedSet
+from .types import CandidateOutputs, CandidateReadoutContext, PaddedSet
 
 
 def _symmetric_pool(values: PaddedSet) -> torch.Tensor:
@@ -88,7 +88,17 @@ class PooledScorer(CandidateScorerBase):
         )
         update = self.transition(features).unsqueeze(1)
         next_path = self.residual(path, update)
-        return self.policy_heads(next_path)
+        return self._candidate_policy_outputs(
+            next_path,
+            CandidateReadoutContext(
+                query=query,
+                source=source,
+                edge=edge,
+                destination=destination,
+                global_evidence=evidence_set,
+                controller_features=control,
+            ),
+        )
 
 
 class FlatTransformerScorer(CandidateScorerBase):
@@ -175,4 +185,14 @@ class FlatTransformerScorer(CandidateScorerBase):
             values = layer(values, src_key_padding_mask=~mask)
             values = values * mask.unsqueeze(-1)
         next_path = values[:, : self.config.path_rows]
-        return self.policy_heads(next_path)
+        return self._candidate_policy_outputs(
+            next_path,
+            CandidateReadoutContext(
+                query=query,
+                source=source,
+                edge=edge,
+                destination=destination,
+                global_evidence=evidence_set,
+                controller_features=control,
+            ),
+        )

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from dataclasses import replace
 
 import torch
 from torch import nn
@@ -13,6 +14,10 @@ from .arc_processor import ArcProcessor
 from .config import SpiderModelConfig
 from .context_refiner import ContextRefiner
 from .evidence import EvidenceUpdater
+from .evidence_readout import (
+    DedicatedPooledEvidenceReadout,
+    SlotAwareEvidenceReadout,
+)
 from .hypothesis import HypothesisBatch
 from .multiset import CrossSetRead
 from .policy_heads import CandidatePolicyHeads
@@ -27,7 +32,7 @@ from .terminator import (
     TerminationHead,
     TerminationOutput,
 )
-from .types import CandidateOutputs, PaddedSet
+from .types import CandidateOutputs, CandidateReadoutContext, PaddedSet
 
 
 class CandidateScorerBase(nn.Module, ABC):
@@ -59,6 +64,19 @@ class CandidateScorerBase(nn.Module, ABC):
             config.dropout,
         )
         self.policy_heads = CandidatePolicyHeads(config.d_model)
+        if config.evidence_readout == "shared":
+            self.evidence_readout = None
+        elif config.evidence_readout == "dedicated_pooled":
+            self.evidence_readout = DedicatedPooledEvidenceReadout(
+                config.d_model
+            )
+        else:
+            self.evidence_readout = SlotAwareEvidenceReadout(
+                config.d_model,
+                config.num_heads,
+                config.control_width,
+                config.dropout,
+            )
         self.context_refiner = ContextRefiner(
             config.d_model,
             config.num_heads,
@@ -312,6 +330,19 @@ class CandidateScorerBase(nn.Module, ABC):
     ) -> CandidateOutputs:
         raise NotImplementedError
 
+    def _candidate_policy_outputs(
+        self,
+        path_state: torch.Tensor,
+        context: CandidateReadoutContext,
+    ) -> CandidateOutputs:
+        outputs = self.policy_heads(path_state)
+        if self.evidence_readout is not None:
+            outputs = replace(
+                outputs,
+                evidence_logits=self.evidence_readout(path_state, context),
+            )
+        return replace(outputs, readout_context=context)
+
     def refine_with_context(
         self,
         batch: PackedProgramBatch,
@@ -333,7 +364,14 @@ class CandidateScorerBase(nn.Module, ABC):
         )
         selected_path = outputs.next_path_state[indices]
         refined_path = self.context_refiner(selected_path, context)
-        refined_outputs = self.policy_heads(refined_path)
+        readout_context = outputs.readout_context
+        if readout_context is None:
+            refined_outputs = self.policy_heads(refined_path)
+        else:
+            refined_outputs = self._candidate_policy_outputs(
+                refined_path,
+                readout_context.index_select(indices),
+            )
         return outputs.index_copy(indices, refined_outputs)
 
     def update_evidence(
@@ -546,4 +584,12 @@ class SpiderModel(CandidateScorerBase):
             destination,
             control,
         )
-        return self.policy_heads(path)
+        readout_context = CandidateReadoutContext(
+            query=query,
+            source=source,
+            edge=edge,
+            destination=destination,
+            global_evidence=evidence_set,
+            controller_features=control,
+        )
+        return self._candidate_policy_outputs(path, readout_context)

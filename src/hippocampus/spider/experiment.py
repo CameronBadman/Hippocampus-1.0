@@ -86,6 +86,9 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         use_null_expansion=bool(
             model_data.get("use_null_expansion", False)
         ),
+        evidence_readout=str(
+            model_data.get("evidence_readout", "shared")
+        ),
     )
     controller_data = raw["controller"]
     controller_config = SparseControllerConfig(

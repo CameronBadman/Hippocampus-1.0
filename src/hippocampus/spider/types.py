@@ -23,6 +23,40 @@ class PaddedSet:
     def width(self) -> int:
         return int(self.values.shape[2])
 
+    def index_select(self, indices: torch.Tensor) -> "PaddedSet":
+        resolved = indices.to(device=self.values.device, dtype=torch.int64)
+        return PaddedSet(
+            values=self.values[resolved],
+            mask=self.mask[resolved],
+            presence=(
+                None if self.presence is None else self.presence[resolved]
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateReadoutContext:
+    query: PaddedSet
+    source: PaddedSet
+    edge: PaddedSet
+    destination: PaddedSet
+    global_evidence: PaddedSet
+    controller_features: torch.Tensor
+
+    def index_select(self, indices: torch.Tensor) -> "CandidateReadoutContext":
+        resolved = indices.to(
+            device=self.controller_features.device,
+            dtype=torch.int64,
+        )
+        return CandidateReadoutContext(
+            query=self.query.index_select(resolved),
+            source=self.source.index_select(resolved),
+            edge=self.edge.index_select(resolved),
+            destination=self.destination.index_select(resolved),
+            global_evidence=self.global_evidence.index_select(resolved),
+            controller_features=self.controller_features[resolved],
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class CandidateOutputs:
@@ -34,6 +68,7 @@ class CandidateOutputs:
     remaining_cost: torch.Tensor
     support_logits: torch.Tensor
     conflict_logits: torch.Tensor
+    readout_context: CandidateReadoutContext | None = None
 
     @property
     def candidate_count(self) -> int:
@@ -67,5 +102,6 @@ class CandidateOutputs:
                 self.tensors(),
                 source.tensors(),
                 strict=True,
-            ))
+            )),
+            readout_context=self.readout_context,
         )

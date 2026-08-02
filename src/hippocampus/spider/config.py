@@ -7,6 +7,11 @@ from typing import Literal
 EdgeMode = Literal["standard", "compositional"]
 TerminationMode = Literal["flat", "hierarchical", "factorized"]
 ExpansionPolicy = Literal["threshold", "learned_null"]
+EvidenceReadoutMode = Literal[
+    "shared",
+    "dedicated_pooled",
+    "slot_aware",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +35,7 @@ class SpiderModelConfig:
     control_width: int = 6
     termination_mode: TerminationMode = "flat"
     use_null_expansion: bool = False
+    evidence_readout: EvidenceReadoutMode = "shared"
 
     def __post_init__(self) -> None:
         for name in (
@@ -65,6 +71,15 @@ class SpiderModelConfig:
         }:
             raise ValueError(
                 "termination_mode must be flat, hierarchical, or factorized"
+            )
+        if self.evidence_readout not in {
+            "shared",
+            "dedicated_pooled",
+            "slot_aware",
+        }:
+            raise ValueError(
+                "evidence_readout must be shared, dedicated_pooled, or "
+                "slot_aware"
             )
 
 
