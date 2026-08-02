@@ -170,7 +170,11 @@ def verify_case(case: GraphProgramCase) -> VerificationReport:
         if any(path[-1] not in case.answer_nodes for path in case.trace.valid_paths):
             errors.append("reachability paths must terminate at an answer node")
 
-    if case.family is ProgramFamily.LATEST_VALID:
+    if (
+        case.family is ProgramFamily.LATEST_VALID
+        and case.termination.decision
+        is not TerminationDecision.UNKNOWN_UNSUPPORTED
+    ):
         context_targets = [
             candidate
             for round_ in case.trace.rounds

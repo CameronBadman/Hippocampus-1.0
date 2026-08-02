@@ -1,0 +1,178 @@
+{
+  "aggregate_sha256": "54a5a79c701a894a5ba3e048319e62f5cdd4fc2da4e4031a74c123fe4eddef97",
+  "dataset_version": "spider-programs-v0.4-aligned-dev",
+  "partition_count": 4,
+  "related_view_partition_rule": "group by base_case_id",
+  "sealed_access_count": 0,
+  "splits": [
+    {
+      "case_count": 8192,
+      "distributions": {
+        "family": {
+          "corroboration": 2048,
+          "latest_valid": 2048,
+          "lookup": 2048,
+          "reachability": 2048
+        },
+        "graph_size": {
+          "16": 2048,
+          "24": 2048,
+          "32": 2048,
+          "8": 2048
+        },
+        "observed_path_length": {
+          "0": 3412,
+          "1": 3927,
+          "2": 341,
+          "3": 256,
+          "4": 256
+        },
+        "outcome": {
+          "answerable": 4096,
+          "unknown": 4096
+        },
+        "required_evidence_cardinality": {
+          "0": 3412,
+          "1": 3414,
+          "2": 1366
+        }
+      },
+      "manifest_file": "training.json",
+      "name": "training",
+      "sha256": "1ce45795173218ea0e05c41404a5dafd43a0c9f48cdd989b3384a0cd4e223a5b"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 212,
+          "1": 247,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 212,
+          "1": 214,
+          "2": 86
+        }
+      },
+      "manifest_file": "model_selection.json",
+      "name": "model_selection",
+      "sha256": "c6f27050861107d757a68e79c5e50bf422b75d64d02be02990044e21f9348356"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 212,
+          "1": 247,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 212,
+          "1": 214,
+          "2": 86
+        }
+      },
+      "manifest_file": "calibration.json",
+      "name": "calibration",
+      "sha256": "66e1fd165e6c0af8110b7de7a21fd474ad117de0777700f5bf04b42d587c255c"
+    },
+    {
+      "case_count": 1024,
+      "distributions": {
+        "family": {
+          "corroboration": 256,
+          "latest_valid": 256,
+          "lookup": 256,
+          "reachability": 256
+        },
+        "graph_size": {
+          "16": 256,
+          "24": 256,
+          "32": 256,
+          "8": 256
+        },
+        "observed_path_length": {
+          "0": 426,
+          "1": 491,
+          "2": 43,
+          "3": 32,
+          "4": 32
+        },
+        "outcome": {
+          "answerable": 512,
+          "unknown": 512
+        },
+        "required_evidence_cardinality": {
+          "0": 426,
+          "1": 427,
+          "2": 171
+        }
+      },
+      "manifest_file": "development_evaluation.json",
+      "name": "development_evaluation",
+      "sha256": "5af4399d7eca5b24443aeef920d2468a9c3e1b8f03c4bd9028cb3c98256a05c7"
+    }
+  ],
+  "stratification": {
+    "graph_size_buckets": [
+      8,
+      16,
+      24,
+      32
+    ],
+    "independent_cycle": [
+      "program_family",
+      "answerable_or_unknown",
+      "graph_size",
+      "requested_path_length"
+    ],
+    "path_length_buckets": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "structurally_coupled_observations": [
+      "required_evidence_cardinality",
+      "observed_path_length"
+    ]
+  },
+  "total_case_count": 10240
+}

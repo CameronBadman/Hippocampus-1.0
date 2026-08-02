@@ -1,6 +1,18 @@
 """Exact synthetic graph programs and exchangeable manifold rendering."""
 
-from .batching import PackedProgramBatch, pack_rendered_cases
+from .aligned_splits import (
+    V04_DATASET_VERSION,
+    AlignedDevSplitManifest,
+    AlignedDevSplitSpec,
+    build_aligned_dev_manifest,
+    default_aligned_dev_specs,
+    generate_aligned_dev_cases,
+)
+from .batching import (
+    FreshRenderedBatchSource,
+    PackedProgramBatch,
+    pack_rendered_cases,
+)
 from .identifiability import (
     IdentifiabilityProbeConfig,
     IdentifiabilityReport,
@@ -60,12 +72,15 @@ from .stress import (
 )
 
 __all__ = [
+    "AlignedDevSplitManifest",
+    "AlignedDevSplitSpec",
     "CandidateTarget",
     "CounterfactualKind",
     "GeneratorConfig",
     "GraphProgramCase",
     "GraphProgramGenerator",
     "FunctionalEdgeSwap",
+    "FreshRenderedBatchSource",
     "Intervention",
     "MetadataLeakageReport",
     "ObservableAtom",
@@ -92,15 +107,19 @@ __all__ = [
     "SyntheticManifoldRenderer",
     "TerminationDecision",
     "TerminationTarget",
+    "V04_DATASET_VERSION",
     "VerificationReport",
+    "build_aligned_dev_manifest",
     "build_split_manifest",
     "build_rollout_stress_manifest",
     "build_recurrence_necessity_manifest",
     "default_split_specs",
     "default_split_specs_v0_2",
+    "default_aligned_dev_specs",
     "default_recurrence_necessity_specs",
     "generate_recurrence_necessity_cases",
     "generate_recurrence_necessity_pair",
+    "generate_aligned_dev_cases",
     "generate_rollout_stress_examples",
     "generate_split_cases",
     "make_counterfactual",

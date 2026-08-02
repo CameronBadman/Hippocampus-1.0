@@ -828,6 +828,7 @@ def train_oracle_batches(
     execution_policy: ControllerExecutionPolicy | None = None,
     resume_checkpoint: Path | None = None,
     stop_after_steps: int | None = None,
+    monitor_batches: Sequence[PackedProgramBatch] | None = None,
 ) -> TrainingResult:
     """Train or exactly resume a controller rollout experiment.
 
@@ -862,7 +863,20 @@ def train_oracle_batches(
         for action in ("frontier", "context", "evidence", "termination")
         for source in ActionSource
     }
-    training_case_ids = tuple(batch.cases[0].case_id for batch in batches)
+    declared_case_ids = getattr(batches, "case_ids", None)
+    training_case_ids = (
+        tuple(declared_case_ids)
+        if declared_case_ids is not None
+        else tuple(batch.cases[0].case_id for batch in batches)
+    )
+    if len(training_case_ids) != len(batches):
+        raise ValueError("training batch source case IDs do not match its length")
+    metric_batches = batches if monitor_batches is None else monitor_batches
+    if not metric_batches:
+        raise ValueError("monitor_batches may not be empty")
+    source_state = getattr(batches, "state_dict", None)
+    source_loader = getattr(batches, "load_state_dict", None)
+    stateful_source = callable(source_state) and callable(source_loader)
     resolved_execution_policy = (
         execution_policy or ControllerExecutionPolicy.learned()
     )
@@ -873,7 +887,7 @@ def train_oracle_batches(
     if resume_checkpoint is None:
         initial_loss, initial_metrics = evaluate_oracle_batches(
             model,
-            batches,
+            metric_batches,
             loss_config=loss_settings,
             controller_config=controller_config,
             execution_policy=execution_policy,
@@ -921,6 +935,17 @@ def train_oracle_batches(
                 raise ValueError(
                     f"resume checkpoint {name} does not match this run"
                 )
+        saved_source_state = payload.get("batch_source_state")
+        if stateful_source:
+            if saved_source_state is None:
+                raise ValueError(
+                    "stateful batch source checkpoint has no source state"
+                )
+            source_loader(saved_source_state)
+        elif saved_source_state is not None:
+            raise ValueError(
+                "checkpoint requires a stateful training batch source"
+            )
         start_step = int(payload["step"])
         resumed_from_step = start_step
         if start_step >= target_step:
@@ -979,6 +1004,9 @@ def train_oracle_batches(
             ),
             "execution_policy": asdict(resolved_execution_policy),
             "training_case_ids": training_case_ids,
+            "batch_source_state": (
+                source_state() if stateful_source else None
+            ),
             "initial_metrics_state": asdict(initial_metrics),
             "final_metrics": (
                 final_metrics.as_dict()
@@ -1046,8 +1074,8 @@ def train_oracle_batches(
             for batch in selected
         ]
         for batch, rollout in zip(selected, rollouts, strict=True):
-            seen_case_ids.add(batch.cases[0].case_id)
-            training_examples += 1
+            seen_case_ids.update(case.case_id for case in batch.cases)
+            training_examples += len(batch.cases)
             for diagnostic in rollout.diagnostics:
                 action_source_counts[
                     f"frontier/{diagnostic.frontier_source.value}"
@@ -1107,7 +1135,7 @@ def train_oracle_batches(
     runtime = elapsed_before + time.perf_counter() - started
     final_loss, final_metrics = evaluate_oracle_batches(
         model,
-        batches,
+        metric_batches,
         loss_config=loss_settings,
         controller_config=controller_config,
         execution_policy=execution_policy,
