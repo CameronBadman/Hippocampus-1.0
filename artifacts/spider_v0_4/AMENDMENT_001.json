@@ -1,0 +1,30 @@
+{
+  "amendment_id": "spider-v0.4-amendment-001",
+  "authorised_reason": "demonstrated dataset correctness issue",
+  "finding": {
+    "audit": "artifacts/spider_v0_4/diagnostics/GENERATOR_LABEL_AUDIT.json",
+    "query_cardinality_answerability_accuracy": 0.666015625,
+    "majority_accuracy": 0.5,
+    "unsupported_case_count": 1700,
+    "unsupported_symbol_reuse_count": 0
+  },
+  "historical_dataset_immutable": {
+    "version": "spider-programs-v0.4-aligned-dev",
+    "sha256": "54a5a79c701a894a5ba3e048319e62f5cdd4fc2da4e4031a74c123fe4eddef97"
+  },
+  "corrected_dataset": {
+    "version": "spider-programs-v0.4.1-aligned-evidence-dev",
+    "sha256": "8ff3c7f12978e8381552eafadbe5fc6dfab8eb08c2484204e1cdad7835dc8a32",
+    "unsupported_cases": 0,
+    "query_cardinality_answerability_accuracy": 0.5,
+    "majority_accuracy": 0.5
+  },
+  "scope": [
+    "remove unsupported-interface cases from evidence-only experiments",
+    "use new seeds and content hashes",
+    "preserve all Phase B evidence",
+    "do not rerun Phase C after its failed gate",
+    "use the corrected dataset for readout and decoder experiments"
+  ],
+  "sealed_access_count": 0
+}

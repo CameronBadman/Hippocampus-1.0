@@ -1,0 +1,160 @@
+{
+  "aggregate_sha256": "8ff3c7f12978e8381552eafadbe5fc6dfab8eb08c2484204e1cdad7835dc8a32",
+  "amendment": "remove unsupported-interface cases from evidence-only training",
+  "amends": "spider-programs-v0.4-aligned-dev",
+  "dataset_version": "spider-programs-v0.4.1-aligned-evidence-dev",
+  "partition_count": 4,
+  "related_view_partition_rule": "group by base_case_id",
+  "sealed_access_count": 0,
+  "splits": [
+    {
+      "case_count": 8192,
+      "distributions": {
+        "family": {
+          "corroboration": 2048,
+          "latest_valid": 2048,
+          "lookup": 2048,
+          "reachability": 2048
+        },
+        "graph_size": {
+          "16": 2048,
+          "24": 2048,
+          "32": 2048,
+          "8": 2048
+        },
+        "observed_path_length": {
+          "0": 3072,
+          "1": 4267,
+          "2": 341,
+          "3": 256,
+          "4": 256
+        },
+        "outcome": {
+          "answerable": 4096,
+          "unknown": 4096
+        },
+        "required_evidence_cardinality": {
+          "0": 3072,
+          "1": 3584,
+          "2": 1536
+        }
+      },
+      "manifest_file": "training.json",
+      "name": "training",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "76a5ca713240e78354ea37e790b9ffd07e3e53dba335cf8ad7f0113a36622dd7"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 192,
+          "1": 267,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 192,
+          "1": 224,
+          "2": 96
+        }
+      },
+      "manifest_file": "model_selection.json",
+      "name": "model_selection",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "ff8cd039a5e3d4d9f2cad1cff5a89faf9e03f466b9b8469356aaf0e1c38b5bd3"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 192,
+          "1": 267,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 192,
+          "1": 224,
+          "2": 96
+        }
+      },
+      "manifest_file": "calibration.json",
+      "name": "calibration",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "14f8f07cc94e2975541e4e6a558fb2a81abfedf87db9df8be476d0d5180a003c"
+    },
+    {
+      "case_count": 1024,
+      "distributions": {
+        "family": {
+          "corroboration": 256,
+          "latest_valid": 256,
+          "lookup": 256,
+          "reachability": 256
+        },
+        "graph_size": {
+          "16": 256,
+          "24": 256,
+          "32": 256,
+          "8": 256
+        },
+        "observed_path_length": {
+          "0": 384,
+          "1": 533,
+          "2": 43,
+          "3": 32,
+          "4": 32
+        },
+        "outcome": {
+          "answerable": 512,
+          "unknown": 512
+        },
+        "required_evidence_cardinality": {
+          "0": 384,
+          "1": 448,
+          "2": 192
+        }
+      },
+      "manifest_file": "development_evaluation.json",
+      "name": "development_evaluation",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "9aef20a90700a7fc4166aac4c0f8a63007e3d17b620fde5f79e49ca909386988"
+    }
+  ],
+  "total_case_count": 10240
+}

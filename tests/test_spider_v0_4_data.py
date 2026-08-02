@@ -7,11 +7,15 @@ import torch
 from hippocampus import GraphSchema
 from hippocampus.programs import (
     V04_DATASET_VERSION,
+    V04_1_DATASET_VERSION,
     FreshRenderedBatchSource,
     SyntheticManifoldRenderer,
+    audit_aligned_program_labels,
     build_aligned_dev_manifest,
     default_aligned_dev_specs,
+    default_aligned_evidence_specs,
     generate_aligned_dev_cases,
+    generate_aligned_evidence_cases,
     pack_rendered_cases,
     verify_case,
 )
@@ -50,6 +54,20 @@ def test_v0_4_partitions_are_disjoint_and_stratified() -> None:
         assert set(graph_size_counts.values()) == {64}
         assert all_case_ids.isdisjoint(case.case_id for case in cases)
         all_case_ids.update(case.case_id for case in cases)
+
+
+def test_v0_4_1_amendment_removes_unsupported_cardinality_leak() -> None:
+    specs = default_aligned_evidence_specs()
+    cases = generate_aligned_evidence_cases(specs[0], limit=256)
+    report = audit_aligned_program_labels(cases)
+
+    assert all(spec.dataset_version == V04_1_DATASET_VERSION for spec in specs)
+    assert [spec.case_count for spec in specs] == [8192, 512, 512, 1024]
+    assert report.unsupported_case_count == 0
+    assert report.query_cardinality_answerability_accuracy == 0.5
+    assert report.query_cardinality_majority_accuracy == 0.5
+    assert report.invalid_case_count == 0
+    assert report.evidence_label_mismatch_count == 0
 
 
 def test_v0_4_manifest_hashes_actual_cases_deterministically() -> None:

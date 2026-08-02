@@ -154,6 +154,7 @@ def validate_calibration_source(
         "spider-programs-v0.2",
         "spider-programs-v0.3-recurrence-dev",
         "spider-programs-v0.4-aligned-dev",
+        "spider-programs-v0.4.1-aligned-evidence-dev",
     }
     if dataset_version not in allowed_versions:
         raise ValueError(

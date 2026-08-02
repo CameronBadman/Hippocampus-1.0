@@ -11,6 +11,7 @@ from .schema import GraphProgramCase, ProgramFamily, TerminationDecision
 
 
 V04_DATASET_VERSION = "spider-programs-v0.4-aligned-dev"
+V04_1_DATASET_VERSION = "spider-programs-v0.4.1-aligned-evidence-dev"
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +66,37 @@ def default_aligned_dev_specs() -> tuple[AlignedDevSplitSpec, ...]:
         AlignedDevSplitSpec("model_selection", 512, 510_000),
         AlignedDevSplitSpec("calibration", 512, 520_000),
         AlignedDevSplitSpec("development_evaluation", 1_024, 530_000),
+    )
+
+
+def default_aligned_evidence_specs() -> tuple[AlignedDevSplitSpec, ...]:
+    """Return the versioned evidence-only amendment to the v0.4 splits."""
+
+    return (
+        AlignedDevSplitSpec(
+            "training",
+            8_192,
+            610_000,
+            dataset_version=V04_1_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "model_selection",
+            512,
+            710_000,
+            dataset_version=V04_1_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "calibration",
+            512,
+            720_000,
+            dataset_version=V04_1_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "development_evaluation",
+            1_024,
+            730_000,
+            dataset_version=V04_1_DATASET_VERSION,
+        ),
     )
 
 
@@ -144,6 +176,71 @@ def generate_aligned_dev_cases(
         )
     if len({case.case_id for case in cases}) != len(cases):
         raise RuntimeError("v0.4 generator produced duplicate case IDs")
+    return tuple(cases)
+
+
+def generate_aligned_evidence_cases(
+    spec: AlignedDevSplitSpec,
+    *,
+    limit: int | None = None,
+) -> tuple[GraphProgramCase, ...]:
+    """Generate the v0.4.1 evidence amendment without unsupported queries.
+
+    Unsupported-interface recognition belongs to learned termination, which is
+    explicitly deferred in v0.4. Evidence experiments instead alternate
+    ordinary absent/conflict outcomes with exact budget-incomplete outcomes.
+    This keeps query row cardinality matched across answerability classes.
+    """
+
+    if spec.dataset_version != V04_1_DATASET_VERSION:
+        raise ValueError("evidence amendment requires the v0.4.1 dataset version")
+    case_count = spec.case_count if limit is None else min(limit, spec.case_count)
+    if case_count <= 0:
+        raise ValueError("split case limit must be positive")
+    families = tuple(ProgramFamily)
+    generator_cache: dict[tuple[int, int], GraphProgramGenerator] = {}
+    cases: list[GraphProgramCase] = []
+    for index in range(case_count):
+        family = families[index % len(families)]
+        answerable = (index // len(families)) % 2 == 0
+        graph_size = _GRAPH_SIZE_BUCKETS[(index // 8) % 4]
+        path_length = _PATH_LENGTH_BUCKETS[(index // 32) % 4]
+        cache_key = (graph_size, path_length)
+        generator = generator_cache.get(cache_key)
+        if generator is None:
+            generator = GraphProgramGenerator(
+                GeneratorConfig(
+                    min_nodes=graph_size,
+                    max_nodes=graph_size,
+                    min_path_length=path_length,
+                    max_path_length=path_length,
+                    generator_version=spec.dataset_version,
+                )
+            )
+            generator_cache[cache_key] = generator
+        unknown_decision = None
+        context_budget_exhausted = False
+        if not answerable:
+            outcome_group = index // len(families)
+            if (outcome_group // 2) % 2 == 1:
+                unknown_decision = TerminationDecision.UNKNOWN_INCOMPLETE
+                context_budget_exhausted = (
+                    family is ProgramFamily.LATEST_VALID
+                )
+        cases.append(
+            generator.generate(
+                family=family,
+                seed=spec.seed_start + index,
+                answerable=answerable,
+                require_multiple_paths=(
+                    family is ProgramFamily.REACHABILITY and index % 3 == 0
+                ),
+                unknown_decision=unknown_decision,
+                context_budget_exhausted=context_budget_exhausted,
+            )
+        )
+    if len({case.case_id for case in cases}) != len(cases):
+        raise RuntimeError("v0.4.1 generator produced duplicate case IDs")
     return tuple(cases)
 
 

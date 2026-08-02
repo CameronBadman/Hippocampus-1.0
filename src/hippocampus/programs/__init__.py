@@ -2,11 +2,14 @@
 
 from .aligned_splits import (
     V04_DATASET_VERSION,
+    V04_1_DATASET_VERSION,
     AlignedDevSplitManifest,
     AlignedDevSplitSpec,
     build_aligned_dev_manifest,
     default_aligned_dev_specs,
+    default_aligned_evidence_specs,
     generate_aligned_dev_cases,
+    generate_aligned_evidence_cases,
 )
 from .batching import (
     FreshRenderedBatchSource,
@@ -110,6 +113,7 @@ __all__ = [
     "TerminationDecision",
     "TerminationTarget",
     "V04_DATASET_VERSION",
+    "V04_1_DATASET_VERSION",
     "VerificationReport",
     "build_aligned_dev_manifest",
     "audit_aligned_program_labels",
@@ -119,10 +123,12 @@ __all__ = [
     "default_split_specs",
     "default_split_specs_v0_2",
     "default_aligned_dev_specs",
+    "default_aligned_evidence_specs",
     "default_recurrence_necessity_specs",
     "generate_recurrence_necessity_cases",
     "generate_recurrence_necessity_pair",
     "generate_aligned_dev_cases",
+    "generate_aligned_evidence_cases",
     "generate_rollout_stress_examples",
     "generate_split_cases",
     "make_counterfactual",
