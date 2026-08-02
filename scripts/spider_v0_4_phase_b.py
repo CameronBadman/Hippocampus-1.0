@@ -65,6 +65,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="resume calibration/evaluation in an existing output directory",
     )
+    parser.add_argument(
+        "--resume-selection",
+        action="store_true",
+        help="resume missing checkpoint selections before evaluation",
+    )
     parser.add_argument("--training-source-commit")
     parser.add_argument("--elapsed-before-seconds", type=float)
     return parser.parse_args()
@@ -162,13 +167,15 @@ def _release_cuda_cache() -> None:
 
 def main() -> None:
     args = parse_args()
+    if args.resume_selection and args.resume_evaluation:
+        raise ValueError("cannot resume selection and evaluation together")
     if args.pause_after_selection and args.resume_evaluation:
         raise ValueError("cannot pause and resume evaluation simultaneously")
-    if args.resume_evaluation:
+    if args.resume_evaluation or args.resume_selection:
         if not args.output_dir.is_dir():
             raise FileNotFoundError(args.output_dir)
         if (args.output_dir / "metrics.json").exists():
-            raise FileExistsError("evaluation has already completed")
+            raise FileExistsError("experiment has already completed")
     else:
         if args.output_dir.exists():
             raise FileExistsError(f"refusing to reuse {args.output_dir}")
@@ -177,7 +184,7 @@ def main() -> None:
     training_source_commit = (
         args.training_source_commit or evaluation_source_commit
     )
-    if not args.resume_evaluation and (
+    if not (args.resume_evaluation or args.resume_selection) and (
         training_source_commit != evaluation_source_commit
     ):
         raise ValueError(
@@ -287,7 +294,39 @@ def main() -> None:
                 "resumed evaluation has no completed checkpoint selection"
             )
     else:
-        if historical_template is not None:
+        existing_selection_records: dict[int, dict[str, object]] = {}
+        if args.resume_selection:
+            training_path = args.output_dir / "training.json"
+            training_payload = (
+                json.loads(training_path.read_text())
+                if training_path.is_file()
+                else None
+            )
+            checkpoint_paths = []
+            if args.prior_run is not None:
+                checkpoint_paths.extend(
+                    sorted(args.prior_run.glob("checkpoint_step_*.pt"))
+                )
+                prior_final = args.prior_run / "checkpoint.pt"
+                if prior_final.is_file():
+                    checkpoint_paths.append(prior_final)
+            checkpoint_paths.extend(
+                sorted(args.output_dir.glob("checkpoint_step_*.pt"))
+            )
+            current_final = args.output_dir / "checkpoint.pt"
+            if current_final.is_file():
+                checkpoint_paths.append(current_final)
+            if not checkpoint_paths:
+                raise RuntimeError(
+                    "resumed selection has no training checkpoints"
+                )
+            for path in sorted(
+                (args.output_dir / "model_selection").glob("step_*.json")
+            ):
+                record = json.loads(path.read_text())
+                existing_selection_records[int(record["step"])] = record
+            checkpoint_records.extend(existing_selection_records.values())
+        elif historical_template is not None:
             checkpoint_paths = [
                 ROOT / str(historical_template).format(seed=args.seed)
             ]
@@ -375,6 +414,10 @@ def main() -> None:
                 _release_cuda_cache()
                 continue
             selected_steps_seen.add(step)
+            if step in existing_selection_records:
+                del model, payload
+                _release_cuda_cache()
+                continue
             selection = fast_calibrate_closed_loop_evidence(
                 model,
                 selection_batches,
@@ -417,7 +460,9 @@ def main() -> None:
             "evaluation_source_commit": evaluation_source_commit,
             "selected_step": int(selected_record["step"]),
             "selected_checkpoint": str(selected_checkpoint),
-            "runtime_seconds": time.perf_counter() - started,
+            "runtime_seconds": (
+                elapsed_before_seconds + time.perf_counter() - started
+            ),
             "sealed_access_count": 0,
         }
         _write_json(args.output_dir / "evaluation_pause.json", pause)

@@ -283,16 +283,25 @@ def _run_or_load(
                     f"incomplete run has no provenance: {output_dir}"
                 )
             training_source_commit = str(matching[-1]["source_commit"])
+            selection_command = base_command + [
+                "--resume-selection",
+                "--pause-after-selection",
+                "--training-source-commit",
+                training_source_commit,
+                "--elapsed-before-seconds",
+                str(timeout_seconds),
+            ]
+            execute(selection_command, append=True)
+            if not pause_path.is_file():
+                raise RuntimeError(
+                    f"{experiment_id} did not finish resumed selection"
+                )
 
     evaluation_command = base_command + [
         "--resume-evaluation",
         "--training-source-commit",
         training_source_commit,
     ]
-    if not pause_path.is_file():
-        evaluation_command.extend(
-            ("--elapsed-before-seconds", str(timeout_seconds))
-        )
     execute(evaluation_command, append=True)
     if not metrics_path.exists():
         raise RuntimeError(f"{experiment_id} produced no metrics")

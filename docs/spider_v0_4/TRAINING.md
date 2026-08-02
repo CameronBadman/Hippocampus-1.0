@@ -59,6 +59,13 @@ is an orchestration boundary only; neither the model, data, thresholds, metric,
 nor checkpoint-selection rule changes. The original D4 timeout remains in the
 failure ledger.
 
+The eight-checkpoint D2 finalist selector subsequently reached the same guard
+after six selections. Checkpoint selection is therefore resumable as well:
+each completed per-step evaluation is immutable, missing steps are discovered
+from checkpoint payloads, and calibration cannot start until the complete set
+has been compared and a pause record has been written. The partial D2 attempt
+also remains in the failure ledger.
+
 ```bash
 .venv/bin/python scripts/run_spider_v0_4_readout.py --phase all
 ```
