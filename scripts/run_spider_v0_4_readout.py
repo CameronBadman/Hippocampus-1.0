@@ -621,7 +621,10 @@ def main() -> None:
             return
         screen_summary = _summarize_screen(args.output_root)
     else:
-        screen_summary = _summarize_screen(args.output_root)
+        screen_summary_path = args.output_root / "SCREEN_SUMMARY.json"
+        if not screen_summary_path.is_file():
+            raise FileNotFoundError(screen_summary_path)
+        screen_summary = _load(screen_summary_path)
 
     if args.phase in {"extend", "all"}:
         advancement = screen_summary
