@@ -67,3 +67,4 @@ renderer budget for B1 and B2 while providing matched historical A0 controls.
 | Iteration | Hypothesis | Status | Score | Notes |
 |---:|---|---|---:|---|
 | 0 | Freeze protocol before implementing the aligned renderer. | kept | 0.0 | v0-v0.3 artifacts remain immutable; no sealed access is permitted. |
+| 1 | A fixed orthogonal cross-modal geometry makes opaque identity recoverable without collapsing modalities. | kept | 1.0 | A2 achieved 1.000 AUROC and 1.000 Top-1 at 64 and 256 unseen-symbol distractors; A0 remained near chance. Graph training is unlocked. |

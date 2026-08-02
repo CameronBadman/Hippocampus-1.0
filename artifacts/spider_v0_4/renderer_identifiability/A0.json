@@ -1,0 +1,56 @@
+{
+  "arm": "A0",
+  "experiment_id": "V04-renderer-A0-s1701",
+  "geometry": "independent",
+  "probe_seed": 1701,
+  "renderer_hash": "8b7cd03de4c9b8a8e56f44af072d317ccf8ebce947bf312b19e0feee59976b5e",
+  "renderer_version": "renderer-v0.4",
+  "report": {
+    "macro_auroc": 0.49752044677734375,
+    "macro_top1_at_256": 0.0048828125,
+    "macro_top1_at_64": 0.015299479166666666,
+    "minimum_auroc": 0.47803497314453125,
+    "minimum_top1_at_256": 0.0029296875,
+    "minimum_top1_at_64": 0.0146484375,
+    "pairs": [
+      {
+        "auroc": 0.47803497314453125,
+        "source": "query",
+        "target": "summary",
+        "top1_at_256": 0.0048828125,
+        "top1_at_64": 0.0166015625
+      },
+      {
+        "auroc": 0.5090346336364746,
+        "source": "query",
+        "target": "edge",
+        "top1_at_256": 0.0029296875,
+        "top1_at_64": 0.0146484375
+      },
+      {
+        "auroc": 0.5054917335510254,
+        "source": "summary",
+        "target": "edge",
+        "top1_at_256": 0.0068359375,
+        "top1_at_64": 0.0146484375
+      }
+    ],
+    "passed": false,
+    "probe_config": {
+      "batch_size": 256,
+      "learning_rate": 0.01,
+      "seed": 1701,
+      "steps": 400,
+      "temperature": 0.07,
+      "test_symbol_count": 1024,
+      "train_symbol_count": 4096
+    },
+    "renderer_geometry": "independent",
+    "row_permutation_mismatches": 0
+  },
+  "runtime_seconds": 1.4804115389997605,
+  "sealed_access_count": 0,
+  "source_commit": "97c81eda5a7dc69c00c2fba8a34485a57271d02e",
+  "status": "accepted",
+  "timestamp": "2026-08-02T11:32:18.537530+00:00"
+}
