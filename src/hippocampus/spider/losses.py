@@ -36,6 +36,8 @@ class SpiderLossConfig:
     evidence_ranking_margin: float = 0.2
     evidence_hard_negative_count: int = 4
     null_expansion: float = 1.0
+    evidence_null: float = 0.0
+    evidence_cardinality: float = 0.0
 
     def __post_init__(self) -> None:
         for field in fields(self):
@@ -454,6 +456,78 @@ def null_expansion_loss_term(
     return _term(
         raw,
         weight=config.null_expansion,
+        target_count=int(targets.numel()),
+    )
+
+
+def evidence_null_loss_term(
+    null_logits: torch.Tensor | None,
+    candidate_logits: torch.Tensor,
+    candidate_targets: torch.Tensor,
+    candidate_graph_ids: torch.Tensor,
+    *,
+    config: SpiderLossConfig,
+) -> LossTerm | None:
+    """Train a graph-local boundary between selected and rejected evidence."""
+
+    if null_logits is None:
+        return None
+    if not (
+        candidate_logits.shape
+        == candidate_targets.shape
+        == candidate_graph_ids.shape
+    ):
+        raise ValueError("evidence-null supervision must align with candidates")
+    graph_ids = candidate_graph_ids.to(
+        device=null_logits.device,
+        dtype=torch.int64,
+    )
+    if graph_ids.numel() and (
+        bool((graph_ids < 0).any().item())
+        or bool((graph_ids >= null_logits.numel()).any().item())
+    ):
+        raise IndexError("candidate graph ID is out of range")
+    if candidate_logits.numel() == 0:
+        raw = _zero(null_logits)
+    else:
+        relative_logits = candidate_logits.float() - null_logits[graph_ids].float()
+        raw = F.binary_cross_entropy_with_logits(
+            relative_logits,
+            candidate_targets.float(),
+        )
+    return _term(
+        raw,
+        weight=config.evidence_null,
+        target_count=int(candidate_targets.numel()),
+    )
+
+
+def evidence_cardinality_loss_term(
+    cardinality_logits: torch.Tensor | None,
+    required_cardinalities: torch.Tensor,
+    *,
+    config: SpiderLossConfig,
+) -> LossTerm | None:
+    """Supervise total required evidence count in classes 0, 1, 2, 3, 4+."""
+
+    if cardinality_logits is None:
+        return None
+    if cardinality_logits.ndim != 2 or cardinality_logits.shape[1] != 5:
+        raise ValueError("evidence cardinality logits must have shape [graphs, 5]")
+    targets = required_cardinalities.to(
+        device=cardinality_logits.device,
+        dtype=torch.int64,
+    )
+    if targets.ndim != 1 or targets.numel() != cardinality_logits.shape[0]:
+        raise ValueError("required cardinalities must align with graphs")
+    targets = targets.clamp(min=0, max=4)
+    if targets.numel() == 0:
+        raw = _zero(cardinality_logits)
+    else:
+        raw = F.cross_entropy(cardinality_logits.float(), targets)
+    return _term(
+        raw,
+        weight=config.evidence_cardinality,
         target_count=int(targets.numel()),
     )
 

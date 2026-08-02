@@ -89,6 +89,12 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         evidence_readout=str(
             model_data.get("evidence_readout", "shared")
         ),
+        use_evidence_null=bool(
+            model_data.get("use_evidence_null", False)
+        ),
+        use_evidence_cardinality=bool(
+            model_data.get("use_evidence_cardinality", False)
+        ),
     )
     controller_data = raw["controller"]
     controller_config = SparseControllerConfig(
@@ -113,6 +119,9 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         expansion_policy=str(
             controller_data.get("expansion_policy", "threshold")
         ),
+        evidence_selection_policy=str(
+            controller_data.get("evidence_selection_policy", "threshold")
+        ),
     )
     if (
         controller_config.expansion_policy == "learned_null"
@@ -120,6 +129,19 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
     ):
         raise ValueError(
             "learned_null expansion requires model.use_null_expansion=true"
+        )
+    evidence_policy = controller_config.evidence_selection_policy
+    if evidence_policy in {"learned_null", "null_cardinality"} and not (
+        model_config.use_evidence_null
+    ):
+        raise ValueError(
+            "learned evidence null policy requires model.use_evidence_null"
+        )
+    if evidence_policy in {"cardinality", "null_cardinality"} and not (
+        model_config.use_evidence_cardinality
+    ):
+        raise ValueError(
+            "cardinality policy requires model.use_evidence_cardinality"
         )
     training_data = raw["training"]
     training_config = TrainingLoopConfig(

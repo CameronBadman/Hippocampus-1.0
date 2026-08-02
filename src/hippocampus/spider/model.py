@@ -115,6 +115,27 @@ class CandidateScorerBase(nn.Module, ABC):
             if config.use_null_expansion
             else None
         )
+        global_width = 3 * config.d_model + config.control_width
+        self.evidence_null_head = (
+            nn.Sequential(
+                nn.LayerNorm(global_width),
+                nn.Linear(global_width, config.d_model),
+                nn.GELU(),
+                nn.Linear(config.d_model, 1),
+            )
+            if config.use_evidence_null
+            else None
+        )
+        self.evidence_cardinality_head = (
+            nn.Sequential(
+                nn.LayerNorm(global_width),
+                nn.Linear(global_width, config.d_model),
+                nn.GELU(),
+                nn.Linear(config.d_model, 5),
+            )
+            if config.use_evidence_cardinality
+            else None
+        )
 
     def _validate_batch_widths(self, batch: PackedProgramBatch) -> None:
         actual = (
@@ -490,6 +511,39 @@ class CandidateScorerBase(nn.Module, ABC):
             evidence,
             controller_features,
         )
+
+    def evidence_selection_logits(
+        self,
+        batch: PackedProgramBatch,
+        hypotheses: HypothesisBatch,
+        evidence: torch.Tensor,
+        controller_features: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+        """Predict a per-graph null score and total evidence cardinality."""
+
+        if (
+            self.evidence_null_head is None
+            and self.evidence_cardinality_head is None
+        ):
+            return None, None
+        inputs = self._global_state_inputs(
+            batch,
+            hypotheses,
+            evidence,
+            controller_features,
+        )
+        joined = torch.cat(inputs, dim=-1)
+        null_logits = (
+            None
+            if self.evidence_null_head is None
+            else self.evidence_null_head(joined).squeeze(-1)
+        )
+        cardinality_logits = (
+            None
+            if self.evidence_cardinality_head is None
+            else self.evidence_cardinality_head(joined)
+        )
+        return null_logits, cardinality_logits
 
     def termination_output(
         self,

@@ -146,7 +146,10 @@ class ControllerProposal:
     full_arc_count: int
     search_truncated: bool
     candidate_graph_ids: torch.Tensor
+    evidence_selected_by_graph: torch.Tensor
     null_expansion_logits: torch.Tensor | None = None
+    evidence_null_logits: torch.Tensor | None = None
+    evidence_cardinality_logits: torch.Tensor | None = None
     pre_context_outputs: CandidateOutputs | None = None
     context_refined: bool = False
 
@@ -532,6 +535,7 @@ def _filtered_stable_evidence_selection(
     *,
     width: int,
     state: ControllerState,
+    per_graph_widths: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Select unique logical evidence actions without a destination cap."""
 
@@ -591,6 +595,30 @@ def _filtered_stable_evidence_selection(
     unique_candidates = unique_candidates[
         torch.argsort(priority_rank[unique_candidates], stable=True)
     ]
+    if per_graph_widths is not None and unique_candidates.numel():
+        graph_widths = per_graph_widths.to(device=device, dtype=torch.int64)
+        candidate_graphs = proposal.candidate_graph_ids[
+            unique_candidates
+        ].to(torch.int64)
+        if bool((candidate_graphs >= graph_widths.numel()).any().item()):
+            raise IndexError("candidate graph ID is out of range")
+        group_permutation = torch.argsort(candidate_graphs, stable=True)
+        grouped_graphs = candidate_graphs[group_permutation]
+        starts = torch.ones(
+            grouped_graphs.numel(), dtype=torch.bool, device=device
+        )
+        starts[1:] = grouped_graphs[1:] != grouped_graphs[:-1]
+        group_starts = torch.nonzero(starts, as_tuple=False).flatten()
+        group_ids = torch.cumsum(starts.to(torch.int64), dim=0) - 1
+        local_rank_grouped = (
+            torch.arange(grouped_graphs.numel(), device=device)
+            - group_starts[group_ids]
+        )
+        local_rank = torch.empty_like(local_rank_grouped)
+        local_rank[group_permutation] = local_rank_grouped
+        unique_candidates = unique_candidates[
+            local_rank < graph_widths[candidate_graphs]
+        ]
     return unique_candidates[:width]
 
 
@@ -729,6 +757,40 @@ class SparseWavefrontController:
                 evidence,
                 current_control,
             )
+        current_control = termination_control_features(
+            batch,
+            hypotheses,
+            state,
+            config=self.config,
+            search_limit=search_limit,
+            context_limit=context_limit,
+        )
+        evidence_null_logits, evidence_cardinality_logits = (
+            model.evidence_selection_logits(
+                batch,
+                hypotheses,
+                evidence,
+                current_control,
+            )
+        )
+        evidence_selected_by_graph = torch.zeros(
+            batch.graph_count,
+            dtype=torch.int64,
+            device=batch.device,
+        )
+        if state.evidence_ledger:
+            ledger_nodes = torch.tensor(
+                [entry.node_id for entry in state.evidence_ledger],
+                dtype=torch.int64,
+                device=batch.device,
+            )
+            ledger_graphs = batch.graph.topology.node_graph_ids[
+                ledger_nodes
+            ].to(torch.int64)
+            evidence_selected_by_graph = torch.bincount(
+                ledger_graphs,
+                minlength=batch.graph_count,
+            )
         if expansion.total_arcs:
             parents = expansion.frontier_positions.to(torch.int64)
             depth_eligible = (
@@ -753,7 +815,10 @@ class SparseWavefrontController:
             full_arc_count=full_expansion.total_arcs,
             search_truncated=search_truncated,
             candidate_graph_ids=candidate_graph_ids,
+            evidence_selected_by_graph=evidence_selected_by_graph,
             null_expansion_logits=null_expansion_logits,
+            evidence_null_logits=evidence_null_logits,
+            evidence_cardinality_logits=evidence_cardinality_logits,
         )
 
     def choose_actions(
@@ -851,9 +916,43 @@ class SparseWavefrontController:
                 state=state,
             )
         else:
+            evidence_policy = self.config.evidence_selection_policy
+            per_graph_widths = None
+            if evidence_policy == "threshold":
+                evidence_mask = (
+                    torch.sigmoid(outputs.evidence_logits)
+                    >= self.config.evidence_threshold
+                )
+            else:
+                evidence_mask = torch.ones(
+                    outputs.evidence_logits.shape,
+                    dtype=torch.bool,
+                    device=device,
+                )
+                if evidence_policy in {"learned_null", "null_cardinality"}:
+                    if proposal.evidence_null_logits is None:
+                        raise ValueError(
+                            "evidence null policy is missing null logits"
+                        )
+                    candidate_null = proposal.evidence_null_logits[
+                        proposal.candidate_graph_ids.to(torch.int64)
+                    ]
+                    evidence_mask &= outputs.evidence_logits > candidate_null
+                if evidence_policy in {"cardinality", "null_cardinality"}:
+                    if proposal.evidence_cardinality_logits is None:
+                        raise ValueError(
+                            "cardinality policy is missing cardinality logits"
+                        )
+                    predicted_total = proposal.evidence_cardinality_logits.argmax(
+                        dim=-1
+                    )
+                    per_graph_widths = torch.clamp(
+                        predicted_total
+                        - proposal.evidence_selected_by_graph,
+                        min=0,
+                    )
             evidence_eligible = torch.nonzero(
-                torch.sigmoid(outputs.evidence_logits)
-                >= self.config.evidence_threshold,
+                evidence_mask,
                 as_tuple=False,
             ).flatten()
             evidence = _filtered_stable_evidence_selection(
@@ -862,6 +961,7 @@ class SparseWavefrontController:
                 outputs.evidence_logits,
                 width=remaining_evidence,
                 state=state,
+                per_graph_widths=per_graph_widths,
             )
 
         if sources["frontier"] is ActionSource.ORACLE:

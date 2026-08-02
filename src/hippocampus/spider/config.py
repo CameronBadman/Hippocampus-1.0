@@ -7,6 +7,12 @@ from typing import Literal
 EdgeMode = Literal["standard", "compositional"]
 TerminationMode = Literal["flat", "hierarchical", "factorized"]
 ExpansionPolicy = Literal["threshold", "learned_null"]
+EvidenceSelectionPolicy = Literal[
+    "threshold",
+    "learned_null",
+    "cardinality",
+    "null_cardinality",
+]
 EvidenceReadoutMode = Literal[
     "shared",
     "dedicated_pooled",
@@ -36,6 +42,8 @@ class SpiderModelConfig:
     termination_mode: TerminationMode = "flat"
     use_null_expansion: bool = False
     evidence_readout: EvidenceReadoutMode = "shared"
+    use_evidence_null: bool = False
+    use_evidence_cardinality: bool = False
 
     def __post_init__(self) -> None:
         for name in (
@@ -96,6 +104,7 @@ class SparseControllerConfig:
     evidence_threshold: float = 0.5
     evidence_selection_budget: int = 32
     expansion_policy: ExpansionPolicy = "threshold"
+    evidence_selection_policy: EvidenceSelectionPolicy = "threshold"
 
     def __post_init__(self) -> None:
         for name in (
@@ -123,4 +132,14 @@ class SparseControllerConfig:
         if self.expansion_policy not in {"threshold", "learned_null"}:
             raise ValueError(
                 "expansion_policy must be threshold or learned_null"
+            )
+        if self.evidence_selection_policy not in {
+            "threshold",
+            "learned_null",
+            "cardinality",
+            "null_cardinality",
+        }:
+            raise ValueError(
+                "evidence_selection_policy must be threshold, learned_null, "
+                "cardinality, or null_cardinality"
             )

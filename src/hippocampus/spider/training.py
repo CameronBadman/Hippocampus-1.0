@@ -37,6 +37,8 @@ from .losses import (
     SpiderLossConfig,
     SpiderLossReport,
     candidate_loss_report,
+    evidence_cardinality_loss_term,
+    evidence_null_loss_term,
     null_expansion_loss_term,
     termination_loss_report,
 )
@@ -568,6 +570,22 @@ def controller_rollout(
             proposal.expansion.frontier_positions,
             config=config,
         )
+        evidence_null_term = evidence_null_loss_term(
+            proposal.evidence_null_logits,
+            transition.refined_outputs.evidence_logits,
+            supervision.candidates.include_as_evidence,
+            proposal.candidate_graph_ids,
+            config=config,
+        )
+        evidence_cardinality_term = evidence_cardinality_loss_term(
+            proposal.evidence_cardinality_logits,
+            torch.tensor(
+                [min(4, len(case.evidence_nodes)) for case in batch.cases],
+                dtype=torch.int64,
+                device=batch.device,
+            ),
+            config=config,
+        )
         reports.append(
             SpiderLossReport(
                 terms={
@@ -576,6 +594,16 @@ def controller_rollout(
                     **(
                         {"null_expansion": null_expansion_term}
                         if null_expansion_term is not None
+                        else {}
+                    ),
+                    **(
+                        {"evidence_null": evidence_null_term}
+                        if evidence_null_term is not None
+                        else {}
+                    ),
+                    **(
+                        {"evidence_cardinality": evidence_cardinality_term}
+                        if evidence_cardinality_term is not None
                         else {}
                     ),
                 }
