@@ -1,0 +1,83 @@
+{
+  "name": "v0_4_phase_b_B0_historical_control",
+  "schema": {
+    "summary_dim": 16,
+    "context_dim": 16,
+    "edge_dim": 16,
+    "query_dim": 16
+  },
+  "dataset": {
+    "version": "spider-programs-v0.4-aligned-dev",
+    "protocol": "spider-v0.4-renderer-causal",
+    "manifest": "artifacts/spider_v0_4/splits/MANIFEST_INDEX.json",
+    "aggregate_sha256": "54a5a79c701a894a5ba3e048319e62f5cdd4fc2da4e4031a74c123fe4eddef97",
+    "training_case_count": 512
+  },
+  "renderer": {
+    "version": "renderer-v0.4",
+    "geometry": "independent",
+    "seed": 91337
+  },
+  "model": {
+    "kind": "pooled",
+    "d_model": 64,
+    "num_heads": 4,
+    "num_blocks": 1,
+    "tied_recurrence": true,
+    "path_rows": 4,
+    "evidence_rows": 4,
+    "edge_mode": "standard",
+    "edge_transforms": 0,
+    "adapter_rank": 0,
+    "dropout": 0.0,
+    "termination_mode": "hierarchical"
+  },
+  "controller": {
+    "max_rounds": 8,
+    "frontier_width": 32,
+    "hypotheses_per_node": 2,
+    "context_read_budget": 4,
+    "evidence_selection_budget": 8,
+    "search_budget": 4096,
+    "max_depth": 10,
+    "expand_threshold": 0.5,
+    "context_threshold": 0.5,
+    "evidence_threshold": 0.5
+  },
+  "training": {
+    "steps": 1000,
+    "batch_size": 4,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "seed": 1701,
+    "device": "cuda",
+    "dtype": "float32",
+    "log_every": 50,
+    "checkpoint_every": 250,
+    "action_schedule": [
+      {"frontier": 1.0, "context": 1.0, "evidence": 1.0, "termination": 0.0},
+      {"frontier": 0.75, "context": 0.75, "evidence": 0.75, "termination": 0.0},
+      {"frontier": 0.5, "context": 0.5, "evidence": 0.5, "termination": 0.0},
+      {"frontier": 0.25, "context": 0.25, "evidence": 0.25, "termination": 0.0},
+      {"frontier": 0.0, "context": 0.0, "evidence": 0.0, "termination": 0.0}
+    ]
+  },
+  "historical_checkpoint_template": "artifacts/spider_v0_3/local_rtx5070ti_2d54286/checkpoints/evidence/V03-screen-E0-s{seed}-1k/checkpoint.pt",
+  "loss": {
+    "priority": 1.0,
+    "expand": 1.0,
+    "context": 0.5,
+    "evidence": 1.0,
+    "evidence_set": 1.0,
+    "evidence_mode": "balanced",
+    "evidence_false_positive_penalty": 0.1,
+    "evidence_ranking": 0.0,
+    "evidence_plausible_ranking": 0.0,
+    "support_conflict": 0.5,
+    "remaining_cost": 0.25,
+    "termination": 0.0,
+    "consistency": 0.0,
+    "search_cost": 0.01,
+    "context_cost": 0.01
+  }
+}

@@ -15,6 +15,11 @@ from .calibration_v0_3 import (
     calibrate_closed_loop_evidence,
     fit_temperature_scaling,
 )
+from .selection_v0_4 import (
+    FastEvidenceCalibrationResult,
+    approximate_exact_set_point,
+    fast_calibrate_closed_loop_evidence,
+)
 from .config import SparseControllerConfig, SpiderModelConfig
 from .controller import (
     ActionDiagnostic,
@@ -157,6 +162,7 @@ __all__ = [
     "EvidenceRequirement",
     "EvidenceRequirementObservation",
     "ExactSetOperatingPoint",
+    "FastEvidenceCalibrationResult",
     "EvidenceLedgerEntry",
     "EvaluationReport",
     "FlatTransformerScorer",
@@ -197,6 +203,7 @@ __all__ = [
     "TrainingResult",
     "attention_backend_status",
     "aggregate_evidence_pipeline",
+    "approximate_exact_set_point",
     "apply_path_state_intervention",
     "authorize_v0_2_sealed_evaluation",
     "behavioural_consistency_loss",
@@ -217,6 +224,7 @@ __all__ = [
     "evaluate_rollout_stress_states",
     "evaluate_termination_state_dataset",
     "fit_temperature_scaling",
+    "fast_calibrate_closed_loop_evidence",
     "make_tiny_cases",
     "multi_positive_evidence_ranking_loss",
     "multi_positive_priority_loss",

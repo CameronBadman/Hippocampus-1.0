@@ -497,6 +497,8 @@ def _invariance(
             replay_mismatches += int(
                 first.selected_arc_trace != repeated.selected_arc_trace
                 or first.termination != repeated.termination
+                or first.context_ledger != repeated.context_ledger
+                or first.evidence_ledger != repeated.evidence_ledger
                 or not torch.equal(
                     first.final_termination_logits,
                     repeated.final_termination_logits,
@@ -525,6 +527,8 @@ def _invariance(
             row_mismatches += int(
                 first.selected_arc_trace != other.selected_arc_trace
                 or first.termination != other.termination
+                or first.context_ledger != other.context_ledger
+                or first.evidence_ledger != other.evidence_ledger
             )
     return {
         "deterministic_replay_samples": samples,
