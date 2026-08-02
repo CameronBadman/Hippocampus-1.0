@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
-from .evidence_diagnostics import EvidencePipelineCaseReport
+from .evidence_diagnostics import (
+    EvidenceCandidateObservation,
+    EvidencePipelineCaseReport,
+)
+from .state_oracle import EvidenceRequirement
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +47,45 @@ class FrozenEvidencePolicyAudit:
             ),
             "recommended_branch": self.recommended_branch,
         }
+
+
+def evidence_pipeline_case_report_from_dict(
+    value: dict[str, Any],
+) -> EvidencePipelineCaseReport:
+    """Restore the immutable candidate observations stored in an evaluation."""
+
+    requirements = tuple(
+        EvidenceRequirement(**item) for item in value["requirements"]
+    )
+    candidates = tuple(
+        EvidenceCandidateObservation(**item)
+        for item in value["candidate_observations"]
+    )
+    return EvidencePipelineCaseReport(
+        case_id=str(value["case_id"]),
+        family=str(value["family"]),
+        horizon=int(value["horizon"]),
+        requirements=requirements,
+        requirement_observations=(),
+        candidate_observations=candidates,
+        exact_set_accuracy=float(value["exact_set_accuracy"]),
+        true_positives=int(value["true_positives"]),
+        false_positives=int(value["false_positives"]),
+        false_negatives=int(value["false_negatives"]),
+        predicted_cardinality=int(value["predicted_cardinality"]),
+        required_cardinality=int(value["required_cardinality"]),
+        average_precision=float(value["average_precision"]),
+        worst_positive_rank=(
+            None
+            if value["worst_positive_rank"] is None
+            else int(value["worst_positive_rank"])
+        ),
+        minimum_positive_negative_margin=(
+            None
+            if value["minimum_positive_negative_margin"] is None
+            else float(value["minimum_positive_negative_margin"])
+        ),
+    )
 
 
 def _requirement_key(requirement, *, edge_specific: bool):

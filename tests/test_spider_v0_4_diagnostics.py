@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import asdict
+
 from hippocampus.programs import (
     audit_aligned_program_labels,
     default_aligned_dev_specs,
@@ -10,6 +12,7 @@ from hippocampus.spider import (
     EvidencePipelineCaseReport,
     EvidenceRequirement,
     audit_frozen_evidence_policies,
+    evidence_pipeline_case_report_from_dict,
 )
 
 
@@ -92,6 +95,21 @@ def test_frozen_policy_audit_separates_ranking_from_global_threshold() -> None:
     assert audit.overall["P3_oracle_null"].exact_set_accuracy == 0.5
     assert audit.oracle_cardinality_exact_set_gain == 1.0
     assert audit.recommended_branch == "set_decoding"
+
+
+def test_frozen_pipeline_report_round_trips_from_json_shape() -> None:
+    original = _report(
+        "round-trip",
+        requirements=(EvidenceRequirement(None, None, 1),),
+        candidates=(_candidate(1, 2.0, required=True, selected=True),),
+        true_positives=1,
+        false_positives=0,
+        false_negatives=0,
+    )
+
+    restored = evidence_pipeline_case_report_from_dict(asdict(original))
+
+    assert restored == original
 
 
 def test_aligned_generator_labels_are_mechanically_consistent() -> None:

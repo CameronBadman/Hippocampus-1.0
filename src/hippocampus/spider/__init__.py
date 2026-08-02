@@ -66,6 +66,7 @@ from .evidence_decoding import (
     FrozenEvidencePolicyAudit,
     FrozenEvidencePolicyMetrics,
     audit_frozen_evidence_policies,
+    evidence_pipeline_case_report_from_dict,
 )
 from .evaluation_v0_1 import (
     ClosedLoopEvaluationReport,
@@ -231,6 +232,7 @@ __all__ = [
     "execute_closed_loop_case",
     "evaluate_rollout_stress_states",
     "evaluate_termination_state_dataset",
+    "evidence_pipeline_case_report_from_dict",
     "fit_temperature_scaling",
     "fast_calibrate_closed_loop_evidence",
     "make_tiny_cases",

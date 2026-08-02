@@ -1,0 +1,45 @@
+{
+  "arms": {
+    "D0": {
+      "mean_global_threshold_exact_set_accuracy": 0.7548828125,
+      "mean_oracle_cardinality_exact_set_accuracy": 0.9274088541666666,
+      "mean_oracle_cardinality_gain": 0.17252604166666666,
+      "mean_oracle_null_exact_set_accuracy": 0.7578125,
+      "mean_per_case_threshold_exact_set_accuracy": 0.9274088541666666,
+      "seed_branches": [
+        "set_decoding",
+        "set_decoding",
+        "set_decoding"
+      ]
+    },
+    "D2": {
+      "mean_global_threshold_exact_set_accuracy": 0.73046875,
+      "mean_oracle_cardinality_exact_set_accuracy": 0.8919270833333334,
+      "mean_oracle_cardinality_gain": 0.16145833333333334,
+      "mean_oracle_null_exact_set_accuracy": 0.7337239583333334,
+      "mean_per_case_threshold_exact_set_accuracy": 0.8919270833333334,
+      "seed_branches": [
+        "ranking_and_hard_negatives",
+        "set_decoding",
+        "set_decoding"
+      ]
+    }
+  },
+  "campaign": "Spider v0.4 Phase E frozen-logit ceiling",
+  "dataset_hash": "8ff3c7f12978e8381552eafadbe5fc6dfab8eb08c2484204e1cdad7835dc8a32",
+  "dataset_version": "spider-programs-v0.4.1-aligned-evidence-dev",
+  "decision": {
+    "primary_oracle_cardinality_gains": [
+      0.1865234375,
+      0.177734375,
+      0.1533203125
+    ],
+    "run_ranking_first": false,
+    "run_set_decoding_first": true,
+    "selected_branch": "set_decoding",
+    "strong_ceiling_seed_count": 3
+  },
+  "development_evaluation_reexecution": false,
+  "primary_arm": "D0",
+  "sealed_access_count": 0
+}
