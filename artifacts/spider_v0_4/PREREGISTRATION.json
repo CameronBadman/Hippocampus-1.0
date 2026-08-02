@@ -1,0 +1,62 @@
+{
+  "campaign": "Spider v0.4 representation and exact evidence recovery",
+  "checkpoint_interval": 250,
+  "checkpoint_selection": [
+    "exact_set_accuracy_subject_to_precision_at_least_0.90",
+    "evidence_recall",
+    "macro_average_precision",
+    "lower_false_positives_per_case",
+    "better_worst_positive_rank",
+    "earlier_checkpoint"
+  ],
+  "dataset": {
+    "calibration_cases": 512,
+    "development_evaluation_cases": 1024,
+    "model_selection_cases": 512,
+    "related_view_grouping": "base_case_id",
+    "training_cases": 8192,
+    "version": "spider-programs-v0.4-aligned-dev"
+  },
+  "deferred": [
+    "larger_d_model",
+    "more_path_rows",
+    "more_spider_blocks",
+    "compositional_edge_transforms",
+    "learned_termination",
+    "multi_binding",
+    "natural_language_writers",
+    "sealed_evaluation"
+  ],
+  "development_hardware": "NVIDIA GeForce RTX 5070 Ti",
+  "final_replication": {
+    "accelerator": "A100",
+    "pooled_runs": 3,
+    "spider_runs": 3,
+    "unlock": "freeze one pooled and one Spider finalist first"
+  },
+  "maximum_steps": 2000,
+  "phase_order": ["A", "B", "C", "D", "E", "F1_or_F2", "A100"],
+  "primary_metric": {
+    "guards": {
+      "evidence_precision": 0.9,
+      "scored_positive_coverage": 0.98
+    },
+    "name": "exact_evidence_set_accuracy"
+  },
+  "renderer": {
+    "A0": "hash_modality_and_symbol",
+    "A1": "shared_latent_plus_modality_embedding",
+    "A2": "fixed_seeded_orthogonal_modality_transform",
+    "version": "renderer-v0.4"
+  },
+  "run_budget": {
+    "A100_replication": 6,
+    "data_protocol": 6,
+    "decoder_or_loss_branch": 12,
+    "readout_matrix": 21,
+    "renderer_causal_new_training": 6
+  },
+  "sealed_access_allowed": false,
+  "seeds": [1701, 1802, 1903],
+  "status": "frozen_before_v0.4_implementation"
+}

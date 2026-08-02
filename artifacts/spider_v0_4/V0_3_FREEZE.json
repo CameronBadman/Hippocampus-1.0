@@ -1,0 +1,16 @@
+{
+  "files": {
+    "artifacts/spider_v0_3/local_rtx5070ti_2d54286/GOOGLE_DRIVE_CHECKPOINTS.json": "1fc91d2e15afa24ca6a5fa734a91bc50d0be4ebb275864efd76e396afac1d6ed",
+    "artifacts/spider_v0_3/local_rtx5070ti_2d54286/evidence/experiments.jsonl": "5f7a0adb9962440a47b628ae1d1704478188af21804b81f6870bae348ff92671",
+    "artifacts/spider_v0_3/local_rtx5070ti_2d54286/termination/experiments.jsonl": "3852917469769665819315a661850c779255df157d09e5d9e80626ba07464ff1",
+    "configs/spider_v0_3/evidence_E0.json": "954e7c25a87b0502951ae4cfae692c2aacf6b70ccd99951442bb8bbe9e2d0d3d",
+    "docs/spider_v0_3/FINAL_REPORT.md": "77cf75ae2327a37dd00a32087370eb6e87f2e23563da21b7acafac1d9bd13eee",
+    "research/spider_v0_3/research.md": "f6a0997e81dfda916f7bf45eaf2300e90e81e2e0eb1c82fa8eb752307773372b"
+  },
+  "final_commit": "8f21ec4aea39e0b43a8df922076572445f6b43cb",
+  "final_tag": "spider-v0.3-contingency-final",
+  "policy": "byte-immutable historical evidence",
+  "sealed_access_count": 0,
+  "source_commit": "2d542860af20bfe6ef2ab64e2950df1d07ceb2da",
+  "source_tag": "spider-v0.3-evidence-source"
+}
