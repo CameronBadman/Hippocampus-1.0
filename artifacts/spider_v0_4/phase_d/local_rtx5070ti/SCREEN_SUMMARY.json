@@ -1,0 +1,223 @@
+{
+  "arm_summaries": {
+    "D0": {
+      "constraint_seed_count": 1.0,
+      "exact_evidence_set_accuracy": 0.7587890625,
+      "false_positives_per_case": 0.06803385416666667,
+      "macro_average_precision": 0.9216242972883598,
+      "mean_selected_step": 750.0,
+      "mean_worst_positive_rank": 1.4244791666666667,
+      "precision": 0.8992901717519619,
+      "recall": 0.7459935897435898,
+      "scored_positive_coverage": 0.9975961538461539
+    },
+    "D1": {
+      "constraint_seed_count": 2.0,
+      "exact_evidence_set_accuracy": 0.7607421875,
+      "false_positives_per_case": 0.051106770833333336,
+      "macro_average_precision": 0.9270261863425925,
+      "mean_selected_step": 916.6666666666666,
+      "mean_worst_positive_rank": 1.4057291666666667,
+      "precision": 0.9221845167860333,
+      "recall": 0.734775641025641,
+      "scored_positive_coverage": 0.9995993589743589
+    },
+    "D2": {
+      "constraint_seed_count": 2.0,
+      "exact_evidence_set_accuracy": 0.7421875,
+      "false_positives_per_case": 0.061197916666666664,
+      "macro_average_precision": 0.894691094495782,
+      "mean_selected_step": 500.0,
+      "mean_worst_positive_rank": 1.4546875,
+      "precision": 0.9045512597236736,
+      "recall": 0.7111378205128205,
+      "scored_positive_coverage": 0.9919871794871795
+    },
+    "D3": {
+      "constraint_seed_count": 1.0,
+      "exact_evidence_set_accuracy": 0.7425130208333334,
+      "false_positives_per_case": 0.0673828125,
+      "macro_average_precision": 0.9118372903138529,
+      "mean_selected_step": 416.6666666666667,
+      "mean_worst_positive_rank": 1.4244791666666667,
+      "precision": 0.8977875869709553,
+      "recall": 0.7175480769230769,
+      "scored_positive_coverage": 0.9971955128205128
+    },
+    "D4": {
+      "constraint_seed_count": 2.0,
+      "exact_evidence_set_accuracy": 0.7516276041666666,
+      "false_positives_per_case": 0.051106770833333336,
+      "macro_average_precision": 0.9167406674633237,
+      "mean_selected_step": 333.3333333333333,
+      "mean_worst_positive_rank": 1.4125,
+      "precision": 0.9202803192397372,
+      "recall": 0.719551282051282,
+      "scored_positive_coverage": 0.999198717948718
+    }
+  },
+  "campaign": "Spider v0.4 Phase D readout screen",
+  "dataset_hash": "8ff3c7f12978e8381552eafadbe5fc6dfab8eb08c2484204e1cdad7835dc8a32",
+  "full_run_arms": [
+    "D0",
+    "D2"
+  ],
+  "gates": {
+    "D1_vs_D0": {
+      "advances": false,
+      "candidate": "D1",
+      "control": "D0",
+      "seed_results": [
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": -0.0009765625,
+            "macro_average_precision": 0.028106398809523703,
+            "precision": 0.020913042882023003,
+            "recall": 0.0
+          },
+          "seed": 1701
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.013671875,
+            "macro_average_precision": 0.007218191964285636,
+            "precision": 0.0032936651039788822,
+            "recall": 0.006009615384615308
+          },
+          "seed": 1802
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": -0.0068359375,
+            "macro_average_precision": -0.019118923611111227,
+            "precision": 0.0444763271162123,
+            "recall": -0.039663461538461564
+          },
+          "seed": 1903
+        }
+      ],
+      "seed_wins": 0
+    },
+    "D3_vs_D2": {
+      "advances": false,
+      "candidate": "D3",
+      "control": "D2",
+      "seed_results": [
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": -0.0126953125,
+            "macro_average_precision": 0.027274925595238142,
+            "precision": -0.02726264067205575,
+            "recall": 0.004807692307692291
+          },
+          "seed": 1701
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.0,
+            "macro_average_precision": 0.014278369200244279,
+            "precision": 0.014917649400407962,
+            "recall": 0.0024038461538461453
+          },
+          "seed": 1802
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.013671875,
+            "macro_average_precision": 0.009885292658730171,
+            "precision": -0.007946026986506816,
+            "recall": 0.012019230769230727
+          },
+          "seed": 1903
+        }
+      ],
+      "seed_wins": 0
+    },
+    "D4_vs_D2": {
+      "advances": false,
+      "candidate": "D4",
+      "control": "D2",
+      "seed_results": [
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": -0.0029296875,
+            "macro_average_precision": 0.029564112103174556,
+            "precision": 0.042639773531493286,
+            "recall": -0.018028846153846145
+          },
+          "seed": 1701
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.005859375,
+            "macro_average_precision": 0.02124234489468879,
+            "precision": 0.01127255121552817,
+            "recall": 0.012019230769230727
+          },
+          "seed": 1802
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.025390625,
+            "macro_average_precision": 0.015342261904761956,
+            "precision": -0.006725146198830467,
+            "recall": 0.03125
+          },
+          "seed": 1903
+        }
+      ],
+      "seed_wins": 0
+    },
+    "D4_vs_D3": {
+      "advances": false,
+      "candidate": "D4",
+      "control": "D3",
+      "seed_results": [
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.009765625,
+            "macro_average_precision": 0.0022891865079364138,
+            "precision": 0.06990241420354903,
+            "recall": -0.022836538461538436
+          },
+          "seed": 1701
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.005859375,
+            "macro_average_precision": 0.006963975694444513,
+            "precision": -0.0036450981848797914,
+            "recall": 0.009615384615384581
+          },
+          "seed": 1802
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "exact_set": 0.01171875,
+            "macro_average_precision": 0.005456969246031784,
+            "precision": 0.0012208807876763483,
+            "recall": 0.019230769230769273
+          },
+          "seed": 1903
+        }
+      ],
+      "seed_wins": 0
+    }
+  },
+  "pooled_finalist": "D0",
+  "sealed_access_count": 0,
+  "source_commit": "8762f5c63e83be694bb6cd9af55199b9fea0d122",
+  "spider_finalist": "D2"
+}
