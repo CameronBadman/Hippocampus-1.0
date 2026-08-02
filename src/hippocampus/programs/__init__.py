@@ -1,12 +1,22 @@
 """Exact synthetic graph programs and exchangeable manifold rendering."""
 
 from .batching import PackedProgramBatch, pack_rendered_cases
+from .identifiability import (
+    IdentifiabilityProbeConfig,
+    IdentifiabilityReport,
+    PairIdentifiability,
+    run_renderer_identifiability,
+)
 from .counterfactuals import make_counterfactual
 from .equivalent_views import make_equivalent_view
 from .generator import GeneratorConfig, GraphProgramGenerator
 from .leakage import MetadataLeakageReport, metadata_leakage_report
 from .oracle import VerificationReport, verify_case
-from .renderer import RenderedCase, SyntheticManifoldRenderer
+from .renderer import (
+    RenderedCase,
+    RendererGeometry,
+    SyntheticManifoldRenderer,
+)
 from .recurrence import (
     RECURRENCE_DATASET_VERSION,
     RecurrenceLeakageReport,
@@ -61,6 +71,9 @@ __all__ = [
     "ObservableAtom",
     "OracleRound",
     "PackedProgramBatch",
+    "IdentifiabilityProbeConfig",
+    "IdentifiabilityReport",
+    "PairIdentifiability",
     "ParallelOracleTrace",
     "ProgramEdge",
     "ProgramFamily",
@@ -70,6 +83,7 @@ __all__ = [
     "RecurrenceNecessityManifest",
     "RecurrenceNecessitySpec",
     "RenderedCase",
+    "RendererGeometry",
     "RolloutStressExample",
     "RolloutStressKind",
     "RolloutStressManifest",
@@ -93,6 +107,7 @@ __all__ = [
     "make_equivalent_view",
     "metadata_leakage_report",
     "pack_rendered_cases",
+    "run_renderer_identifiability",
     "recurrence_metadata_leakage_report",
     "swap_aligned_edge_manifolds",
     "verify_case",
