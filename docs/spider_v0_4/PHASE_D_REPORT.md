@@ -43,6 +43,24 @@ set decoding. Phase D strengthens that decision: ranking AP is materially
 higher than deployed lookup recall, and none of the cleaner readouts solves
 selection.
 
+## Finalist continuation
+
+The non-advancing controls D0 and D2 were exact-resumed to the registered
+2,000-step limit. The selector compared the complete 250-step checkpoint
+history and could retain an earlier checkpoint. Longer training did not rescue
+either processor.
+
+| Arm | Selected steps by seed | Exact set | Precision | Recall | Coverage | Macro AP |
+|---|---|---:|---:|---:|---:|---:|
+| D0 | 2,000 / 1,500 / 750 | 0.7549 | 0.8830 | 0.7516 | 0.9992 | 0.9378 |
+| D2 | 500 / 1,250 / 2,000 | 0.7305 | 0.9039 | 0.7019 | 0.9940 | 0.8981 |
+
+Relative to the 1,000-step screen, D0 exact-set fell 0.0039 while recall rose
+only 0.0056; D2 exact-set fell 0.0117 and recall fell 0.0092. D0 remains the
+stronger local control, but its mean precision is below the 0.90 primary
+constraint. There is no evidence here that more training or the recurrent
+processor addresses exact evidence recovery.
+
 ## Integrity and operational note
 
 Every accepted result used dataset hash

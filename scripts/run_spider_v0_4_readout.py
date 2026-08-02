@@ -152,13 +152,10 @@ def _run_or_load(
     metrics_path = output_dir / "metrics.json"
     if metrics_path.exists():
         metrics = _load(metrics_path)
-        if (
-            metrics["source_commit"] != source_commit
-            and metrics.get("evaluation_source_commit") != source_commit
-        ):
-            raise RuntimeError(
-                f"{experiment_id} was produced by another source commit"
-            )
+        if metrics["config_sha256"] != _sha256(CONFIGS[arm]):
+            raise RuntimeError(f"{experiment_id} config hash has drifted")
+        if metrics["sealed_access_count"] != 0:
+            raise RuntimeError(f"{experiment_id} records sealed access")
         return metrics
 
     base_command = [
@@ -662,10 +659,18 @@ def main() -> None:
             return
         output = _summarize_full(args.output_root)
     elif args.phase == "summarize":
-        full_summary = args.output_root / "FULL_SUMMARY.json"
+        finalist_metrics = tuple(
+            args.output_root
+            / "full"
+            / "runs"
+            / f"V04-phase-D-{arm}-full-s{seed}"
+            / "metrics.json"
+            for arm in screen_summary["full_run_arms"]
+            for seed in SEEDS
+        )
         output = (
             _summarize_full(args.output_root)
-            if full_summary.exists()
+            if all(path.is_file() for path in finalist_metrics)
             else screen_summary
         )
     else:

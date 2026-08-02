@@ -1,0 +1,34 @@
+{
+  "arm_summaries": {
+    "D0": {
+      "constraint_seed_count": 0.0,
+      "exact_evidence_set_accuracy": 0.7548828125,
+      "false_positives_per_case": 0.08138020833333333,
+      "macro_average_precision": 0.9378139467592593,
+      "mean_selected_step": 1416.6666666666667,
+      "mean_worst_positive_rank": 1.4046875,
+      "precision": 0.8830037785477302,
+      "recall": 0.7516025641025641,
+      "scored_positive_coverage": 0.999198717948718
+    },
+    "D2": {
+      "constraint_seed_count": 1.0,
+      "exact_evidence_set_accuracy": 0.73046875,
+      "false_positives_per_case": 0.061197916666666664,
+      "macro_average_precision": 0.8980765429593554,
+      "mean_selected_step": 1250.0,
+      "mean_worst_positive_rank": 1.4463541666666666,
+      "precision": 0.9039089299007219,
+      "recall": 0.7019230769230769,
+      "scored_positive_coverage": 0.9939903846153846
+    }
+  },
+  "campaign": "Spider v0.4 Phase D finalist extension",
+  "dataset_hash": "8ff3c7f12978e8381552eafadbe5fc6dfab8eb08c2484204e1cdad7835dc8a32",
+  "finalists": [
+    "D0",
+    "D2"
+  ],
+  "sealed_access_count": 0,
+  "source_commit": "15db463bb715031060ac8dc084c022a669f4192b"
+}
