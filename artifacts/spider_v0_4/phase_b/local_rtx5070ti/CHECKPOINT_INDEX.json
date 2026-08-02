@@ -1,0 +1,70 @@
+{
+  "checkpoints": [
+    {
+      "arm": "B0",
+      "checkpoint_sha256": "885229b4eeb024407549b403d0513ba759db7da21446fba1766bf675faa3e168",
+      "historical_reuse": true,
+      "seed": 1701,
+      "selected_step": 1000
+    },
+    {
+      "arm": "B0",
+      "checkpoint_sha256": "ff670521fda71cbdff2b6d22a0ac03002b9e93e4033b7977a89535a10f47870d",
+      "historical_reuse": true,
+      "seed": 1802,
+      "selected_step": 1000
+    },
+    {
+      "arm": "B0",
+      "checkpoint_sha256": "dc4b047b7d239700a7b29e40c6840d598141b65b66bf17b38fd233e799d852fe",
+      "historical_reuse": true,
+      "seed": 1903,
+      "selected_step": 1000
+    },
+    {
+      "arm": "B1",
+      "checkpoint_sha256": "7d6a531c08cffebd20c83e6b815bbaa18fa4d05bcbbd8f08ccfa4730aef84990",
+      "historical_reuse": false,
+      "seed": 1701,
+      "selected_step": 500
+    },
+    {
+      "arm": "B1",
+      "checkpoint_sha256": "4593aad3db82fd7bc3b92ff54c0b3468fe17bda7187b835b0fde21d20bcc7890",
+      "historical_reuse": false,
+      "seed": 1802,
+      "selected_step": 1000
+    },
+    {
+      "arm": "B1",
+      "checkpoint_sha256": "7984a9c00eff6fdeed1597ec23ae0a2e742aade45372227b201cf13d80769603",
+      "historical_reuse": false,
+      "seed": 1903,
+      "selected_step": 500
+    },
+    {
+      "arm": "B2",
+      "checkpoint_sha256": "ff06167bebe01de10d8e79665c8b55940f877d44f58972dc64b7ecf4a8fc7958",
+      "historical_reuse": false,
+      "seed": 1701,
+      "selected_step": 500
+    },
+    {
+      "arm": "B2",
+      "checkpoint_sha256": "90b27a7d8197459dfebb300347a9b863bf86cd15bb141efb1bcb5e566b4ae648",
+      "historical_reuse": false,
+      "seed": 1802,
+      "selected_step": 750
+    },
+    {
+      "arm": "B2",
+      "checkpoint_sha256": "6fbc9d16415bf28584994ebf2155ff9d6986c95b2a9151d85b81bc63208ab040",
+      "historical_reuse": false,
+      "seed": 1903,
+      "selected_step": 500
+    }
+  ],
+  "dataset_hash": "54a5a79c701a894a5ba3e048319e62f5cdd4fc2da4e4031a74c123fe4eddef97",
+  "sealed_access_count": 0,
+  "source_commit": "6ac41ee6b44aa8621de4663fd6fda7f770aced27"
+}

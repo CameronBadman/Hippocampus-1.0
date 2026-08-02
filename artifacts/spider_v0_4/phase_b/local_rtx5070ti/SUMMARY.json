@@ -1,0 +1,69 @@
+{
+  "arms": {
+    "B0": {
+      "exact_evidence_set_accuracy": 0.5865885416666666,
+      "false_positives_per_case": 0.134765625,
+      "macro_average_precision": 0.9082450761798588,
+      "precision": 0.6533831517813286,
+      "recall": 0.4720416124837451,
+      "scored_positive_coverage": 0.977893368010403
+    },
+    "B1": {
+      "exact_evidence_set_accuracy": 0.5035807291666666,
+      "false_positives_per_case": 0.008463541666666666,
+      "macro_average_precision": 0.8860126789474616,
+      "precision": 0.9470503352856294,
+      "recall": 0.1660164716081491,
+      "scored_positive_coverage": 0.9852622453402687
+    },
+    "B2": {
+      "exact_evidence_set_accuracy": 0.5924479166666666,
+      "false_positives_per_case": 0.059895833333333336,
+      "macro_average_precision": 0.8710383819079471,
+      "precision": 0.874276543709739,
+      "recall": 0.39358474208929345,
+      "scored_positive_coverage": 0.9661898569570871
+    }
+  },
+  "campaign": "Spider v0.4 Phase B renderer causal test",
+  "dataset_hash": "54a5a79c701a894a5ba3e048319e62f5cdd4fc2da4e4031a74c123fe4eddef97",
+  "decision": {
+    "B2_advances": false,
+    "next_phase": "inspect_generator_and_labels",
+    "seed_results": [
+      {
+        "advance": false,
+        "deltas": {
+          "exact_set": -0.1201171875,
+          "lookup_recall": -0.015625,
+          "precision": 0.17536120913509556,
+          "reachability_recall": -0.2421875
+        },
+        "seed": 1701
+      },
+      {
+        "advance": false,
+        "deltas": {
+          "exact_set": 0.26953125,
+          "lookup_recall": 0.0078125,
+          "precision": 0.2776141384388807,
+          "reachability_recall": 0.328125
+        },
+        "seed": 1802
+      },
+      {
+        "advance": false,
+        "deltas": {
+          "exact_set": -0.1318359375,
+          "lookup_recall": -0.0078125,
+          "precision": 0.2097048282112548,
+          "reachability_recall": -0.671875
+        },
+        "seed": 1903
+      }
+    ],
+    "seed_wins": 0
+  },
+  "sealed_access_count": 0,
+  "source_commit": "6ac41ee6b44aa8621de4663fd6fda7f770aced27"
+}

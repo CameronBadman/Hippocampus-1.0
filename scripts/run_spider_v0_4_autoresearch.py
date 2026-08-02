@@ -275,6 +275,27 @@ def _write_summary(
     (output_root / "SUMMARY.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n"
     )
+    checkpoint_index = {
+        "source_commit": payload["source_commit"],
+        "dataset_hash": payload["dataset_hash"],
+        "sealed_access_count": 0,
+        "checkpoints": [
+            {
+                "arm": arm,
+                "seed": seed,
+                "selected_step": results[(arm, seed)]["selected_step"],
+                "checkpoint_sha256": results[(arm, seed)][
+                    "selected_checkpoint_sha256"
+                ],
+                "historical_reuse": arm == "B0",
+            }
+            for arm in ARMS
+            for seed in SEEDS
+        ],
+    }
+    (output_root / "CHECKPOINT_INDEX.json").write_text(
+        json.dumps(checkpoint_index, indent=2, sort_keys=True) + "\n"
+    )
     lines = [
         "# Spider v0.4 Phase B",
         "",

@@ -68,3 +68,4 @@ renderer budget for B1 and B2 while providing matched historical A0 controls.
 |---:|---|---|---:|---|
 | 0 | Freeze protocol before implementing the aligned renderer. | kept | 0.0 | v0-v0.3 artifacts remain immutable; no sealed access is permitted. |
 | 1 | A fixed orthogonal cross-modal geometry makes opaque identity recoverable without collapsing modalities. | kept | 1.0 | A2 achieved 1.000 AUROC and 1.000 Top-1 at 64 and 256 unseen-symbol distractors; A0 remained near chance. Graph training is unlocked. |
+| 2 | Cross-modal identity alignment alone improves pooled-model lookup, reachability, and exact evidence recovery under E0. | rejected | 0.5924 | B2 won 0/3 matched seeds. Mean lookup/reachability recall did not clear the +0.30/+0.20 gates; precision and scored coverage also missed the primary constraints in aggregate. Route to generator/label and frozen-logit set-decoding audit; do not run Phase C yet. |
