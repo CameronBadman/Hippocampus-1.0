@@ -1,0 +1,27 @@
+{
+  "a100_replication_required": false,
+  "checkpoints": [
+    {
+      "checkpoint_sha256": "a24db248e27019f40cb1bd4076d47de0d7aad13ecedfeba14071e4686822eac5",
+      "seed": 1701,
+      "selected_step": 2000,
+      "source_commit": "ab28a70815400c325edabc2081d9ee5d2bae5e47"
+    },
+    {
+      "checkpoint_sha256": "c63b3474a30281eec8156a4340c1d61896d684274617ec58efd3e8067d537690",
+      "seed": 1802,
+      "selected_step": 1500,
+      "source_commit": "ab28a70815400c325edabc2081d9ee5d2bae5e47"
+    },
+    {
+      "checkpoint_sha256": "12535976fed176eff8353db51d1556dfb1a1a05c1d4515bceac1783ad2259ca3",
+      "seed": 1903,
+      "selected_step": 750,
+      "source_commit": "ab28a70815400c325edabc2081d9ee5d2bae5e47"
+    }
+  ],
+  "dataset_hash": "8ff3c7f12978e8381552eafadbe5fc6dfab8eb08c2484204e1cdad7835dc8a32",
+  "sealed_access_count": 0,
+  "selected_arm": "F0",
+  "selection_reason": "no learned decoder passed the matched-seed gate"
+}

@@ -528,6 +528,9 @@ def _summarize(output_root: Path) -> dict[str, Any]:
         "new_training_run_count": len(TRAINED_ARMS) * len(SEEDS),
         "historical_control_reuse_count": len(SEEDS),
         "sealed_access_count": 0,
+        "run_source_commits": sorted(
+            {row["source_commit"] for row in results.values()}
+        ),
     }
     _write(output_root / "SUMMARY.json", payload)
     lines = [
@@ -555,6 +558,71 @@ def _summarize(output_root: Path) -> dict[str, Any]:
         )
     )
     (output_root / "SUMMARY.md").write_text("\n".join(lines) + "\n")
+    ledger_lines = [
+        "# Spider v0.4 Phase F1 experiment ledger",
+        "",
+        "| Arm | Seed | Status | Step | Exact set | Precision | Recall | Coverage | Cardinality MAE | Source |",
+        "|---|---:|---|---:|---:|---:|---:|---:|---:|---|",
+    ]
+    for arm in ARMS:
+        for seed in SEEDS:
+            row = results[(arm, seed)]
+            primary = row["primary_metric"]
+            ledger_lines.append(
+                f"| {arm} | {seed} | "
+                f"{'reused' if arm == 'F0' else row['status']} | "
+                f"{row['selected_step']} | "
+                f"{primary['exact_evidence_set_accuracy']:.4f} | "
+                f"{primary['precision']:.4f} | "
+                f"{primary['recall']:.4f} | "
+                f"{primary['scored_positive_coverage']:.4f} | "
+                f"{primary['mean_absolute_cardinality_error']:.4f} | "
+                f"`{row['source_commit'][:8]}` |"
+            )
+    ledger_lines.extend(
+        (
+            "",
+            "One F1/1802 attempt was invalidated after concurrent execution "
+            "was detected. Both processes were terminated, the partial "
+            "checkpoints were quarantined, and the seed was rerun from step "
+            "zero under the campaign lock. The invalid attempt is retained "
+            "in `failed_experiments.jsonl` and is not counted above.",
+            "",
+            "No sealed split was accessed.",
+        )
+    )
+    (output_root / "EXPERIMENT_LEDGER.md").write_text(
+        "\n".join(ledger_lines) + "\n"
+    )
+    _write(
+        output_root / "FINALIST.json",
+        {
+            "selected_arm": finalist,
+            "selection_reason": (
+                "highest-ranked advancing learned decoder"
+                if finalist != "F0"
+                else "no learned decoder passed the matched-seed gate"
+            ),
+            "a100_replication_required": finalist != "F0",
+            "dataset_hash": payload["dataset_hash"],
+            "checkpoints": [
+                {
+                    "seed": seed,
+                    "selected_step": results[(finalist, seed)][
+                        "selected_step"
+                    ],
+                    "checkpoint_sha256": results[(finalist, seed)][
+                        "selected_checkpoint_sha256"
+                    ],
+                    "source_commit": results[(finalist, seed)][
+                        "source_commit"
+                    ],
+                }
+                for seed in SEEDS
+            ],
+            "sealed_access_count": 0,
+        },
+    )
     return payload
 
 
