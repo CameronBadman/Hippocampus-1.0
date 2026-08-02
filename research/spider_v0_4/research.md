@@ -19,7 +19,8 @@ corroboration.
 
 ## Constraints
 
-- Evaluator: `.venv/bin/python scripts/run_spider_v0_4_autoresearch.py`
+- Phase B evaluator: `.venv/bin/python scripts/run_spider_v0_4_autoresearch.py`
+- Phase D evaluator: `.venv/bin/python scripts/run_spider_v0_4_readout.py`
 - Keep policy: `pass_only`
 - `pause_every: never`
 - `max_iterations: 51`
@@ -28,7 +29,10 @@ corroboration.
 - Development accelerator: one local NVIDIA GeForce RTX 5070 Ti, FP32.
 - Final replication: one A100 only after one pooled and one Spider finalist are
   frozen.
-- Dataset: `spider-programs-v0.4-aligned-dev`; renderer: `renderer-v0.4`.
+- Phase B dataset: immutable `spider-programs-v0.4-aligned-dev`.
+- Post-audit dataset: `spider-programs-v0.4.1-aligned-evidence-dev`, which
+  removes the unsupported-query cardinality leak without altering Phase B.
+- Renderer: `renderer-v0.4` with the passing A2 orthogonal geometry.
 - Seeds: 1701, 1802, and 1903.
 - Maximum trainable steps: 2,000; checkpoint interval: 250.
 - No existing sealed split may be opened, materialised, or used for selection.
@@ -71,3 +75,5 @@ renderer budget for B1 and B2 while providing matched historical A0 controls.
 | 2 | Cross-modal identity alignment alone improves pooled-model lookup, reachability, and exact evidence recovery under E0. | rejected | 0.5924 | B2 won 0/3 matched seeds. Mean lookup/reachability recall did not clear the +0.30/+0.20 gates; precision and scored coverage also missed the primary constraints in aggregate. Route to generator/label and frozen-logit set-decoding audit; do not run Phase C yet. |
 | 3 | The Phase B failure is caused by inconsistent evidence labels. | rejected | 0.0 | All 10,240 cases verify, exact candidate labels match required evidence, positive summary identity is complete, and an observable lookup rule is 1.000 accurate. A separate query-cardinality leak in unsupported cases requires a dataset amendment but does not explain answerable lookup recall. |
 | 4 | Frozen B2 ranking has enough information that cardinality-aware decoding can materially improve exact recovery. | kept | 0.8822 | Oracle-cardinality top-k improves mean B2 exact set by 0.2897; every seed clears the +0.15 branch gate. Ranking remains imperfect, especially on positive lookup, so readout and decoding both remain live suspects. |
+| 5 | Remove the unsupported-query row-count leak before evidence readout experiments. | kept | 0.5 | `spider-programs-v0.4.1-aligned-evidence-dev` has chance-level query-cardinality answerability accuracy in every partition, zero invalid traces, new seeds, and zero sealed access. |
+| 6 | A dedicated or slot-aware evidence readout recovers signal hidden by the shared mean-pooled head. | running | 0.0 | D0-D4 are frozen on the corrected dataset. All arms screen to 1,000 steps; one pooled and one Spider finalist resume exactly to 2,000 according to the registered matched-seed gate. |

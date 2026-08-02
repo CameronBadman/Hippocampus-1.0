@@ -34,6 +34,25 @@ checkpoint; B1 and B2 are the six registered new training runs.
 .venv/bin/python scripts/run_spider_v0_4_autoresearch.py --phase B
 ```
 
+Phase D uses the corrected, non-sealed
+`spider-programs-v0.4.1-aligned-evidence-dev` dataset and holds the A2
+renderer, fixed 512-case corpus, controller, E0 evidence objective, and every
+model dimension constant. The five registered arms are pooled/shared (D0),
+pooled/dedicated (D1), Spider/shared (D2), Spider/dedicated (D3), and
+Spider/slot-aware (D4).
+
+All 15 matched-seed arms screen under the same pre-registered 2,000-step
+schedule, pausing at step 1,000. An ablation qualifies when it gains at least
+0.05 exact-set accuracy or 0.07 recall, loses no more than 0.02 precision,
+does not reduce macro AP, and wins at least two matched seeds. The selected
+pooled and Spider arms resume exactly to step 2,000; data-order, renderer
+presentation counters, optimiser state, action RNG, and PyTorch RNG are
+restored from the pause checkpoint.
+
+```bash
+.venv/bin/python scripts/run_spider_v0_4_readout.py --phase all
+```
+
 Every run records its source commit, config and dataset hashes, selected
 checkpoint, calibration policy, complete per-family evidence metrics, runtime,
 peak memory, and mechanical invariance guards in JSON. Crashes and timeouts are

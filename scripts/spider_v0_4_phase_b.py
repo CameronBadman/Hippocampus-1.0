@@ -19,7 +19,9 @@ from hippocampus.programs import (
     FreshRenderedBatchSource,
     SyntheticManifoldRenderer,
     default_aligned_dev_specs,
+    default_aligned_evidence_specs,
     generate_aligned_dev_cases,
+    generate_aligned_evidence_cases,
     pack_rendered_cases,
 )
 from hippocampus.spider import (
@@ -40,7 +42,7 @@ COVERAGE_FLOOR = 0.98
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run one preregistered Spider v0.4 renderer causal arm."
+        description="Run one preregistered Spider v0.4 development arm."
     )
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--experiment-id", required=True)
@@ -50,7 +52,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--selection-cases", type=int, default=512)
     parser.add_argument("--calibration-cases", type=int, default=512)
     parser.add_argument("--evaluation-cases", type=int, default=1024)
-    parser.add_argument("--steps", type=int, default=1000)
+    parser.add_argument("--stop-after-steps", type=int)
+    parser.add_argument("--resume-checkpoint", type=Path)
+    parser.add_argument("--prior-run", type=Path)
     return parser.parse_args()
 
 
@@ -151,10 +155,12 @@ def main() -> None:
     args.output_dir.mkdir(parents=True)
     source_commit = _source_commit()
     experiment = load_experiment(args.config)
-    if experiment.raw["dataset"].get("protocol") != (
-        "spider-v0.4-renderer-causal"
-    ):
-        raise ValueError("config does not name the v0.4 renderer protocol")
+    protocol = experiment.raw["dataset"].get("protocol")
+    if protocol not in {
+        "spider-v0.4-renderer-causal",
+        "spider-v0.4-readout",
+    }:
+        raise ValueError("config does not name a registered v0.4 protocol")
     manifest_path = ROOT / experiment.raw["dataset"]["manifest"]
     manifest = json.loads(manifest_path.read_text())
     expected_hash = experiment.raw["dataset"]["aggregate_sha256"]
@@ -163,36 +169,52 @@ def main() -> None:
     if manifest["sealed_access_count"] != 0:
         raise RuntimeError("v0.4 development manifest records sealed access")
     if experiment.device.type != "cuda" or not torch.cuda.is_available():
-        raise RuntimeError("registered Phase B runs require the local CUDA GPU")
+        raise RuntimeError("registered v0.4 runs require the local CUDA GPU")
     training_config = replace(
         experiment.training_config,
         seed=args.seed,
-        steps=args.steps,
     )
     experiment = replace(experiment, training_config=training_config)
+    stop_after_steps = (
+        training_config.steps
+        if args.stop_after_steps is None
+        else args.stop_after_steps
+    )
+    if not 0 < stop_after_steps <= training_config.steps:
+        raise ValueError("stop-after steps exceed the registered schedule")
     full_protocol = (
         args.train_cases == 512
         and args.selection_cases == 512
         and args.calibration_cases == 512
         and args.evaluation_cases == 1024
-        and args.steps == 1000
+        and stop_after_steps in {1000, 2000}
     )
     started = time.perf_counter()
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     torch.cuda.reset_peak_memory_stats(experiment.device)
 
-    specs = {spec.name: spec for spec in default_aligned_dev_specs()}
-    train_cases = generate_aligned_dev_cases(
+    dataset_version = str(experiment.raw["dataset"]["version"])
+    if dataset_version == "spider-programs-v0.4-aligned-dev":
+        specs = {spec.name: spec for spec in default_aligned_dev_specs()}
+        generate_cases = generate_aligned_dev_cases
+    elif dataset_version == "spider-programs-v0.4.1-aligned-evidence-dev":
+        specs = {
+            spec.name: spec for spec in default_aligned_evidence_specs()
+        }
+        generate_cases = generate_aligned_evidence_cases
+    else:
+        raise ValueError("unsupported v0.4 development dataset version")
+    train_cases = generate_cases(
         specs["training"], limit=args.train_cases
     )
-    selection_cases = generate_aligned_dev_cases(
+    selection_cases = generate_cases(
         specs["model_selection"], limit=args.selection_cases
     )
-    calibration_cases = generate_aligned_dev_cases(
+    calibration_cases = generate_cases(
         specs["calibration"], limit=args.calibration_cases
     )
-    evaluation_cases = generate_aligned_dev_cases(
+    evaluation_cases = generate_cases(
         specs["development_evaluation"], limit=args.evaluation_cases
     )
     renderer_data = experiment.raw["renderer"]
@@ -239,6 +261,8 @@ def main() -> None:
             checkpoint_every=250,
             execution_policy=fixed_policy,
             monitor_batches=monitor,
+            resume_checkpoint=args.resume_checkpoint,
+            stop_after_steps=stop_after_steps,
         )
         training_payload = {
             "runtime_seconds": training.runtime_seconds,
@@ -253,11 +277,24 @@ def main() -> None:
             "history": [asdict(record) for record in training.records],
         }
         _write_json(args.output_dir / "training.json", training_payload)
-        checkpoint_paths = [
+        checkpoint_paths = []
+        if args.prior_run is not None:
+            checkpoint_paths.extend(
+                sorted(args.prior_run.glob("checkpoint_step_*.pt"))
+            )
+            prior_final = args.prior_run / "checkpoint.pt"
+            if prior_final.is_file():
+                checkpoint_paths.append(prior_final)
+        checkpoint_paths.extend(
             args.output_dir / f"checkpoint_step_{step:06d}.pt"
-            for step in (250, 500, 750)
-            if step < args.steps
-        ] + [checkpoint_path]
+            for step in range(
+                training.resumed_from_step + 250,
+                stop_after_steps,
+                250,
+            )
+            if (args.output_dir / f"checkpoint_step_{step:06d}.pt").is_file()
+        )
+        checkpoint_paths.append(checkpoint_path)
         del model, train_source, monitor
         _release_cuda_cache()
 
@@ -267,15 +304,21 @@ def main() -> None:
         experiment=experiment,
         row_seed_offset=1_000_000 + args.seed,
     )
+    selected_steps_seen: set[int] = set()
     for checkpoint_path in checkpoint_paths:
         model, payload = _load_model_checkpoint(experiment, checkpoint_path)
         step = int(payload["step"])
+        if step in selected_steps_seen:
+            del model, payload
+            _release_cuda_cache()
+            continue
+        selected_steps_seen.add(step)
         selection = fast_calibrate_closed_loop_evidence(
             model,
             selection_batches,
             controller_config=experiment.controller_config,
             split_name="model_selection",
-            dataset_version="spider-programs-v0.4-aligned-dev",
+            dataset_version=dataset_version,
             precision_floor=PRECISION_FLOOR,
             coverage_floor=COVERAGE_FLOOR,
             execution_policy=fixed_policy,
@@ -318,7 +361,7 @@ def main() -> None:
         calibration_batches,
         controller_config=experiment.controller_config,
         split_name="calibration",
-        dataset_version="spider-programs-v0.4-aligned-dev",
+        dataset_version=dataset_version,
         precision_floor=PRECISION_FLOOR,
         coverage_floor=COVERAGE_FLOOR,
         execution_policy=fixed_policy,
@@ -346,7 +389,7 @@ def main() -> None:
         evaluation_batches,
         split="development_evaluation",
         controller_config=experiment.controller_config,
-        dataset_version="spider-programs-v0.4-aligned-dev",
+        dataset_version=dataset_version,
         evidence_threshold=calibration.calibration.threshold,
         permuted_batches=permuted_batches,
         invariance_sample_limit=min(32, len(evaluation_batches)),
@@ -400,7 +443,8 @@ def main() -> None:
         "resolved_seed": args.seed,
         "renderer": renderer_data,
         "parameter_count": parameter_count(model),
-        "planned_steps": args.steps,
+        "planned_steps": training_config.steps,
+        "completed_steps": stop_after_steps,
         "selected_step": int(selected_record["step"]),
         "selected_checkpoint": str(selected_checkpoint),
         "selected_checkpoint_sha256": _sha256(selected_checkpoint),
