@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import copy
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import json
 import statistics
@@ -89,6 +91,26 @@ def _append_once(path: Path, record: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a") as handle:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+
+@contextmanager
+def _campaign_lock(output_root: Path):
+    """Prevent two orchestrators from mutating one campaign directory."""
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    lock_path = output_root / ".campaign.lock"
+    handle = lock_path.open("a+")
+    try:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise RuntimeError(
+                f"another Phase F orchestrator holds {lock_path}"
+            ) from error
+        yield
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
 
 
 def _execute(
@@ -536,10 +558,8 @@ def _summarize(output_root: Path) -> dict[str, Any]:
     return payload
 
 
-def main() -> None:
-    args = parse_args()
+def _run_campaign(args: argparse.Namespace) -> None:
     _verify_historical_control_equivalence()
-    args.output_root.mkdir(parents=True, exist_ok=True)
     _append_once(
         args.output_root / "experiments.jsonl",
         _ledger_record(_historical_control(SEEDS[0]), arm="F0", reused=True),
@@ -581,6 +601,12 @@ def main() -> None:
             return
     result = _summarize(args.output_root)
     print(json.dumps(result, sort_keys=True))
+
+
+def main() -> None:
+    args = parse_args()
+    with _campaign_lock(args.output_root):
+        _run_campaign(args)
 
 
 if __name__ == "__main__":

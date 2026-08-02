@@ -160,6 +160,17 @@ def test_phase_f_resume_distinguishes_training_selection_and_evaluation(
     assert module._interrupted_stage(output) == ("evaluation", None)
 
 
+def test_phase_f_campaign_lock_rejects_concurrent_orchestrator(
+    tmp_path: Path,
+) -> None:
+    module = _module()
+
+    with module._campaign_lock(tmp_path):
+        with pytest.raises(RuntimeError, match="another Phase F orchestrator"):
+            with module._campaign_lock(tmp_path):
+                pass
+
+
 def test_pipeline_reports_mean_absolute_cardinality_error() -> None:
     exact = _report("exact", false_positives=0)
     over = _report("over", false_positives=1)
