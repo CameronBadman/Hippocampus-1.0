@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import importlib.util
 import json
 import random
 from pathlib import Path
+import sys
 
 import pytest
 import torch
@@ -35,6 +37,18 @@ from hippocampus.spider.calibration import validate_calibration_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _autoresearch_module():
+    scripts = str(ROOT / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    path = ROOT / "scripts/run_spider_v0_6_autoresearch.py"
+    spec = importlib.util.spec_from_file_location("spider_v06_runner", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _candidate_outputs(count: int, *, d_model: int = 8) -> CandidateOutputs:
@@ -283,3 +297,46 @@ def test_v0_6_configs_use_no_calibrated_threshold_or_count() -> None:
         split_name="model_selection",
         dataset_version=V06_DATASET_VERSION,
     )
+
+
+def test_v0_6_score_is_limited_by_the_weakest_required_metric() -> None:
+    module = _autoresearch_module()
+    row = {
+        "primary_metric": {
+            "exact_evidence_set_accuracy": 0.88,
+            "precision": 0.91,
+            "recall": 0.83,
+            "scored_positive_coverage": 0.99,
+        }
+    }
+
+    assert module._score(row) == pytest.approx(0.83)
+    row["primary_metric"]["scored_positive_coverage"] = 0.97
+    assert module._score(row) == 0.0
+
+
+def test_v0_6_runner_rejects_fitted_temperature() -> None:
+    module = _autoresearch_module()
+    config = ROOT / "configs/spider_v0_6/Z1.json"
+    metrics = {
+        "experiment_id": "test",
+        "config_sha256": module._sha256(config),
+        "sealed_access_count": 0,
+        "evidence_operating_policy": "candidate_null",
+        "calibration": {
+            "calibration": {
+                "temperature": {
+                    "accepted": True,
+                    "applied_temperature": 1.2,
+                }
+            }
+        },
+        "guards": {
+            "finite": True,
+            "deterministic_replay_mismatches": 0,
+            "row_permutation_decision_mismatches": 0,
+        },
+    }
+
+    with pytest.raises(RuntimeError, match="temperature"):
+        module._validate_zero_shot(metrics, arm="Z1")
