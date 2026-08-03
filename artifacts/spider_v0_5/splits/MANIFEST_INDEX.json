@@ -1,0 +1,159 @@
+{
+  "aggregate_sha256": "b3de9d584148859f4f12a17377005c969372de753677e2b3360fa5e2fa7ada68",
+  "dataset_version": "spider-programs-v0.5-score-decode-dev",
+  "partition_count": 4,
+  "purpose": "score-versus-current-candidate-decoding factorial",
+  "related_view_partition_rule": "group by base_case_id",
+  "sealed_access_count": 0,
+  "splits": [
+    {
+      "case_count": 8192,
+      "distributions": {
+        "family": {
+          "corroboration": 2048,
+          "latest_valid": 2048,
+          "lookup": 2048,
+          "reachability": 2048
+        },
+        "graph_size": {
+          "16": 2048,
+          "24": 2048,
+          "32": 2048,
+          "8": 2048
+        },
+        "observed_path_length": {
+          "0": 3072,
+          "1": 4267,
+          "2": 341,
+          "3": 256,
+          "4": 256
+        },
+        "outcome": {
+          "answerable": 4096,
+          "unknown": 4096
+        },
+        "required_evidence_cardinality": {
+          "0": 3072,
+          "1": 3584,
+          "2": 1536
+        }
+      },
+      "manifest_file": "training.json",
+      "name": "training",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "24d4f622ab36b7a8003011790c8e5729be7456ef9769da789e4a46dc7324cad2"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 192,
+          "1": 267,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 192,
+          "1": 224,
+          "2": 96
+        }
+      },
+      "manifest_file": "model_selection.json",
+      "name": "model_selection",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "5a56589a5b4db799d9e0647960196947ae0b517ba9c3859aa59a0021067be901"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 192,
+          "1": 267,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 192,
+          "1": 224,
+          "2": 96
+        }
+      },
+      "manifest_file": "calibration.json",
+      "name": "calibration",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "3db29576e639ed21a27565f2838bb5b1c8cd11cfdaad1f29e078ff2c76384b4b"
+    },
+    {
+      "case_count": 1024,
+      "distributions": {
+        "family": {
+          "corroboration": 256,
+          "latest_valid": 256,
+          "lookup": 256,
+          "reachability": 256
+        },
+        "graph_size": {
+          "16": 256,
+          "24": 256,
+          "32": 256,
+          "8": 256
+        },
+        "observed_path_length": {
+          "0": 384,
+          "1": 533,
+          "2": 43,
+          "3": 32,
+          "4": 32
+        },
+        "outcome": {
+          "answerable": 512,
+          "unknown": 512
+        },
+        "required_evidence_cardinality": {
+          "0": 384,
+          "1": 448,
+          "2": 192
+        }
+      },
+      "manifest_file": "development_evaluation.json",
+      "name": "development_evaluation",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "fe65599d2a03be843ea53c6116234fd5a5590692595f827c37bfdfb5491fa321"
+    }
+  ],
+  "total_case_count": 10240
+}

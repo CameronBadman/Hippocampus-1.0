@@ -10,10 +10,15 @@ import torch
 
 from hippocampus import GraphSchema
 from hippocampus.programs import (
+    V05_DATASET_VERSION,
     GeneratorConfig,
     GraphProgramGenerator,
     ProgramFamily,
     SyntheticManifoldRenderer,
+    audit_aligned_program_labels,
+    build_aligned_dev_manifest,
+    default_score_decode_specs,
+    generate_score_decode_cases,
     pack_rendered_cases,
 )
 from hippocampus.spider import (
@@ -291,3 +296,94 @@ def test_experiment_rejects_candidate_count_policy_without_decoder(
 
     with pytest.raises(ValueError, match="candidate evidence count"):
         load_experiment(path)
+
+
+def test_v0_5_partitions_are_new_balanced_and_non_sealed() -> None:
+    specs = default_score_decode_specs()
+
+    assert [spec.case_count for spec in specs] == [8192, 512, 512, 1024]
+    assert all(spec.dataset_version == V05_DATASET_VERSION for spec in specs)
+    assert all(not spec.sealed for spec in specs)
+    assert min(spec.seed_start for spec in specs) >= 810_000
+
+    seen_case_ids: set[str] = set()
+    seen_base_ids: set[str] = set()
+    for spec in specs:
+        cases = generate_score_decode_cases(spec, limit=128)
+        manifest = build_aligned_dev_manifest(spec, cases)
+        audit = audit_aligned_program_labels(cases)
+
+        assert not seen_case_ids.intersection(manifest.case_ids)
+        assert not seen_base_ids.intersection(manifest.base_case_ids)
+        assert audit.invalid_case_count == 0
+        assert audit.evidence_label_mismatch_count == 0
+        assert audit.unsupported_case_count == 0
+        assert audit.query_cardinality_answerability_accuracy == (
+            audit.query_cardinality_majority_accuracy
+        )
+        assert manifest.distributions["family"] == {
+            "corroboration": 32,
+            "latest_valid": 32,
+            "lookup": 32,
+            "reachability": 32,
+        }
+        assert manifest.distributions["outcome"] == {
+            "answerable": 64,
+            "unknown": 64,
+        }
+        seen_case_ids.update(manifest.case_ids)
+        seen_base_ids.update(manifest.base_case_ids)
+
+
+def test_v0_5_configs_form_only_the_registered_factorial() -> None:
+    configs = {
+        arm: json.loads(Path(f"configs/spider_v0_5/{arm}.json").read_text())
+        for arm in ("X0", "X1", "X2", "X3")
+    }
+    manifest = json.loads(
+        Path("artifacts/spider_v0_5/splits/MANIFEST_INDEX.json").read_text()
+    )
+    for config in configs.values():
+        assert config["dataset"]["protocol"] == "spider-v0.5-score-decode"
+        assert config["dataset"]["aggregate_sha256"] == (
+            manifest["aggregate_sha256"]
+        )
+        assert config["dataset"]["training_case_count"] == 8192
+        assert config["training"]["steps"] == 2000
+
+    assert configs["X0"]["model"]["evidence_readout"] == "shared"
+    assert configs["X1"]["model"]["evidence_readout"] == "pairwise_matcher"
+    assert configs["X2"]["model"]["evidence_readout"] == "shared"
+    assert configs["X3"]["model"]["evidence_readout"] == "pairwise_matcher"
+    assert configs["X0"]["controller"]["evidence_selection_policy"] == (
+        "threshold"
+    )
+    assert configs["X1"]["controller"]["evidence_selection_policy"] == (
+        "threshold"
+    )
+    for arm in ("X2", "X3"):
+        assert configs[arm]["controller"]["evidence_selection_policy"] == (
+            "candidate_count"
+        )
+        assert configs[arm]["model"]["use_candidate_evidence_count"]
+        assert configs[arm]["loss"]["evidence_candidate_count"] == 1.0
+
+    common_model = {
+        key: value
+        for key, value in configs["X0"]["model"].items()
+        if key not in {"evidence_readout", "use_candidate_evidence_count"}
+    }
+    for config in configs.values():
+        assert {
+            key: value
+            for key, value in config["model"].items()
+            if key not in {"evidence_readout", "use_candidate_evidence_count"}
+        } == common_model
+
+
+@pytest.mark.parametrize("arm", ("X0", "X1", "X2", "X3"))
+def test_v0_5_configs_resolve(arm: str) -> None:
+    experiment = load_experiment(f"configs/spider_v0_5/{arm}.json")
+
+    assert experiment.raw["dataset"]["version"] == V05_DATASET_VERSION
+    assert experiment.device.type == "cuda"

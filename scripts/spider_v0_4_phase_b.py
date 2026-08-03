@@ -20,8 +20,10 @@ from hippocampus.programs import (
     SyntheticManifoldRenderer,
     default_aligned_dev_specs,
     default_aligned_evidence_specs,
+    default_score_decode_specs,
     generate_aligned_dev_cases,
     generate_aligned_evidence_cases,
+    generate_score_decode_cases,
     pack_rendered_cases,
 )
 from hippocampus.spider import (
@@ -42,7 +44,7 @@ COVERAGE_FLOOR = 0.98
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run one preregistered Spider v0.4 development arm."
+        description="Run one preregistered Spider evidence development arm."
     )
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--experiment-id", required=True)
@@ -208,17 +210,18 @@ def main() -> None:
         "spider-v0.4-renderer-causal",
         "spider-v0.4-readout",
         "spider-v0.4-set-decoding",
+        "spider-v0.5-score-decode",
     }:
-        raise ValueError("config does not name a registered v0.4 protocol")
+        raise ValueError("config does not name a registered evidence protocol")
     manifest_path = ROOT / experiment.raw["dataset"]["manifest"]
     manifest = json.loads(manifest_path.read_text())
     expected_hash = experiment.raw["dataset"]["aggregate_sha256"]
     if manifest["aggregate_sha256"] != expected_hash:
-        raise RuntimeError("v0.4 partition manifest hash drift")
+        raise RuntimeError("evidence partition manifest hash drift")
     if manifest["sealed_access_count"] != 0:
-        raise RuntimeError("v0.4 development manifest records sealed access")
+        raise RuntimeError("development manifest records sealed access")
     if experiment.device.type != "cuda" or not torch.cuda.is_available():
-        raise RuntimeError("registered v0.4 runs require the local CUDA GPU")
+        raise RuntimeError("registered evidence runs require the local CUDA GPU")
     training_config = replace(
         experiment.training_config,
         seed=args.seed,
@@ -231,11 +234,21 @@ def main() -> None:
     )
     if not 0 < stop_after_steps <= training_config.steps:
         raise ValueError("stop-after steps exceed the registered schedule")
+    dataset_config = experiment.raw["dataset"]
     full_protocol = (
-        args.train_cases == 512
-        and args.selection_cases == 512
-        and args.calibration_cases == 512
-        and args.evaluation_cases == 1024
+        args.train_cases
+        == int(dataset_config.get("training_case_count", 512))
+        and args.selection_cases
+        == int(dataset_config.get("model_selection_case_count", 512))
+        and args.calibration_cases
+        == int(dataset_config.get("calibration_case_count", 512))
+        and args.evaluation_cases
+        == int(
+            dataset_config.get(
+                "development_evaluation_case_count",
+                1024,
+            )
+        )
         and stop_after_steps in {1000, 2000}
     )
     started = time.perf_counter()
@@ -263,8 +276,11 @@ def main() -> None:
             spec.name: spec for spec in default_aligned_evidence_specs()
         }
         generate_cases = generate_aligned_evidence_cases
+    elif dataset_version == "spider-programs-v0.5-score-decode-dev":
+        specs = {spec.name: spec for spec in default_score_decode_specs()}
+        generate_cases = generate_score_decode_cases
     else:
-        raise ValueError("unsupported v0.4 development dataset version")
+        raise ValueError("unsupported evidence development dataset version")
     train_cases = generate_cases(
         specs["training"], limit=args.train_cases
     )

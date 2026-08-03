@@ -12,6 +12,7 @@ from .schema import GraphProgramCase, ProgramFamily, TerminationDecision
 
 V04_DATASET_VERSION = "spider-programs-v0.4-aligned-dev"
 V04_1_DATASET_VERSION = "spider-programs-v0.4.1-aligned-evidence-dev"
+V05_DATASET_VERSION = "spider-programs-v0.5-score-decode-dev"
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +97,37 @@ def default_aligned_evidence_specs() -> tuple[AlignedDevSplitSpec, ...]:
             1_024,
             730_000,
             dataset_version=V04_1_DATASET_VERSION,
+        ),
+    )
+
+
+def default_score_decode_specs() -> tuple[AlignedDevSplitSpec, ...]:
+    """Return fresh, non-sealed partitions for the v0.5 factorial."""
+
+    return (
+        AlignedDevSplitSpec(
+            "training",
+            8_192,
+            810_000,
+            dataset_version=V05_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "model_selection",
+            512,
+            910_000,
+            dataset_version=V05_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "calibration",
+            512,
+            920_000,
+            dataset_version=V05_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "development_evaluation",
+            1_024,
+            930_000,
+            dataset_version=V05_DATASET_VERSION,
         ),
     )
 
@@ -194,6 +226,28 @@ def generate_aligned_evidence_cases(
 
     if spec.dataset_version != V04_1_DATASET_VERSION:
         raise ValueError("evidence amendment requires the v0.4.1 dataset version")
+    return _generate_supported_evidence_cases(spec, limit=limit)
+
+
+def generate_score_decode_cases(
+    spec: AlignedDevSplitSpec,
+    *,
+    limit: int | None = None,
+) -> tuple[GraphProgramCase, ...]:
+    """Generate fresh supported-query cases for Spider v0.5."""
+
+    if spec.dataset_version != V05_DATASET_VERSION:
+        raise ValueError("score/decode cases require the v0.5 dataset version")
+    return _generate_supported_evidence_cases(spec, limit=limit)
+
+
+def _generate_supported_evidence_cases(
+    spec: AlignedDevSplitSpec,
+    *,
+    limit: int | None,
+) -> tuple[GraphProgramCase, ...]:
+    """Generate evidence-only cases without unsupported-query shortcuts."""
+
     case_count = spec.case_count if limit is None else min(limit, spec.case_count)
     if case_count <= 0:
         raise ValueError("split case limit must be positive")

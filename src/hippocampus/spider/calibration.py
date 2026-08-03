@@ -155,9 +155,10 @@ def validate_calibration_source(
         "spider-programs-v0.3-recurrence-dev",
         "spider-programs-v0.4-aligned-dev",
         "spider-programs-v0.4.1-aligned-evidence-dev",
+        "spider-programs-v0.5-score-decode-dev",
     }
     if dataset_version not in allowed_versions:
         raise ValueError(
             "calibration requires a registered non-sealed Spider "
-            "development dataset (v0.2, recurrence-dev, or v0.4)"
+            "development dataset (v0.2 through v0.5)"
         )
