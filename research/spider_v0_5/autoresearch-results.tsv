@@ -1,0 +1,2 @@
+iteration	timestamp	hypothesis	status	score	baseline_score	delta	notes
+0	2026-08-03T00:00:00+10:00	freeze score-versus-decode factorial	kept	0.7549	0.7549	0.0000	protocol frozen; no sealed access
