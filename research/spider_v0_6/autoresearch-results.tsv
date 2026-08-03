@@ -1,0 +1,3 @@
+iteration	timestamp	hypothesis	status	score	baseline_score	delta	notes
+0	2026-08-04T00:00:00+10:00	freeze calibration-free candidate-energy protocol	kept	0.7444	0.7444	0.0000	unseen symbols; zero-margin NULL comparison; no sealed access
+
