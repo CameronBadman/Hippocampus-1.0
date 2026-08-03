@@ -9,4 +9,6 @@
 - Environment: Tier 1; NVIDIA GeForce RTX 5070 Ti, driver 595.84, 16,303 MiB.
 - Decision: run a full 2×2 factorial so scorer and decoder main effects remain
   identifiable. No capacity or termination change is permitted.
-
+- Execution amendment made before results: the 250–1,000 checkpoints inside
+  each full seed-1701 run are the screen. Avoiding separate 1,000-step jobs
+  prevents duplicate training and preserves the registered 2,000-step maximum.

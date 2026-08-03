@@ -84,8 +84,10 @@ currently selectable evidence actions.
 ## Execution protocol
 
 1. Verify X0 on the new non-sealed development partitions.
-2. Screen X1, X2, and X3 for 1,000 steps on seed 1701.
-3. Advance informative arms to 2,000 steps and all three matched seeds.
+2. Treat checkpoints through step 1,000 of seed 1701 as the screen; do not run
+   a duplicate short training job.
+3. Continue the same registered 2,000-step training schedule and complete all
+   three matched seeds for the factorial unless a mechanical guard fails.
 4. Select checkpoints only on model selection.
 5. Fit threshold/operating policy only on calibration.
 6. Evaluate development evaluation once per selected checkpoint.

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import importlib.util
 import json
 import random
 from pathlib import Path
+import sys
 
 import pytest
 import torch
@@ -35,6 +37,21 @@ from hippocampus.spider import (
     load_experiment,
 )
 from hippocampus.spider.types import CandidateOutputs
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _autoresearch_module():
+    scripts = str(ROOT / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    path = ROOT / "scripts/run_spider_v0_5_autoresearch.py"
+    spec = importlib.util.spec_from_file_location("spider_v05_autoresearch", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _batch(*, row_seed: int = 0):
@@ -387,3 +404,97 @@ def test_v0_5_configs_resolve(arm: str) -> None:
 
     assert experiment.raw["dataset"]["version"] == V05_DATASET_VERSION
     assert experiment.device.type == "cuda"
+
+
+def _gate_metrics(
+    *,
+    exact: float,
+    precision: float,
+    recall: float,
+    coverage: float,
+    lookup: float,
+    latest: float,
+    corroboration: float,
+) -> dict[str, object]:
+    return {
+        "primary_metric": {
+            "exact_evidence_set_accuracy": exact,
+            "precision": precision,
+            "recall": recall,
+            "scored_positive_coverage": coverage,
+        },
+        "per_family": {
+            "lookup": {"recall": lookup},
+            "latest_valid": {"exact_evidence_set_accuracy": latest},
+            "corroboration": {
+                "exact_evidence_set_accuracy": corroboration
+            },
+        },
+    }
+
+
+def test_v0_5_gate_requires_recall_precision_and_family_safety() -> None:
+    module = _autoresearch_module()
+    control = _gate_metrics(
+        exact=0.70,
+        precision=0.90,
+        recall=0.60,
+        coverage=0.99,
+        lookup=0.10,
+        latest=0.95,
+        corroboration=0.94,
+    )
+    passing = _gate_metrics(
+        exact=0.75,
+        precision=0.91,
+        recall=0.65,
+        coverage=0.99,
+        lookup=0.30,
+        latest=0.93,
+        corroboration=0.92,
+    )
+
+    assert module._seed_gate(control, passing)["advances"]
+    for override in (
+        {"exact": 0.749},
+        {"precision": 0.899},
+        {"recall": 0.649},
+        {"coverage": 0.979},
+        {"lookup": 0.299},
+        {"latest": 0.929},
+        {"corroboration": 0.919},
+    ):
+        values = {
+            "exact": 0.75,
+            "precision": 0.91,
+            "recall": 0.65,
+            "coverage": 0.99,
+            "lookup": 0.30,
+            "latest": 0.93,
+            "corroboration": 0.92,
+            **override,
+        }
+        assert not module._seed_gate(
+            control,
+            _gate_metrics(**values),
+        )["advances"]
+
+
+def test_v0_5_orchestrator_lock_and_resume_stages(tmp_path: Path) -> None:
+    module = _autoresearch_module()
+    with module._campaign_lock(tmp_path):
+        with pytest.raises(RuntimeError, match="another v0.5 orchestrator"):
+            with module._campaign_lock(tmp_path):
+                pass
+
+    run = tmp_path / "run"
+    run.mkdir()
+    partial = run / "checkpoint_step_000750.pt"
+    partial.touch()
+    assert module._interrupted_stage(run) == ("training", partial)
+    (run / "checkpoint.pt").touch()
+    assert module._interrupted_stage(run) == ("selection", None)
+    (run / "evaluation_pause.json").write_text(
+        json.dumps({"training_source_commit": "abc"})
+    )
+    assert module._interrupted_stage(run) == ("evaluation", None)
