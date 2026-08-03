@@ -391,3 +391,26 @@ report](docs/spider_v0_4/FINAL_REPORT.md), [Phase F
 result](docs/spider_v0_4/PHASE_F_REPORT.md), and [training
 protocol](docs/spider_v0_4/TRAINING.md). Machine-readable results and the
 generated ledger are under `artifacts/spider_v0_4/phase_f/local_rtx5070ti/`.
+
+## Spider v0.5 score-versus-decode AutoResearch
+
+Run or resume one arm/seed on CUDA, then generate the aggregate after all
+twelve registered runs are present:
+
+```bash
+.venv/bin/python scripts/run_spider_v0_5_autoresearch.py \
+  --phase run --arm X0 --seed 1701
+.venv/bin/python scripts/run_spider_v0_5_autoresearch.py --phase summarize
+```
+
+The completed three-seed 2x2 factorial retained X0, the shared pooled evidence
+head with a calibrated global threshold. A current-candidate count decoder
+raised recall from 0.7444 to 0.9075 but reduced precision from 0.9444 to 0.7411;
+the pairwise matcher did not recover lookup evidence reliably. No treatment
+passed the frozen gate, so no A100 or sealed stage was run.
+
+See the [v0.5 final report](docs/spider_v0_5/FINAL_REPORT.md), [training and
+reproduction notes](docs/spider_v0_5/TRAINING.md), [dataset
+card](docs/spider_v0_5/DATASET_CARD.md), and [frozen
+design](docs/spider_v0_5/DESIGN.md). The machine-readable ledger and aggregate
+are under `artifacts/spider_v0_5/local_rtx5070ti/`.
