@@ -150,6 +150,7 @@ class ControllerProposal:
     null_expansion_logits: torch.Tensor | None = None
     evidence_null_logits: torch.Tensor | None = None
     evidence_cardinality_logits: torch.Tensor | None = None
+    evidence_candidate_count_logits: torch.Tensor | None = None
     pre_context_outputs: CandidateOutputs | None = None
     context_refined: bool = False
 
@@ -773,6 +774,13 @@ class SparseWavefrontController:
                 current_control,
             )
         )
+        evidence_candidate_count_logits = (
+            model.candidate_evidence_count_logits(
+                outputs,
+                candidate_graph_ids,
+                graph_count=batch.graph_count,
+            )
+        )
         evidence_selected_by_graph = torch.zeros(
             batch.graph_count,
             dtype=torch.int64,
@@ -819,6 +827,9 @@ class SparseWavefrontController:
             null_expansion_logits=null_expansion_logits,
             evidence_null_logits=evidence_null_logits,
             evidence_cardinality_logits=evidence_cardinality_logits,
+            evidence_candidate_count_logits=(
+                evidence_candidate_count_logits
+            ),
         )
 
     def choose_actions(
@@ -951,6 +962,16 @@ class SparseWavefrontController:
                         - proposal.evidence_selected_by_graph,
                         min=0,
                     )
+                if evidence_policy == "candidate_count":
+                    if proposal.evidence_candidate_count_logits is None:
+                        raise ValueError(
+                            "candidate-count policy is missing count logits"
+                        )
+                    per_graph_widths = (
+                        proposal.evidence_candidate_count_logits.argmax(
+                            dim=-1
+                        )
+                    )
             evidence_eligible = torch.nonzero(
                 evidence_mask,
                 as_tuple=False,
@@ -1051,6 +1072,13 @@ class SparseWavefrontController:
         refined_proposal = replace(
             proposal,
             candidate_outputs=refined_outputs,
+            evidence_candidate_count_logits=(
+                model.candidate_evidence_count_logits(
+                    refined_outputs,
+                    proposal.candidate_graph_ids,
+                    graph_count=batch.graph_count,
+                )
+            ),
             pre_context_outputs=proposal.candidate_outputs,
             context_refined=True,
         )

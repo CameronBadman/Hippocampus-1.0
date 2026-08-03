@@ -38,6 +38,7 @@ class SpiderLossConfig:
     null_expansion: float = 1.0
     evidence_null: float = 0.0
     evidence_cardinality: float = 0.0
+    evidence_candidate_count: float = 0.0
 
     def __post_init__(self) -> None:
         for field in fields(self):
@@ -528,6 +529,36 @@ def evidence_cardinality_loss_term(
     return _term(
         raw,
         weight=config.evidence_cardinality,
+        target_count=int(targets.numel()),
+    )
+
+
+def evidence_candidate_count_loss_term(
+    count_logits: torch.Tensor | None,
+    current_counts: torch.Tensor,
+    *,
+    config: SpiderLossConfig,
+) -> LossTerm | None:
+    """Supervise current-set evidence counts in classes 0, 1, 2, 3, 4+."""
+
+    if count_logits is None:
+        return None
+    if count_logits.ndim != 2 or count_logits.shape[1] != 5:
+        raise ValueError(
+            "candidate evidence count logits must have shape [graphs, 5]"
+        )
+    targets = current_counts.to(device=count_logits.device, dtype=torch.int64)
+    if targets.ndim != 1 or targets.numel() != count_logits.shape[0]:
+        raise ValueError("candidate evidence counts must align with graphs")
+    targets = targets.clamp(min=0, max=4)
+    raw = (
+        _zero(count_logits)
+        if targets.numel() == 0
+        else F.cross_entropy(count_logits.float(), targets)
+    )
+    return _term(
+        raw,
+        weight=config.evidence_candidate_count,
         target_count=int(targets.numel()),
     )
 

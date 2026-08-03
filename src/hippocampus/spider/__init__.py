@@ -68,6 +68,11 @@ from .evidence_decoding import (
     audit_frozen_evidence_policies,
     evidence_pipeline_case_report_from_dict,
 )
+from .evidence_readout import PairwiseEvidenceReadout
+from .evidence_selector import (
+    CandidateEvidenceSetDecoder,
+    candidate_evidence_count_targets,
+)
 from .evaluation_v0_1 import (
     ClosedLoopEvaluationReport,
     calibrate_on_development_batches,
@@ -82,6 +87,7 @@ from .losses import (
     SpiderLossReport,
     behavioural_consistency_loss,
     candidate_loss_report,
+    evidence_candidate_count_loss_term,
     evidence_cardinality_loss_term,
     evidence_null_loss_term,
     multi_positive_evidence_ranking_loss,
@@ -147,6 +153,7 @@ __all__ = [
     "ActionSchedule",
     "ActionSource",
     "CandidateOutputs",
+    "CandidateEvidenceSetDecoder",
     "CandidateScorerBase",
     "CandidateSupervision",
     "ClosedLoopEvaluationReport",
@@ -184,6 +191,7 @@ __all__ = [
     "OracleMetrics",
     "OracleRollout",
     "PaddedSet",
+    "PairwiseEvidenceReadout",
     "PathStateIntervention",
     "PooledScorer",
     "PositionFreeCrossAttention",
@@ -225,7 +233,9 @@ __all__ = [
     "calibrate_closed_loop_evidence",
     "calibrate_on_development_batches",
     "candidate_control_features",
+    "candidate_evidence_count_targets",
     "candidate_loss_report",
+    "evidence_candidate_count_loss_term",
     "evidence_cardinality_loss_term",
     "evidence_null_loss_term",
     "controller_rollout",

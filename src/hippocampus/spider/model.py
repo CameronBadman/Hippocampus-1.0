@@ -16,8 +16,10 @@ from .context_refiner import ContextRefiner
 from .evidence import EvidenceUpdater
 from .evidence_readout import (
     DedicatedPooledEvidenceReadout,
+    PairwiseEvidenceReadout,
     SlotAwareEvidenceReadout,
 )
+from .evidence_selector import CandidateEvidenceSetDecoder
 from .hypothesis import HypothesisBatch
 from .multiset import CrossSetRead
 from .policy_heads import CandidatePolicyHeads
@@ -70,12 +72,17 @@ class CandidateScorerBase(nn.Module, ABC):
             self.evidence_readout = DedicatedPooledEvidenceReadout(
                 config.d_model
             )
-        else:
+        elif config.evidence_readout == "slot_aware":
             self.evidence_readout = SlotAwareEvidenceReadout(
                 config.d_model,
                 config.num_heads,
                 config.control_width,
                 config.dropout,
+            )
+        else:
+            self.evidence_readout = PairwiseEvidenceReadout(
+                config.d_model,
+                config.control_width,
             )
         self.context_refiner = ContextRefiner(
             config.d_model,
@@ -134,6 +141,11 @@ class CandidateScorerBase(nn.Module, ABC):
                 nn.Linear(config.d_model, 5),
             )
             if config.use_evidence_cardinality
+            else None
+        )
+        self.candidate_evidence_count_decoder = (
+            CandidateEvidenceSetDecoder(config.d_model)
+            if config.use_candidate_evidence_count
             else None
         )
 
@@ -544,6 +556,23 @@ class CandidateScorerBase(nn.Module, ABC):
             else self.evidence_cardinality_head(joined)
         )
         return null_logits, cardinality_logits
+
+    def candidate_evidence_count_logits(
+        self,
+        outputs: CandidateOutputs,
+        candidate_graph_ids: torch.Tensor,
+        *,
+        graph_count: int,
+    ) -> torch.Tensor | None:
+        """Predict current visible evidence count from the candidate set."""
+
+        if self.candidate_evidence_count_decoder is None:
+            return None
+        return self.candidate_evidence_count_decoder(
+            outputs,
+            candidate_graph_ids,
+            graph_count=graph_count,
+        )
 
     def termination_output(
         self,

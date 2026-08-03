@@ -95,6 +95,9 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         use_evidence_cardinality=bool(
             model_data.get("use_evidence_cardinality", False)
         ),
+        use_candidate_evidence_count=bool(
+            model_data.get("use_candidate_evidence_count", False)
+        ),
     )
     controller_data = raw["controller"]
     controller_config = SparseControllerConfig(
@@ -142,6 +145,13 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
     ):
         raise ValueError(
             "cardinality policy requires model.use_evidence_cardinality"
+        )
+    if evidence_policy == "candidate_count" and not (
+        model_config.use_candidate_evidence_count
+    ):
+        raise ValueError(
+            "candidate evidence count policy requires "
+            "model.use_candidate_evidence_count"
         )
     training_data = raw["training"]
     training_config = TrainingLoopConfig(

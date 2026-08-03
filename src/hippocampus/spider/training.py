@@ -37,11 +37,13 @@ from .losses import (
     SpiderLossConfig,
     SpiderLossReport,
     candidate_loss_report,
+    evidence_candidate_count_loss_term,
     evidence_cardinality_loss_term,
     evidence_null_loss_term,
     null_expansion_loss_term,
     termination_loss_report,
 )
+from .evidence_selector import candidate_evidence_count_targets
 from .model import CandidateScorerBase
 from .state_oracle import StateOracle
 from .types import CandidateOutputs
@@ -586,6 +588,16 @@ def controller_rollout(
             ),
             config=config,
         )
+        evidence_candidate_count_term = evidence_candidate_count_loss_term(
+            proposal.evidence_candidate_count_logits,
+            candidate_evidence_count_targets(
+                supervision.candidates.include_as_evidence,
+                proposal.candidate_graph_ids,
+                proposal.expansion.edge_ids,
+                graph_count=batch.graph_count,
+            ),
+            config=config,
+        )
         reports.append(
             SpiderLossReport(
                 terms={
@@ -604,6 +616,15 @@ def controller_rollout(
                     **(
                         {"evidence_cardinality": evidence_cardinality_term}
                         if evidence_cardinality_term is not None
+                        else {}
+                    ),
+                    **(
+                        {
+                            "evidence_candidate_count": (
+                                evidence_candidate_count_term
+                            )
+                        }
+                        if evidence_candidate_count_term is not None
                         else {}
                     ),
                 }

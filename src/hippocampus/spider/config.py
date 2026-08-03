@@ -12,11 +12,13 @@ EvidenceSelectionPolicy = Literal[
     "learned_null",
     "cardinality",
     "null_cardinality",
+    "candidate_count",
 ]
 EvidenceReadoutMode = Literal[
     "shared",
     "dedicated_pooled",
     "slot_aware",
+    "pairwise_matcher",
 ]
 
 
@@ -44,6 +46,7 @@ class SpiderModelConfig:
     evidence_readout: EvidenceReadoutMode = "shared"
     use_evidence_null: bool = False
     use_evidence_cardinality: bool = False
+    use_candidate_evidence_count: bool = False
 
     def __post_init__(self) -> None:
         for name in (
@@ -84,10 +87,11 @@ class SpiderModelConfig:
             "shared",
             "dedicated_pooled",
             "slot_aware",
+            "pairwise_matcher",
         }:
             raise ValueError(
-                "evidence_readout must be shared, dedicated_pooled, or "
-                "slot_aware"
+                "evidence_readout must be shared, dedicated_pooled, "
+                "slot_aware, or pairwise_matcher"
             )
 
 
@@ -138,8 +142,9 @@ class SparseControllerConfig:
             "learned_null",
             "cardinality",
             "null_cardinality",
+            "candidate_count",
         }:
             raise ValueError(
                 "evidence_selection_policy must be threshold, learned_null, "
-                "cardinality, or null_cardinality"
+                "cardinality, null_cardinality, or candidate_count"
             )

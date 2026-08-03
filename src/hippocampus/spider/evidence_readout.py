@@ -92,3 +92,84 @@ class SlotAwareEvidenceReadout(nn.Module):
         ):
             token = read(token, token_mask, values)
         return self.output(token[:, 0]).squeeze(-1)
+
+
+class _PairwiseSetSimilarity(nn.Module):
+    """Learned row matching with symmetric reductions over valid pairs."""
+
+    def __init__(self, d_model: int) -> None:
+        super().__init__()
+        self.left_projection = nn.Linear(d_model, d_model, bias=False)
+        self.right_projection = nn.Linear(d_model, d_model, bias=False)
+        self.scale = d_model**-0.5
+
+    def forward(self, left: PaddedSet, right: PaddedSet) -> torch.Tensor:
+        if left.batch_size != right.batch_size:
+            raise ValueError("paired sets must have equal batch sizes")
+        left_values = self.left_projection(left.values)
+        right_values = self.right_projection(right.values)
+        similarities = torch.einsum(
+            "bid,bjd->bij",
+            left_values,
+            right_values,
+        ) * self.scale
+        valid = left.mask.unsqueeze(2) & right.mask.unsqueeze(1)
+        flat = similarities.flatten(1)
+        flat_valid = valid.flatten(1)
+        has_pairs = flat_valid.any(dim=1)
+        masked = torch.where(
+            flat_valid,
+            flat,
+            torch.full_like(flat, -torch.inf),
+        )
+        maximum = masked.max(dim=1).values
+        pair_count = flat_valid.sum(dim=1).clamp_min(1)
+        log_mean_exp = torch.logsumexp(masked, dim=1) - pair_count.log()
+        zeros = similarities.new_zeros((left.batch_size,))
+        return torch.stack(
+            (
+                torch.where(has_pairs, maximum, zeros),
+                torch.where(has_pairs, log_mean_exp, zeros),
+            ),
+            dim=-1,
+        )
+
+
+class PairwiseEvidenceReadout(nn.Module):
+    """Evidence head exposing cross-manifold identity comparisons directly."""
+
+    def __init__(self, d_model: int, control_width: int) -> None:
+        super().__init__()
+        self.query_edge = _PairwiseSetSimilarity(d_model)
+        self.query_destination = _PairwiseSetSimilarity(d_model)
+        self.edge_destination = _PairwiseSetSimilarity(d_model)
+        input_width = d_model + 6 + control_width
+        self.output = nn.Sequential(
+            nn.LayerNorm(input_width),
+            nn.Linear(input_width, d_model),
+            nn.GELU(),
+            nn.Linear(d_model, 1),
+        )
+
+    def forward(
+        self,
+        path_state: torch.Tensor,
+        context: CandidateReadoutContext,
+    ) -> torch.Tensor:
+        matches = torch.cat(
+            (
+                self.query_edge(context.query, context.edge),
+                self.query_destination(context.query, context.destination),
+                self.edge_destination(context.edge, context.destination),
+            ),
+            dim=-1,
+        )
+        features = torch.cat(
+            (
+                path_state.mean(dim=1),
+                matches,
+                context.controller_features,
+            ),
+            dim=-1,
+        )
+        return self.output(features).squeeze(-1)
