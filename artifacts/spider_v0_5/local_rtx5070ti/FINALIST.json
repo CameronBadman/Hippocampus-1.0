@@ -1,0 +1,26 @@
+{
+  "checkpoints": [
+    {
+      "checkpoint_sha256": "9ee87a8d5fba7cc6f9307491d475c97db0fa5baa9e01900b44b7da492ea98f92",
+      "seed": 1701,
+      "selected_step": 1500,
+      "source_commit": "5e832a30db3002e38ff93dc9d6a1c6d9947ca59e"
+    },
+    {
+      "checkpoint_sha256": "381115c5f563f80ec9c9b0fea48eab0de4201d96f62800e798932a0800ce9068",
+      "seed": 1802,
+      "selected_step": 1000,
+      "source_commit": "5e832a30db3002e38ff93dc9d6a1c6d9947ca59e"
+    },
+    {
+      "checkpoint_sha256": "b7ad702b972348142f4985a2913a02d7468980a0d2b25d9d9fba539f86756710",
+      "seed": 1903,
+      "selected_step": 1750,
+      "source_commit": "5e832a30db3002e38ff93dc9d6a1c6d9947ca59e"
+    }
+  ],
+  "dataset_hash": "b3de9d584148859f4f12a17377005c969372de753677e2b3360fa5e2fa7ada68",
+  "sealed_access_count": 0,
+  "selected_arm": "X0",
+  "selection_reason": "no treatment arm passed the matched-seed gate"
+}

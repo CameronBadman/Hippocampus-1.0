@@ -99,3 +99,10 @@ currently selectable evidence actions.
 | Iteration | Hypothesis | Status | Score | Notes |
 | ---: | --- | --- | ---: | --- |
 | 0 | Freeze the score-versus-decode factorial before implementation. | kept | 0.7549 | v0.4 remains immutable; no sealed data is in scope. |
+| 1 | Re-establish the shared-head/global-threshold control on the new partitions. | kept | 0.7754 | X0: precision 0.9444, recall 0.7444; lookup recall is zero on every seed. |
+| 2 | Explicit pairwise cross-manifold matching fixes opaque evidence ranking. | discarded | 0.7793 | X1: precision 0.9313, recall 0.7584; no lookup recovery and zero gate wins. |
+| 3 | A decoder that observes the current candidates fixes threshold under-selection. | discarded | 0.6761 | X2: raw exact set 0.8350 and recall 0.9075, but precision 0.7411 fails the guard. |
+| 4 | Pairwise matching makes current-candidate count selection precise. | discarded | 0.7220 | X3: raw exact set 0.8252, precision 0.8130, and unstable seed behavior. |
+
+The four-iteration budget is exhausted. No treatment advances, X0 remains the
+finalist, and no sealed or A100 stage opens.

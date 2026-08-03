@@ -1,0 +1,308 @@
+{
+  "accepted_training_run_count": 12,
+  "advancing_arms": [],
+  "arm_summaries": {
+    "X0": {
+      "exact_evidence_set_accuracy": 0.775390625,
+      "false_positives_per_case": 0.035807291666666664,
+      "macro_average_precision": 0.94775958994709,
+      "mean_absolute_cardinality_error": 0.2421875,
+      "mean_selected_step": 1416.6666666666667,
+      "mean_worst_positive_rank": 1.403125,
+      "precision": 0.9443846733278894,
+      "recall": 0.7443910256410257,
+      "score": 0.775390625,
+      "scored_positive_coverage": 0.9995993589743589
+    },
+    "X1": {
+      "exact_evidence_set_accuracy": 0.779296875,
+      "false_positives_per_case": 0.046223958333333336,
+      "macro_average_precision": 0.9535329861111111,
+      "mean_absolute_cardinality_error": 0.2412109375,
+      "mean_selected_step": 1583.3333333333333,
+      "mean_worst_positive_rank": 1.3927083333333334,
+      "precision": 0.9312643225785262,
+      "recall": 0.7584134615384616,
+      "score": 0.779296875,
+      "scored_positive_coverage": 1.0
+    },
+    "X2": {
+      "exact_evidence_set_accuracy": 0.8349609375,
+      "false_positives_per_case": 0.2578125,
+      "macro_average_precision": 0.9468055555555556,
+      "mean_absolute_cardinality_error": 0.22233072916666666,
+      "mean_selected_step": 1666.6666666666667,
+      "mean_worst_positive_rank": 1.4005208333333334,
+      "precision": 0.7411058549278087,
+      "recall": 0.9074519230769231,
+      "score": 0.6760667924278086,
+      "scored_positive_coverage": 1.0
+    },
+    "X3": {
+      "exact_evidence_set_accuracy": 0.8251953125,
+      "false_positives_per_case": 0.181640625,
+      "macro_average_precision": 0.9524652777777778,
+      "mean_absolute_cardinality_error": 0.2236328125,
+      "mean_selected_step": 1583.3333333333333,
+      "mean_worst_positive_rank": 1.3869791666666667,
+      "precision": 0.8129786145026455,
+      "recall": 0.8529647435897436,
+      "score": 0.7219620489930147,
+      "scored_positive_coverage": 1.0
+    }
+  },
+  "campaign": "Spider v0.5 score-versus-decode factorial",
+  "dataset_hash": "b3de9d584148859f4f12a17377005c969372de753677e2b3360fa5e2fa7ada68",
+  "factorial_effects": {
+    "decoder_main_effect_exact_set": 0.052734375,
+    "matcher_decoder_interaction_exact_set": -0.013671875,
+    "matcher_main_effect_exact_set": -0.0029296875
+  },
+  "gates": {
+    "X1_vs_X0": {
+      "advances": false,
+      "seed_results": [
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": 0.0078125,
+            "exact_set": 0.0126953125,
+            "latest_exact": 0.015625,
+            "lookup_recall": 0.0,
+            "recall": 0.03485576923076916
+          },
+          "seed": 1701
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": -0.00390625,
+            "exact_set": 0.0009765625,
+            "latest_exact": 0.0,
+            "lookup_recall": 0.0,
+            "recall": 0.010817307692307598
+          },
+          "seed": 1802
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": 0.0,
+            "exact_set": -0.001953125,
+            "latest_exact": -0.0078125,
+            "lookup_recall": 0.0,
+            "recall": -0.0036057692307691624
+          },
+          "seed": 1903
+        }
+      ],
+      "seed_wins": 0
+    },
+    "X2_vs_X0": {
+      "advances": false,
+      "seed_results": [
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": 0.00390625,
+            "exact_set": 0.0341796875,
+            "latest_exact": 0.01171875,
+            "lookup_recall": 0.5078125,
+            "recall": 0.16826923076923073
+          },
+          "seed": 1701
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": -0.00390625,
+            "exact_set": 0.0888671875,
+            "latest_exact": 0.0,
+            "lookup_recall": 0.4453125,
+            "recall": 0.1610576923076923
+          },
+          "seed": 1802
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": 0.0,
+            "exact_set": 0.0556640625,
+            "latest_exact": 0.0,
+            "lookup_recall": 0.40625,
+            "recall": 0.15985576923076927
+          },
+          "seed": 1903
+        }
+      ],
+      "seed_wins": 0
+    },
+    "X3_vs_X0": {
+      "advances": false,
+      "seed_results": [
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": 0.0078125,
+            "exact_set": -0.0126953125,
+            "latest_exact": -0.03125,
+            "lookup_recall": 0.15625,
+            "recall": -0.027644230769230838
+          },
+          "seed": 1701
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": 0.0,
+            "exact_set": 0.0888671875,
+            "latest_exact": -0.00390625,
+            "lookup_recall": 0.5703125,
+            "recall": 0.18028846153846145
+          },
+          "seed": 1802
+        },
+        {
+          "advances": false,
+          "deltas": {
+            "corroboration_exact": -0.00390625,
+            "exact_set": 0.0732421875,
+            "latest_exact": -0.00390625,
+            "lookup_recall": 0.5,
+            "recall": 0.17307692307692313
+          },
+          "seed": 1903
+        }
+      ],
+      "seed_wins": 0
+    }
+  },
+  "per_family": {
+    "X0": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.99609375,
+        "false_positives_per_case": 0.0026041666666666665,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9979296066252588,
+        "recall": 0.996875
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.9934895833333334,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 0.9895833333333334
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 0.7530381944444444,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6119791666666666,
+        "false_positives_per_case": 0.13932291666666666,
+        "macro_evidence_average_precision": 0.9857597552910052,
+        "precision": 0.5823402031063322,
+        "recall": 0.3671875
+      }
+    },
+    "X1": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.9973958333333334,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9989615784008308,
+        "recall": 0.9979166666666667
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.99609375,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 0.9947916666666666
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 0.7725694444444444,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6236979166666666,
+        "false_positives_per_case": 0.18229166666666666,
+        "macro_evidence_average_precision": 0.9950954861111111,
+        "precision": 0.5679301374953548,
+        "recall": 0.4453125
+      }
+    },
+    "X2": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.99609375,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 0.996875
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.9973958333333334,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9987029831387808,
+        "recall": 0.9986979166666666
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.61328125,
+        "false_positives_per_case": 0.3346354166666667,
+        "macro_evidence_average_precision": 0.7486979166666666,
+        "precision": 0.4213339533695029,
+        "recall": 0.453125
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.7330729166666666,
+        "false_positives_per_case": 0.6953125,
+        "macro_evidence_average_precision": 0.9853298611111111,
+        "precision": 0.40805049422412765,
+        "recall": 0.9557291666666666
+      }
+    },
+    "X3": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.9973958333333334,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 0.9989872685185185,
+        "precision": 1.0,
+        "recall": 0.9958333333333333
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.98046875,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9987029831387808,
+        "recall": 0.9765625
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.64453125,
+        "false_positives_per_case": 0.21484375,
+        "macro_evidence_average_precision": 0.78515625,
+        "precision": 0.4664767331433998,
+        "recall": 0.4088541666666667
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6783854166666666,
+        "false_positives_per_case": 0.5104166666666666,
+        "macro_evidence_average_precision": 0.9786892361111111,
+        "precision": 0.5960835276280753,
+        "recall": 0.6927083333333334
+      }
+    }
+  },
+  "run_source_commits": [
+    "5e832a30db3002e38ff93dc9d6a1c6d9947ca59e"
+  ],
+  "sealed_access_count": 0,
+  "selected_finalist": "X0",
+  "source_commit": "5e832a30db3002e38ff93dc9d6a1c6d9947ca59e"
+}

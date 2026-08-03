@@ -1,0 +1,118 @@
+{
+  "artifact_policy": "Binary checkpoints are local and gitignored; this index plus experiment records preserves their identities.",
+  "campaign": "Spider v0.5 score-versus-decode factorial",
+  "checkpoints": [
+    {
+      "arm": "X0",
+      "checkpoint_sha256": "9ee87a8d5fba7cc6f9307491d475c97db0fa5baa9e01900b44b7da492ea98f92",
+      "config_sha256": "c2abd3a5052e2f3ad66a7d71bb815035d49b5862535ea6e71107ed198af40c02",
+      "experiment_id": "V05-X0-s1701",
+      "local_checkpoint": "runs/V05-X0-s1701/checkpoint_step_001500.pt",
+      "seed": 1701,
+      "selected_step": 1500
+    },
+    {
+      "arm": "X0",
+      "checkpoint_sha256": "381115c5f563f80ec9c9b0fea48eab0de4201d96f62800e798932a0800ce9068",
+      "config_sha256": "c2abd3a5052e2f3ad66a7d71bb815035d49b5862535ea6e71107ed198af40c02",
+      "experiment_id": "V05-X0-s1802",
+      "local_checkpoint": "runs/V05-X0-s1802/checkpoint_step_001000.pt",
+      "seed": 1802,
+      "selected_step": 1000
+    },
+    {
+      "arm": "X0",
+      "checkpoint_sha256": "b7ad702b972348142f4985a2913a02d7468980a0d2b25d9d9fba539f86756710",
+      "config_sha256": "c2abd3a5052e2f3ad66a7d71bb815035d49b5862535ea6e71107ed198af40c02",
+      "experiment_id": "V05-X0-s1903",
+      "local_checkpoint": "runs/V05-X0-s1903/checkpoint_step_001750.pt",
+      "seed": 1903,
+      "selected_step": 1750
+    },
+    {
+      "arm": "X1",
+      "checkpoint_sha256": "47c4e51cb53d7d8b0b8ca7557d2545d40f3c305714af521de7e9f69db4967013",
+      "config_sha256": "9bf096dea45336411d4b08050341e89225fa20f2375778ef5b9406f86c29e7dd",
+      "experiment_id": "V05-X1-s1701",
+      "local_checkpoint": "runs/V05-X1-s1701/checkpoint.pt",
+      "seed": 1701,
+      "selected_step": 2000
+    },
+    {
+      "arm": "X1",
+      "checkpoint_sha256": "3cd9891e5adb5c2f07c58a9184b8f75749bfc04e2959a0205eced7ca044fb9fb",
+      "config_sha256": "9bf096dea45336411d4b08050341e89225fa20f2375778ef5b9406f86c29e7dd",
+      "experiment_id": "V05-X1-s1802",
+      "local_checkpoint": "runs/V05-X1-s1802/checkpoint_step_000750.pt",
+      "seed": 1802,
+      "selected_step": 750
+    },
+    {
+      "arm": "X1",
+      "checkpoint_sha256": "ea86bbc6dc010a7e1f8761bc6b2852da6d39ee9aa96a560cbd2f700c7451294b",
+      "config_sha256": "9bf096dea45336411d4b08050341e89225fa20f2375778ef5b9406f86c29e7dd",
+      "experiment_id": "V05-X1-s1903",
+      "local_checkpoint": "runs/V05-X1-s1903/checkpoint.pt",
+      "seed": 1903,
+      "selected_step": 2000
+    },
+    {
+      "arm": "X2",
+      "checkpoint_sha256": "e7422cf2b260f93bb621ad7d87f59963f664344f4e6334412e27463c746521c2",
+      "config_sha256": "0e7692520642f473bf3e0408a91ff2326ba653f81e91a0c2216b3d3dcb15fb98",
+      "experiment_id": "V05-X2-s1701",
+      "local_checkpoint": "runs/V05-X2-s1701/checkpoint_step_001000.pt",
+      "seed": 1701,
+      "selected_step": 1000
+    },
+    {
+      "arm": "X2",
+      "checkpoint_sha256": "49d25a9674ee6b41120b01be77f8ae3aebe51fd20e022b549e677ee64c8b6b65",
+      "config_sha256": "0e7692520642f473bf3e0408a91ff2326ba653f81e91a0c2216b3d3dcb15fb98",
+      "experiment_id": "V05-X2-s1802",
+      "local_checkpoint": "runs/V05-X2-s1802/checkpoint.pt",
+      "seed": 1802,
+      "selected_step": 2000
+    },
+    {
+      "arm": "X2",
+      "checkpoint_sha256": "21e56e170892519a24b7a7a9495573db679c4a0bc1f683b6d97abcb7524bb253",
+      "config_sha256": "0e7692520642f473bf3e0408a91ff2326ba653f81e91a0c2216b3d3dcb15fb98",
+      "experiment_id": "V05-X2-s1903",
+      "local_checkpoint": "runs/V05-X2-s1903/checkpoint.pt",
+      "seed": 1903,
+      "selected_step": 2000
+    },
+    {
+      "arm": "X3",
+      "checkpoint_sha256": "360a27f975578391768377762f5f20748ebc4ccc1800eb9ba05fa11f71638b7e",
+      "config_sha256": "aa1a1c2a18dd164924237256b6db987ed8a8ed2a249dca451edd19ad6598c970",
+      "experiment_id": "V05-X3-s1701",
+      "local_checkpoint": "runs/V05-X3-s1701/checkpoint_step_000750.pt",
+      "seed": 1701,
+      "selected_step": 750
+    },
+    {
+      "arm": "X3",
+      "checkpoint_sha256": "d317399e28649ac34a750f87e2de5499d07b272d57b6ecca09ecef70bbe3f972",
+      "config_sha256": "aa1a1c2a18dd164924237256b6db987ed8a8ed2a249dca451edd19ad6598c970",
+      "experiment_id": "V05-X3-s1802",
+      "local_checkpoint": "runs/V05-X3-s1802/checkpoint.pt",
+      "seed": 1802,
+      "selected_step": 2000
+    },
+    {
+      "arm": "X3",
+      "checkpoint_sha256": "33ae61a57a05bb717835a9e23ba18bc47625a342e376a446fc9250789e93809e",
+      "config_sha256": "aa1a1c2a18dd164924237256b6db987ed8a8ed2a249dca451edd19ad6598c970",
+      "experiment_id": "V05-X3-s1903",
+      "local_checkpoint": "runs/V05-X3-s1903/checkpoint.pt",
+      "seed": 1903,
+      "selected_step": 2000
+    }
+  ],
+  "dataset_hash": "b3de9d584148859f4f12a17377005c969372de753677e2b3360fa5e2fa7ada68",
+  "run_count": 12,
+  "sealed_access_count": 0,
+  "source_commit": "5e832a30db3002e38ff93dc9d6a1c6d9947ca59e"
+}
