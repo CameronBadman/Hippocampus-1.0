@@ -70,6 +70,7 @@ from .evidence_decoding import (
 )
 from .evidence_readout import PairwiseEvidenceReadout
 from .evidence_selector import (
+    CandidateEvidenceNullDecoder,
     CandidateEvidenceSetDecoder,
     candidate_evidence_count_targets,
 )
@@ -154,6 +155,7 @@ __all__ = [
     "ActionSource",
     "CandidateOutputs",
     "CandidateEvidenceSetDecoder",
+    "CandidateEvidenceNullDecoder",
     "CandidateScorerBase",
     "CandidateSupervision",
     "ClosedLoopEvaluationReport",

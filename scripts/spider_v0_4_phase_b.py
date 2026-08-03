@@ -21,9 +21,11 @@ from hippocampus.programs import (
     default_aligned_dev_specs,
     default_aligned_evidence_specs,
     default_score_decode_specs,
+    default_zero_shot_specs,
     generate_aligned_dev_cases,
     generate_aligned_evidence_cases,
     generate_score_decode_cases,
+    generate_zero_shot_cases,
     pack_rendered_cases,
 )
 from hippocampus.spider import (
@@ -211,6 +213,7 @@ def main() -> None:
         "spider-v0.4-readout",
         "spider-v0.4-set-decoding",
         "spider-v0.5-score-decode",
+        "spider-v0.6-zero-shot",
     }:
         raise ValueError("config does not name a registered evidence protocol")
     manifest_path = ROOT / experiment.raw["dataset"]["manifest"]
@@ -220,6 +223,11 @@ def main() -> None:
         raise RuntimeError("evidence partition manifest hash drift")
     if manifest["sealed_access_count"] != 0:
         raise RuntimeError("development manifest records sealed access")
+    if (
+        protocol == "spider-v0.6-zero-shot"
+        and bool(experiment.raw["dataset"].get("fit_operating_policy", True))
+    ):
+        raise ValueError("v0.6 forbids fitting an operating policy")
     if experiment.device.type != "cuda" or not torch.cuda.is_available():
         raise RuntimeError("registered evidence runs require the local CUDA GPU")
     training_config = replace(
@@ -279,6 +287,9 @@ def main() -> None:
     elif dataset_version == "spider-programs-v0.5-score-decode-dev":
         specs = {spec.name: spec for spec in default_score_decode_specs()}
         generate_cases = generate_score_decode_cases
+    elif dataset_version == "spider-programs-v0.6-zero-shot-dev":
+        specs = {spec.name: spec for spec in default_zero_shot_specs()}
+        generate_cases = generate_zero_shot_cases
     else:
         raise ValueError("unsupported evidence development dataset version")
     train_cases = generate_cases(

@@ -573,7 +573,11 @@ def controller_rollout(
             config=config,
         )
         evidence_null_term = evidence_null_loss_term(
-            proposal.evidence_null_logits,
+            (
+                proposal.evidence_candidate_null_logits
+                if proposal.evidence_candidate_null_logits is not None
+                else proposal.evidence_null_logits
+            ),
             transition.refined_outputs.evidence_logits,
             supervision.candidates.include_as_evidence,
             proposal.candidate_graph_ids,

@@ -19,7 +19,10 @@ from .evidence_readout import (
     PairwiseEvidenceReadout,
     SlotAwareEvidenceReadout,
 )
-from .evidence_selector import CandidateEvidenceSetDecoder
+from .evidence_selector import (
+    CandidateEvidenceNullDecoder,
+    CandidateEvidenceSetDecoder,
+)
 from .hypothesis import HypothesisBatch
 from .multiset import CrossSetRead
 from .policy_heads import CandidatePolicyHeads
@@ -146,6 +149,14 @@ class CandidateScorerBase(nn.Module, ABC):
         self.candidate_evidence_count_decoder = (
             CandidateEvidenceSetDecoder(config.d_model)
             if config.use_candidate_evidence_count
+            else None
+        )
+        self.candidate_evidence_null_decoder = (
+            CandidateEvidenceNullDecoder(
+                config.d_model,
+                config.control_width,
+            )
+            if config.use_candidate_evidence_null
             else None
         )
 
@@ -569,6 +580,23 @@ class CandidateScorerBase(nn.Module, ABC):
         if self.candidate_evidence_count_decoder is None:
             return None
         return self.candidate_evidence_count_decoder(
+            outputs,
+            candidate_graph_ids,
+            graph_count=graph_count,
+        )
+
+    def candidate_evidence_null_logits(
+        self,
+        outputs: CandidateOutputs,
+        candidate_graph_ids: torch.Tensor,
+        *,
+        graph_count: int,
+    ) -> torch.Tensor | None:
+        """Predict a raw graph-local NULL energy from current candidates."""
+
+        if self.candidate_evidence_null_decoder is None:
+            return None
+        return self.candidate_evidence_null_decoder(
             outputs,
             candidate_graph_ids,
             graph_count=graph_count,

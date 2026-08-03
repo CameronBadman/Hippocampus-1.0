@@ -98,6 +98,9 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         use_candidate_evidence_count=bool(
             model_data.get("use_candidate_evidence_count", False)
         ),
+        use_candidate_evidence_null=bool(
+            model_data.get("use_candidate_evidence_null", False)
+        ),
     )
     controller_data = raw["controller"]
     controller_config = SparseControllerConfig(
@@ -152,6 +155,13 @@ def load_experiment(path: str | Path) -> ResolvedExperiment:
         raise ValueError(
             "candidate evidence count policy requires "
             "model.use_candidate_evidence_count"
+        )
+    if evidence_policy == "candidate_null" and not (
+        model_config.use_candidate_evidence_null
+    ):
+        raise ValueError(
+            "candidate evidence null policy requires "
+            "model.use_candidate_evidence_null"
         )
     training_data = raw["training"]
     training_config = TrainingLoopConfig(

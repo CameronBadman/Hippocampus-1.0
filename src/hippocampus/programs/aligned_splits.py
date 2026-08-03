@@ -13,6 +13,7 @@ from .schema import GraphProgramCase, ProgramFamily, TerminationDecision
 V04_DATASET_VERSION = "spider-programs-v0.4-aligned-dev"
 V04_1_DATASET_VERSION = "spider-programs-v0.4.1-aligned-evidence-dev"
 V05_DATASET_VERSION = "spider-programs-v0.5-score-decode-dev"
+V06_DATASET_VERSION = "spider-programs-v0.6-zero-shot-dev"
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,6 +133,37 @@ def default_score_decode_specs() -> tuple[AlignedDevSplitSpec, ...]:
     )
 
 
+def default_zero_shot_specs() -> tuple[AlignedDevSplitSpec, ...]:
+    """Return symbol-disjoint, non-sealed partitions for Spider v0.6."""
+
+    return (
+        AlignedDevSplitSpec(
+            "training",
+            8_192,
+            1_010_000,
+            dataset_version=V06_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "model_selection",
+            512,
+            1_110_000,
+            dataset_version=V06_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "calibration",
+            512,
+            1_120_000,
+            dataset_version=V06_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "development_evaluation",
+            1_024,
+            1_130_000,
+            dataset_version=V06_DATASET_VERSION,
+        ),
+    )
+
+
 _GRAPH_SIZE_BUCKETS = (8, 16, 24, 32)
 _PATH_LENGTH_BUCKETS = (1, 2, 3, 4)
 
@@ -239,6 +271,34 @@ def generate_score_decode_cases(
     if spec.dataset_version != V05_DATASET_VERSION:
         raise ValueError("score/decode cases require the v0.5 dataset version")
     return _generate_supported_evidence_cases(spec, limit=limit)
+
+
+def generate_zero_shot_cases(
+    spec: AlignedDevSplitSpec,
+    *,
+    limit: int | None = None,
+) -> tuple[GraphProgramCase, ...]:
+    """Generate fresh supported-query cases for Spider v0.6."""
+
+    if spec.dataset_version != V06_DATASET_VERSION:
+        raise ValueError("zero-shot cases require the v0.6 dataset version")
+    return _generate_supported_evidence_cases(spec, limit=limit)
+
+
+def observable_symbols(cases: Sequence[GraphProgramCase]) -> set[str]:
+    """Return every model-visible surface symbol in a case collection."""
+
+    symbols: set[str] = set()
+    for case in cases:
+        for atom in case.query_atoms:
+            symbols.update(atom.symbols)
+        for node in case.nodes:
+            for atom in (*node.summary_atoms, *node.context_atoms):
+                symbols.update(atom.symbols)
+        for edge in case.edges:
+            for atom in edge.atoms:
+                symbols.update(atom.symbols)
+    return symbols
 
 
 def _generate_supported_evidence_cases(

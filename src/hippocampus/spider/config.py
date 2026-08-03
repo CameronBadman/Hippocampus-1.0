@@ -13,6 +13,7 @@ EvidenceSelectionPolicy = Literal[
     "cardinality",
     "null_cardinality",
     "candidate_count",
+    "candidate_null",
 ]
 EvidenceReadoutMode = Literal[
     "shared",
@@ -47,6 +48,7 @@ class SpiderModelConfig:
     use_evidence_null: bool = False
     use_evidence_cardinality: bool = False
     use_candidate_evidence_count: bool = False
+    use_candidate_evidence_null: bool = False
 
     def __post_init__(self) -> None:
         for name in (
@@ -143,8 +145,10 @@ class SparseControllerConfig:
             "cardinality",
             "null_cardinality",
             "candidate_count",
+            "candidate_null",
         }:
             raise ValueError(
                 "evidence_selection_policy must be threshold, learned_null, "
-                "cardinality, null_cardinality, or candidate_count"
+                "cardinality, null_cardinality, candidate_count, or "
+                "candidate_null"
             )

@@ -151,6 +151,7 @@ class ControllerProposal:
     evidence_null_logits: torch.Tensor | None = None
     evidence_cardinality_logits: torch.Tensor | None = None
     evidence_candidate_count_logits: torch.Tensor | None = None
+    evidence_candidate_null_logits: torch.Tensor | None = None
     pre_context_outputs: CandidateOutputs | None = None
     context_refined: bool = False
 
@@ -781,6 +782,11 @@ class SparseWavefrontController:
                 graph_count=batch.graph_count,
             )
         )
+        evidence_candidate_null_logits = model.candidate_evidence_null_logits(
+            outputs,
+            candidate_graph_ids,
+            graph_count=batch.graph_count,
+        )
         evidence_selected_by_graph = torch.zeros(
             batch.graph_count,
             dtype=torch.int64,
@@ -830,6 +836,7 @@ class SparseWavefrontController:
             evidence_candidate_count_logits=(
                 evidence_candidate_count_logits
             ),
+            evidence_candidate_null_logits=evidence_candidate_null_logits,
         )
 
     def choose_actions(
@@ -972,6 +979,15 @@ class SparseWavefrontController:
                             dim=-1
                         )
                     )
+                if evidence_policy == "candidate_null":
+                    if proposal.evidence_candidate_null_logits is None:
+                        raise ValueError(
+                            "candidate-null policy is missing NULL energies"
+                        )
+                    candidate_null = proposal.evidence_candidate_null_logits[
+                        proposal.candidate_graph_ids.to(torch.int64)
+                    ]
+                    evidence_mask &= outputs.evidence_logits > candidate_null
             evidence_eligible = torch.nonzero(
                 evidence_mask,
                 as_tuple=False,
@@ -1074,6 +1090,13 @@ class SparseWavefrontController:
             candidate_outputs=refined_outputs,
             evidence_candidate_count_logits=(
                 model.candidate_evidence_count_logits(
+                    refined_outputs,
+                    proposal.candidate_graph_ids,
+                    graph_count=batch.graph_count,
+                )
+            ),
+            evidence_candidate_null_logits=(
+                model.candidate_evidence_null_logits(
                     refined_outputs,
                     proposal.candidate_graph_ids,
                     graph_count=batch.graph_count,

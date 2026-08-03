@@ -4,7 +4,75 @@ import torch
 from torch import nn
 
 from ..segmented import segment_max, segment_mean
+from .set_attention import masked_mean
 from .types import CandidateOutputs
+
+
+def _candidate_scalars(outputs: CandidateOutputs) -> torch.Tensor:
+    return torch.stack(
+        (
+            outputs.priority_logits,
+            outputs.expand_logits,
+            outputs.context_logits,
+            outputs.evidence_logits,
+            outputs.remaining_cost,
+            outputs.support_logits,
+            outputs.conflict_logits,
+        ),
+        dim=-1,
+    )
+
+
+def _candidate_owners(
+    outputs: CandidateOutputs,
+    candidate_graph_ids: torch.Tensor,
+    *,
+    graph_count: int,
+) -> torch.Tensor:
+    if graph_count < 0:
+        raise ValueError("graph_count must be non-negative")
+    owners = candidate_graph_ids.to(
+        device=outputs.evidence_logits.device,
+        dtype=torch.int64,
+    )
+    if owners.ndim != 1 or owners.numel() != outputs.candidate_count:
+        raise ValueError("candidate graph IDs must align with candidates")
+    if owners.numel() and (
+        bool((owners < 0).any().item())
+        or bool((owners >= graph_count).any().item())
+    ):
+        raise IndexError("candidate graph ID is out of range")
+    return owners
+
+
+def _pool_candidate_set(
+    encoded: torch.Tensor,
+    owners: torch.Tensor,
+    *,
+    graph_count: int,
+) -> torch.Tensor:
+    mean = segment_mean(
+        encoded,
+        row_owner_ids=owners,
+        num_segments=graph_count,
+    )
+    maximum = segment_max(
+        encoded,
+        row_owner_ids=owners,
+        num_segments=graph_count,
+    )
+    counts = torch.bincount(owners, minlength=graph_count).to(
+        dtype=encoded.dtype
+    )
+    return torch.cat(
+        (
+            mean.values,
+            maximum.values,
+            torch.log1p(counts).unsqueeze(-1),
+            (counts == 0).to(encoded.dtype).unsqueeze(-1),
+        ),
+        dim=-1,
+    )
 
 
 class CandidateEvidenceSetDecoder(nn.Module):
@@ -42,59 +110,94 @@ class CandidateEvidenceSetDecoder(nn.Module):
         *,
         graph_count: int,
     ) -> torch.Tensor:
-        if graph_count < 0:
-            raise ValueError("graph_count must be non-negative")
-        owners = candidate_graph_ids.to(
-            device=outputs.evidence_logits.device,
-            dtype=torch.int64,
-        )
-        if owners.ndim != 1 or owners.numel() != outputs.candidate_count:
-            raise ValueError("candidate graph IDs must align with candidates")
-        if owners.numel() and (
-            bool((owners < 0).any().item())
-            or bool((owners >= graph_count).any().item())
-        ):
-            raise IndexError("candidate graph ID is out of range")
-        scalars = torch.stack(
-            (
-                outputs.priority_logits,
-                outputs.expand_logits,
-                outputs.context_logits,
-                outputs.evidence_logits,
-                outputs.remaining_cost,
-                outputs.support_logits,
-                outputs.conflict_logits,
-            ),
-            dim=-1,
+        owners = _candidate_owners(
+            outputs,
+            candidate_graph_ids,
+            graph_count=graph_count,
         )
         candidate_features = torch.cat(
-            (outputs.next_path_state.mean(dim=1), scalars),
+            (outputs.next_path_state.mean(dim=1), _candidate_scalars(outputs)),
             dim=-1,
         )
         encoded = self.candidate_encoder(candidate_features)
-        mean = segment_mean(
-            encoded,
-            row_owner_ids=owners,
-            num_segments=graph_count,
+        return self.output(
+            _pool_candidate_set(encoded, owners, graph_count=graph_count)
         )
-        maximum = segment_max(
-            encoded,
-            row_owner_ids=owners,
-            num_segments=graph_count,
+
+
+class CandidateEvidenceNullDecoder(nn.Module):
+    """Emit one candidate-relative NULL energy per graph.
+
+    The decoder sees the current candidate set after context refinement. It
+    uses only symmetric reductions and candidate-aligned neural state.
+    """
+
+    def __init__(self, d_model: int, control_width: int) -> None:
+        super().__init__()
+        if d_model <= 0 or control_width <= 0:
+            raise ValueError("decoder dimensions must be positive")
+        candidate_width = 3 * d_model + control_width + 7
+        self.candidate_encoder = nn.Sequential(
+            nn.LayerNorm(candidate_width),
+            nn.Linear(candidate_width, d_model),
+            nn.GELU(),
+            nn.Linear(d_model, d_model),
         )
-        counts = torch.bincount(owners, minlength=graph_count).to(
-            dtype=encoded.dtype
+        self.output = nn.Sequential(
+            nn.LayerNorm(2 * d_model + 2),
+            nn.Linear(2 * d_model + 2, d_model),
+            nn.GELU(),
+            nn.Linear(d_model, 1),
         )
-        set_features = torch.cat(
+        self.d_model = d_model
+        self.control_width = control_width
+
+    def _features(self, outputs: CandidateOutputs) -> torch.Tensor:
+        count = outputs.candidate_count
+        context = outputs.readout_context
+        if context is None:
+            query = outputs.next_path_state.new_zeros((count, self.d_model))
+            evidence = outputs.next_path_state.new_zeros((count, self.d_model))
+            control = outputs.next_path_state.new_zeros(
+                (count, self.control_width)
+            )
+        else:
+            query = masked_mean(context.query.values, context.query.mask)
+            evidence = masked_mean(
+                context.global_evidence.values,
+                context.global_evidence.mask,
+            )
+            control = context.controller_features
+        return torch.cat(
             (
-                mean.values,
-                maximum.values,
-                torch.log1p(counts).unsqueeze(-1),
-                (counts == 0).to(encoded.dtype).unsqueeze(-1),
+                outputs.next_path_state.mean(dim=1),
+                query,
+                evidence,
+                control,
+                _candidate_scalars(outputs),
             ),
             dim=-1,
         )
-        return self.output(set_features)
+
+    def forward(
+        self,
+        outputs: CandidateOutputs,
+        candidate_graph_ids: torch.Tensor,
+        *,
+        graph_count: int,
+    ) -> torch.Tensor:
+        owners = _candidate_owners(
+            outputs,
+            candidate_graph_ids,
+            graph_count=graph_count,
+        )
+        encoded = self.candidate_encoder(self._features(outputs))
+        pooled = _pool_candidate_set(
+            encoded,
+            owners,
+            graph_count=graph_count,
+        )
+        return self.output(pooled).squeeze(-1)
 
 
 def candidate_evidence_count_targets(
