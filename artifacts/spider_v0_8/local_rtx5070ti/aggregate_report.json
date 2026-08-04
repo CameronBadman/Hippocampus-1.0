@@ -1,0 +1,53 @@
+{
+  "accepted_run_count": 3,
+  "arms": {
+    "T0": {
+      "mean_components": {
+        "macro_average_precision": 0.4446484208592289,
+        "macro_hard_negative_pairwise_accuracy": 0.8718539278672811,
+        "mrr": 0.5913725490196078,
+        "recall_at_8": 0.8107843137254904
+      },
+      "mean_score": 0.6328809458996412,
+      "run_count": 1,
+      "scores": [
+        0.6328809458996412
+      ]
+    },
+    "T1": {
+      "mean_components": {
+        "macro_average_precision": 1.0,
+        "macro_hard_negative_pairwise_accuracy": 1.0,
+        "mrr": 1.0,
+        "recall_at_8": 1.0
+      },
+      "mean_score": 1.0,
+      "run_count": 1,
+      "scores": [
+        1.0
+      ]
+    },
+    "T2": {
+      "mean_components": {
+        "macro_average_precision": 0.9897726236088306,
+        "macro_hard_negative_pairwise_accuracy": 0.9975290114551576,
+        "mrr": 1.0,
+        "recall_at_8": 0.9970588235294118
+      },
+      "mean_score": 0.9960754581105962,
+      "run_count": 1,
+      "scores": [
+        0.9960754581105962
+      ]
+    }
+  },
+  "component_floor": 0.8,
+  "format": "spider-v0.8-sre-aggregate-v1",
+  "generated_at": "2026-08-04T04:35:22.297916+00:00",
+  "invalid_run_count": 0,
+  "recommendation": "T1",
+  "sealed_access_count": 0,
+  "source_commit": "1d90f6e1348c6b64b322b25032a90dde332ca77c",
+  "target_met": true,
+  "target_score": 0.85
+}

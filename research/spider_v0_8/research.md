@@ -91,3 +91,6 @@ No other arm is permitted before these three answer the transfer question.
 | Iteration | Hypothesis | Status | Score | Notes |
 | ---: | --- | --- | ---: | --- |
 | 0 | Freeze SRE transfer protocol and source hashes. | kept | — | Sealed SRE test remains unopened. |
+| 1 | T0 frozen semantic/status control. | kept as control | 0.6329 | High Recall@8, weak exact set recovery. |
+| 2 | T1 packed scorer without explicit alignment. | passed | 1.0000 | Selected at step 250; exact-set accuracy 1.00. |
+| 3 | T2 add multi-positive canonical alignment. | passed, not preferred | 0.9961 | Ranking passed, but exact-set accuracy fell to 0.75. |
