@@ -24,7 +24,7 @@ from style_presets import rcparams
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "artifacts/spider_v0_6/local_rtx5070ti"
 SEEDS = (1701, 1802, 1903)
-ARMS = ("Z0", "Z1")
+ARMS = ("Z0", "Z1", "Z2")
 CONFIGS = {arm: ROOT / f"configs/spider_v0_6/{arm}.json" for arm in ARMS}
 TRAIN_STEPS = 2_000
 TARGET_SCORE = 0.82
@@ -532,26 +532,41 @@ def _summarize(output_root: Path) -> dict[str, Any]:
     results = _load_all(output_root)
     summaries = {arm: _arm_summary(results, arm) for arm in ARMS}
     per_family = {arm: _family_summary(results, arm) for arm in ARMS}
-    seed_results = []
-    for seed in SEEDS:
-        control = _score(results[("Z0", seed)])
-        candidate = _score(results[("Z1", seed)])
-        seed_results.append(
-            {
-                "seed": seed,
-                "control_score": control,
-                "candidate_score": candidate,
-                "delta": candidate - control,
-                "advances": candidate >= control + MIN_DELTA - 1e-12,
-            }
-        )
-    wins = sum(int(row["advances"]) for row in seed_results)
-    candidate_success = (
-        wins >= 2
-        and summaries["Z1"]["score"] >= TARGET_SCORE
-        and summaries["Z1"]["scored_positive_coverage"] >= 0.98
+    candidate_gates: dict[str, dict[str, Any]] = {}
+    for arm in ARMS[1:]:
+        seed_results = []
+        for seed in SEEDS:
+            control = _score(results[("Z0", seed)])
+            candidate = _score(results[(arm, seed)])
+            seed_results.append(
+                {
+                    "seed": seed,
+                    "control_score": control,
+                    "candidate_score": candidate,
+                    "delta": candidate - control,
+                    "advances": candidate >= control + MIN_DELTA - 1e-12,
+                }
+            )
+        wins = sum(int(row["advances"]) for row in seed_results)
+        candidate_gates[arm] = {
+            "seed_results": seed_results,
+            "seed_wins": wins,
+            "candidate_success": (
+                wins >= 2
+                and summaries[arm]["score"] >= TARGET_SCORE
+                and summaries[arm]["scored_positive_coverage"] >= 0.98
+            ),
+        }
+    successful = [
+        arm
+        for arm in ARMS[1:]
+        if candidate_gates[arm]["candidate_success"]
+    ]
+    finalist = (
+        max(successful, key=lambda arm: summaries[arm]["score"])
+        if successful
+        else "Z0"
     )
-    finalist = "Z1" if candidate_success else "Z0"
     payload = {
         "campaign": "Spider v0.6 zero-shot evidence energy",
         "source_commit": _source_commit(),
@@ -560,11 +575,7 @@ def _summarize(output_root: Path) -> dict[str, Any]:
         "score_definition": "min(exact_set, precision, recall)",
         "arm_summaries": summaries,
         "per_family": per_family,
-        "gate": {
-            "seed_results": seed_results,
-            "seed_wins": wins,
-            "candidate_success": candidate_success,
-        },
+        "gate": {"candidates": candidate_gates},
         "selected_finalist": finalist,
         "accepted_training_run_count": len(ARMS) * len(SEEDS),
         "temperature_fit_count": 0,
@@ -611,9 +622,9 @@ def _summarize(output_root: Path) -> dict[str, Any]:
         {
             "selected_arm": finalist,
             "selection_reason": (
-                "candidate-relative NULL passed the zero-shot gate"
-                if candidate_success
-                else "candidate-relative NULL did not pass the zero-shot gate"
+                f"{finalist} passed the zero-shot gate"
+                if finalist != "Z0"
+                else "no candidate passed the zero-shot gate"
             ),
             "dataset_hash": payload["dataset_hash"],
             "score": summaries[finalist]["score"],

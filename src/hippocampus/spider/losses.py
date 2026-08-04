@@ -12,6 +12,7 @@ from .terminator import TerminationFactorTargets, TerminationOutput
 
 
 EvidenceLossMode = Literal["plain", "balanced", "focal"]
+EvidenceNullLossMode = Literal["plain", "graph_balanced"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +38,7 @@ class SpiderLossConfig:
     evidence_hard_negative_count: int = 4
     null_expansion: float = 1.0
     evidence_null: float = 0.0
+    evidence_null_mode: EvidenceNullLossMode = "plain"
     evidence_cardinality: float = 0.0
     evidence_candidate_count: float = 0.0
 
@@ -47,6 +49,10 @@ class SpiderLossConfig:
                 raise ValueError(f"{field.name} loss setting must be non-negative")
         if self.evidence_mode not in {"plain", "balanced", "focal"}:
             raise ValueError("evidence_mode must be plain, balanced, or focal")
+        if self.evidence_null_mode not in {"plain", "graph_balanced"}:
+            raise ValueError(
+                "evidence_null_mode must be plain or graph_balanced"
+            )
         if (
             self.evidence_ranking > 0
             or self.evidence_plausible_ranking > 0
@@ -488,18 +494,60 @@ def evidence_null_loss_term(
         or bool((graph_ids >= null_logits.numel()).any().item())
     ):
         raise IndexError("candidate graph ID is out of range")
+    target_count = int(candidate_targets.numel())
     if candidate_logits.numel() == 0:
         raw = _zero(null_logits)
     else:
         relative_logits = candidate_logits.float() - null_logits[graph_ids].float()
-        raw = F.binary_cross_entropy_with_logits(
+        elementwise = F.binary_cross_entropy_with_logits(
             relative_logits,
             candidate_targets.float(),
+            reduction="none",
         )
+        if config.evidence_null_mode == "plain":
+            raw = elementwise.mean()
+        else:
+            positive = candidate_targets.bool()
+            negative = ~positive
+            graph_count = int(null_logits.numel())
+            zeros = torch.zeros_like(elementwise)
+            positive_sums = segment_sum(
+                torch.where(positive, elementwise, zeros),
+                row_owner_ids=graph_ids,
+                num_segments=graph_count,
+            ).values
+            negative_sums = segment_sum(
+                torch.where(negative, elementwise, zeros),
+                row_owner_ids=graph_ids,
+                num_segments=graph_count,
+            ).values
+            positive_counts = torch.bincount(
+                graph_ids[positive],
+                minlength=graph_count,
+            )
+            negative_counts = torch.bincount(
+                graph_ids[negative],
+                minlength=graph_count,
+            )
+            positive_valid = positive_counts > 0
+            negative_valid = negative_counts > 0
+            positive_means = positive_sums / positive_counts.clamp_min(1)
+            negative_means = negative_sums / negative_counts.clamp_min(1)
+            class_counts = (
+                positive_valid.to(elementwise.dtype)
+                + negative_valid.to(elementwise.dtype)
+            )
+            graph_losses = (
+                positive_means * positive_valid
+                + negative_means * negative_valid
+            ) / class_counts.clamp_min(1)
+            active_graphs = class_counts > 0
+            raw = graph_losses[active_graphs].mean()
+            target_count = int(active_graphs.sum().item())
     return _term(
         raw,
         weight=config.evidence_null,
-        target_count=int(candidate_targets.numel()),
+        target_count=target_count,
     )
 
 

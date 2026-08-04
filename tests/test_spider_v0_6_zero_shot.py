@@ -29,7 +29,9 @@ from hippocampus.spider import (
     PooledScorer,
     SparseControllerConfig,
     SparseWavefrontController,
+    SpiderLossConfig,
     SpiderModelConfig,
+    evidence_null_loss_term,
     load_experiment,
 )
 from hippocampus.spider.types import CandidateOutputs
@@ -247,6 +249,93 @@ def test_candidate_null_is_recomputed_after_context_refinement() -> None:
     )
 
 
+def test_graph_balanced_null_loss_ignores_duplicate_negative_mass() -> None:
+    null = torch.tensor([0.3], requires_grad=True)
+    logits = torch.tensor([-0.2, 2.0], requires_grad=True)
+    targets = torch.tensor([True, False])
+    owners = torch.tensor([0, 0], dtype=torch.int32)
+    config = SpiderLossConfig(
+        evidence_null=1.0,
+        evidence_null_mode="graph_balanced",
+    )
+
+    original = evidence_null_loss_term(
+        null,
+        logits,
+        targets,
+        owners,
+        config=config,
+    )
+    duplicated = evidence_null_loss_term(
+        null,
+        torch.stack((logits[0], logits[1], logits[1])),
+        torch.tensor([True, False, False]),
+        torch.tensor([0, 0, 0], dtype=torch.int32),
+        config=config,
+    )
+
+    assert original is not None and duplicated is not None
+    assert original.target_count == 1
+    assert duplicated.target_count == 1
+    assert torch.allclose(original.raw, duplicated.raw)
+    original.weighted.backward()
+    assert null.grad is not None
+    assert logits.grad is not None
+
+
+def test_plain_null_loss_remains_candidate_weighted() -> None:
+    null = torch.tensor([0.3])
+    logits = torch.tensor([-0.2, 2.0])
+    targets = torch.tensor([True, False])
+    owners = torch.tensor([0, 0], dtype=torch.int32)
+    config = SpiderLossConfig(
+        evidence_null=1.0,
+        evidence_null_mode="plain",
+    )
+
+    original = evidence_null_loss_term(
+        null,
+        logits,
+        targets,
+        owners,
+        config=config,
+    )
+    duplicated = evidence_null_loss_term(
+        null,
+        torch.tensor([-0.2, 2.0, 2.0]),
+        torch.tensor([True, False, False]),
+        torch.tensor([0, 0, 0], dtype=torch.int32),
+        config=config,
+    )
+
+    assert original is not None and duplicated is not None
+    assert original.target_count == 2
+    assert duplicated.target_count == 3
+    assert not torch.allclose(original.raw, duplicated.raw)
+
+
+def test_graph_balanced_null_loss_handles_all_negative_graphs() -> None:
+    null = torch.tensor([0.1, -0.2], requires_grad=True)
+    logits = torch.tensor([1.0, -1.0, 0.0], requires_grad=True)
+    term = evidence_null_loss_term(
+        null,
+        logits,
+        torch.tensor([False, False, True]),
+        torch.tensor([0, 0, 1], dtype=torch.int32),
+        config=SpiderLossConfig(
+            evidence_null=1.0,
+            evidence_null_mode="graph_balanced",
+        ),
+    )
+
+    assert term is not None
+    assert term.target_count == 2
+    assert torch.isfinite(term.raw)
+    term.weighted.backward()
+    assert torch.isfinite(null.grad).all()
+    assert torch.isfinite(logits.grad).all()
+
+
 def test_candidate_null_policy_requires_the_candidate_decoder(
     tmp_path: Path,
 ) -> None:
@@ -276,7 +365,7 @@ def test_v0_6_partitions_have_disjoint_symbol_namespaces() -> None:
 
 
 def test_v0_6_configs_use_no_calibrated_threshold_or_count() -> None:
-    for arm in ("Z0", "Z1"):
+    for arm in ("Z0", "Z1", "Z2"):
         raw = json.loads(
             (ROOT / f"configs/spider_v0_6/{arm}.json").read_text()
         )
@@ -292,6 +381,11 @@ def test_v0_6_configs_use_no_calibrated_threshold_or_count() -> None:
     z1 = load_experiment(ROOT / "configs/spider_v0_6/Z1.json")
     assert z1.model_config.use_candidate_evidence_null
     assert z1.controller_config.evidence_selection_policy == "candidate_null"
+    z2 = load_experiment(ROOT / "configs/spider_v0_6/Z2.json")
+    assert z2.loss_config.evidence_null_mode == "graph_balanced"
+
+    module = _autoresearch_module()
+    assert module.ARMS == ("Z0", "Z1", "Z2")
 
     validate_calibration_source(
         split_name="model_selection",
