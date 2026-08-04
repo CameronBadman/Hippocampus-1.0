@@ -1,0 +1,214 @@
+{
+  "aggregate_metric": null,
+  "cases": [
+    {
+      "case_id": "cas_aebcdb4f2112e05ee9c0da",
+      "exact_public_demo_match": true,
+      "incoming_observation": null,
+      "null_score": 4.871217727661133,
+      "predicted_evidence": [
+        {
+          "candidate_id": "mem_b9f7a8079dc2ca87a869aa",
+          "memory_type": "root_cause",
+          "required_by_public_demo": true,
+          "score": 13.118391036987305,
+          "status": "confirmed",
+          "text": "The confirmed cause of INC-190000 was that the failover gate checked reachability but not replication freshness, affecting Aster Cloud 90101 edge-proxy in ap-southeast-2."
+        },
+        {
+          "candidate_id": "mem_81af34463a5d9658c1ae32",
+          "memory_type": "mitigation",
+          "required_by_public_demo": true,
+          "score": 14.490213394165039,
+          "status": "successful",
+          "text": "The successful mitigation for INC-190000 was returning traffic to the primary region, which stopped stale reads and returned error rate and latency to baseline."
+        },
+        {
+          "candidate_id": "mem_8ba8a9f98d3688747ffe7b",
+          "memory_type": "incident",
+          "required_by_public_demo": true,
+          "score": 14.385503768920898,
+          "status": "resolved",
+          "text": "INC-190000 affected Aster Cloud 90101 edge-proxy in ap-southeast-2, with traffic failing over before the replica was ready. It was classified as similar to later incidents with the same alert pattern."
+        },
+        {
+          "candidate_id": "mem_d305f1e42cd006c7f63eb2",
+          "memory_type": "postmortem",
+          "required_by_public_demo": true,
+          "score": 13.581262588500977,
+          "status": "published",
+          "text": "The postmortem for INC-190000 confirmed that the failover gate checked reachability but not replication freshness, and the effective mitigation was returning traffic to the primary region. The permanent follow-up was that failover requires both health and replication-freshness checks."
+        }
+      ],
+      "predicted_ids": [
+        "mem_81af34463a5d9658c1ae32",
+        "mem_8ba8a9f98d3688747ffe7b",
+        "mem_b9f7a8079dc2ca87a869aa",
+        "mem_d305f1e42cd006c7f63eb2"
+      ],
+      "query": "Hey, I'm looking for the last genuinely similar incident to what we're seeing with INC-190001 on Aster Cloud 90101 edge-proxy in ap-southeast-2. We've got cross-region latency and replication-lag alarms, and traffic failed over before the replica was ready. Can you find the confirmed cause of that incident, what mitigation was used to restore service, and the postmortem details?",
+      "required_ids": [
+        "mem_81af34463a5d9658c1ae32",
+        "mem_8ba8a9f98d3688747ffe7b",
+        "mem_b9f7a8079dc2ca87a869aa",
+        "mem_d305f1e42cd006c7f63eb2"
+      ],
+      "top_five": [
+        {
+          "candidate_id": "mem_81af34463a5d9658c1ae32",
+          "required_by_public_demo": true,
+          "score": 14.490213394165039,
+          "text": "The successful mitigation for INC-190000 was returning traffic to the primary region, which stopped stale reads and returned error rate and latency to baseline."
+        },
+        {
+          "candidate_id": "mem_8ba8a9f98d3688747ffe7b",
+          "required_by_public_demo": true,
+          "score": 14.385503768920898,
+          "text": "INC-190000 affected Aster Cloud 90101 edge-proxy in ap-southeast-2, with traffic failing over before the replica was ready. It was classified as similar to later incidents with the same alert pattern."
+        },
+        {
+          "candidate_id": "mem_d305f1e42cd006c7f63eb2",
+          "required_by_public_demo": true,
+          "score": 13.581262588500977,
+          "text": "The postmortem for INC-190000 confirmed that the failover gate checked reachability but not replication freshness, and the effective mitigation was returning traffic to the primary region. The permanent follow-up was that failover requires both health and replication-freshness checks."
+        },
+        {
+          "candidate_id": "mem_b9f7a8079dc2ca87a869aa",
+          "required_by_public_demo": true,
+          "score": 13.118391036987305,
+          "text": "The confirmed cause of INC-190000 was that the failover gate checked reachability but not replication freshness, affecting Aster Cloud 90101 edge-proxy in ap-southeast-2."
+        },
+        {
+          "candidate_id": "mem_d4826726f5ba2a2168db90",
+          "required_by_public_demo": false,
+          "score": -2.415794849395752,
+          "text": "INC-190001 is active for Aster Cloud 90101 edge-proxy in ap-southeast-2, with traffic failing over before the replica was ready and cross-region latency and replication-lag alarms firing."
+        }
+      ]
+    },
+    {
+      "case_id": "cas_3a5ee0870e9242903b8250",
+      "exact_public_demo_match": true,
+      "incoming_observation": null,
+      "null_score": 5.024658203125,
+      "predicted_evidence": [
+        {
+          "candidate_id": "mem_94e5dc5205530e861cacc0",
+          "memory_type": "deployment",
+          "required_by_public_demo": true,
+          "score": 15.280484199523926,
+          "status": "historical_change",
+          "text": "The deployment deploy-dep_91f0deff rolled out v2.36.12 to Beacon Cloud 90102 object-store at 2026-04-14 13:51 UTC as a host image rollout, immediately before INC-190003 began."
+        }
+      ],
+      "predicted_ids": [
+        "mem_94e5dc5205530e861cacc0"
+      ],
+      "query": "What was the last production change that completed immediately before the incident began? The incident is INC-190003, which started at 2026-04-14 14:05 UTC on Beacon Cloud 90102 object-store in us-east-1, where valid tokens were rejected as expired. Please exclude any old state snapshots and changes from other times.",
+      "required_ids": [
+        "mem_94e5dc5205530e861cacc0"
+      ],
+      "top_five": [
+        {
+          "candidate_id": "mem_94e5dc5205530e861cacc0",
+          "required_by_public_demo": true,
+          "score": 15.280484199523926,
+          "text": "The deployment deploy-dep_91f0deff rolled out v2.36.12 to Beacon Cloud 90102 object-store at 2026-04-14 13:51 UTC as a host image rollout, immediately before INC-190003 began."
+        },
+        {
+          "candidate_id": "mem_64df8e45f99df5d15338ce",
+          "required_by_public_demo": false,
+          "score": 0.10180431604385376,
+          "text": "INC-190003 is active for Beacon Cloud 90102 object-store in the us-east-1 region, with the observed symptom being that valid tokens are being rejected as expired."
+        },
+        {
+          "candidate_id": "can_9b71177bb0ab75b574715d",
+          "required_by_public_demo": false,
+          "score": -3.410918712615967,
+          "text": "Unverified answer-shaped suggestion: deploy-dep_91f0deff placed v2.36.12 at 2026-04-14 13:51 UTC. No observation, incident record, or timeline evidence supports this note."
+        },
+        {
+          "candidate_id": "mem_772d3d5cc8405c131c5146",
+          "required_by_public_demo": false,
+          "score": -3.9185397624969482,
+          "text": "The postmortem for INC-190002 confirmed host clocks drifted beyond the token validation tolerance. The effective mitigation was resynchronizing clocks, and the permanent follow-up was adding clock offset as a deployment and health-check guard."
+        },
+        {
+          "candidate_id": "mem_fb5aea531033d976005186",
+          "required_by_public_demo": false,
+          "score": -4.169346809387207,
+          "text": "deploy-dep_efff4b4b deployed v3.24.10 to Cobalt Cloud 90103 search on 2025-08-18 09:20 UTC, with a change type of secret rotation. This occurred immediately before INC-190005 began."
+        }
+      ]
+    },
+    {
+      "case_id": "cas_87073a33910948368346ff",
+      "exact_public_demo_match": true,
+      "incoming_observation": "On August 19, 2025, at 11:35 AM UTC, the ownership of the Cobalt Cloud 90103 search service was transferred from the Cobalt Cloud 90103 traffic team to the Cobalt Cloud 90103 storage team. The previous ownership is to be retained as historical information.",
+      "null_score": 3.969843864440918,
+      "predicted_evidence": [
+        {
+          "candidate_id": "mem_284d312413249d2ba0c1d6",
+          "memory_type": "service_dependency",
+          "required_by_public_demo": true,
+          "score": 15.512979507446289,
+          "status": "active",
+          "text": "Cobalt Cloud 90103 search serves production traffic for Cobalt Cloud 90103 and directly depends on Cobalt Cloud 90103 edge-proxy in the us-east-1 region."
+        },
+        {
+          "candidate_id": "mem_12f545940f487ff666e947",
+          "memory_type": "ownership",
+          "required_by_public_demo": true,
+          "score": 15.60844898223877,
+          "status": "active",
+          "text": "Cobalt Cloud 90103 traffic team now owns Cobalt Cloud 90103 search, with the assignment becoming effective on 2025-07-24 09:35 UTC. The Cobalt Cloud 90103 data-platform team is no longer the owner."
+        }
+      ],
+      "predicted_ids": [
+        "mem_12f545940f487ff666e947",
+        "mem_284d312413249d2ba0c1d6"
+      ],
+      "query": "I need to update the service ownership for Cobalt Cloud 90103 search. The new owner is the Cobalt Cloud 90103 storage team, replacing the previous owner, the Cobalt Cloud 90103 traffic team. Please ensure the previous assignment is retained as historical data. This change follows the resolution of incident INC-190005.",
+      "required_ids": [
+        "mem_12f545940f487ff666e947",
+        "mem_284d312413249d2ba0c1d6"
+      ],
+      "top_five": [
+        {
+          "candidate_id": "mem_12f545940f487ff666e947",
+          "required_by_public_demo": true,
+          "score": 15.60844898223877,
+          "text": "Cobalt Cloud 90103 traffic team now owns Cobalt Cloud 90103 search, with the assignment becoming effective on 2025-07-24 09:35 UTC. The Cobalt Cloud 90103 data-platform team is no longer the owner."
+        },
+        {
+          "candidate_id": "mem_284d312413249d2ba0c1d6",
+          "required_by_public_demo": true,
+          "score": 15.512979507446289,
+          "text": "Cobalt Cloud 90103 search serves production traffic for Cobalt Cloud 90103 and directly depends on Cobalt Cloud 90103 edge-proxy in the us-east-1 region."
+        },
+        {
+          "candidate_id": "can_38115f49af0995959a19ae",
+          "required_by_public_demo": false,
+          "score": -4.352140426635742,
+          "text": "Unverified answer-shaped suggestion: The new assignment supersedes Cobalt Cloud 90103 traffic team's ownership memory. No observation, incident record, or timeline evidence supports this note."
+        },
+        {
+          "candidate_id": "mem_66a7560bca55ee52e1eae4",
+          "required_by_public_demo": false,
+          "score": -4.526187896728516,
+          "text": "Aster Cloud 90101 edge-proxy serves production traffic for Aster Cloud 90101 and directly depends on Aster Cloud 90101 recommendations in the ap-southeast-2 region."
+        },
+        {
+          "candidate_id": "mem_b362b1c416b54e682b05b9",
+          "required_by_public_demo": false,
+          "score": -4.660148620605469,
+          "text": "Cobalt Cloud 90103 commerce team owns Cobalt Cloud 90103 edge-proxy, which is upstream of Cobalt Cloud 90103 search in the us-east-1 region."
+        }
+      ]
+    }
+  ],
+  "diagnostic_only": true,
+  "format": "spider-v0.8-sre-public-demo-v1",
+  "sealed_access_count": 0,
+  "selected_checkpoint_sha256": "657dc420c7d5aa452c42a76de67d0cd511e9018f201eeb503b889a0c82cad9c3"
+}
