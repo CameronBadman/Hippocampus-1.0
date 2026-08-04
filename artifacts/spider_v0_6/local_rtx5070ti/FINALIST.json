@@ -1,0 +1,29 @@
+{
+  "checkpoints": [
+    {
+      "checkpoint_sha256": "8afe9dc585f880aadc2df2bf98ec457273e8bb6522719c857ea7328c019eba9a",
+      "seed": 1701,
+      "selected_step": 1750,
+      "source_commit": "d3fe4241e164154b362fad9f695c5aea05f91508"
+    },
+    {
+      "checkpoint_sha256": "379fd950706b3dace7fe31806c149e89237152a590889e88b7f6bb2d4a147a70",
+      "seed": 1802,
+      "selected_step": 2000,
+      "source_commit": "d3fe4241e164154b362fad9f695c5aea05f91508"
+    },
+    {
+      "checkpoint_sha256": "827ce774aa68df3b65c9e4ea93a22f50fd8e1cee2bcb2b156a222a78e76627fc",
+      "seed": 1903,
+      "selected_step": 1000,
+      "source_commit": "d3fe4241e164154b362fad9f695c5aea05f91508"
+    }
+  ],
+  "dataset_hash": "a05d301bef77d86abcbb658444c2ed277545b82653dac202cef319ecfc1abc17",
+  "score": 0.7600160256410257,
+  "sealed_access_count": 0,
+  "selected_arm": "Z0",
+  "selection_reason": "candidate-relative NULL did not pass the zero-shot gate",
+  "symbol_overlap_count": 0,
+  "temperature_fit_count": 0
+}

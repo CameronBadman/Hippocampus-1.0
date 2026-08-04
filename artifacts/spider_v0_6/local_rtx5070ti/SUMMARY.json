@@ -1,0 +1,130 @@
+{
+  "accepted_training_run_count": 6,
+  "arm_summaries": {
+    "Z0": {
+      "exact_evidence_set_accuracy": 0.7809244791666666,
+      "false_positives_per_case": 0.046223958333333336,
+      "macro_average_precision": 0.9500390625,
+      "mean_absolute_cardinality_error": 0.2412109375,
+      "mean_selected_step": 1583.3333333333333,
+      "mean_worst_positive_rank": 1.3989583333333333,
+      "precision": 0.9322172673369316,
+      "recall": 0.7600160256410257,
+      "score": 0.7600160256410257,
+      "scored_positive_coverage": 1.0
+    },
+    "Z1": {
+      "exact_evidence_set_accuracy": 0.791015625,
+      "false_positives_per_case": 0.032877604166666664,
+      "macro_average_precision": 0.9480208333333333,
+      "mean_absolute_cardinality_error": 0.22330729166666666,
+      "mean_selected_step": 1416.6666666666667,
+      "mean_worst_positive_rank": 1.3989583333333333,
+      "precision": 0.9495127845046205,
+      "recall": 0.7608173076923077,
+      "score": 0.7608173076923077,
+      "scored_positive_coverage": 0.999198717948718
+    }
+  },
+  "campaign": "Spider v0.6 zero-shot evidence energy",
+  "dataset_hash": "a05d301bef77d86abcbb658444c2ed277545b82653dac202cef319ecfc1abc17",
+  "gate": {
+    "candidate_success": false,
+    "seed_results": [
+      {
+        "advances": true,
+        "candidate_score": 0.7704326923076923,
+        "control_score": 0.7415865384615384,
+        "delta": 0.028846153846153855,
+        "seed": 1701
+      },
+      {
+        "advances": false,
+        "candidate_score": 0.7644230769230769,
+        "control_score": 0.7752403846153846,
+        "delta": -0.01081730769230771,
+        "seed": 1802
+      },
+      {
+        "advances": false,
+        "candidate_score": 0.7475961538461539,
+        "control_score": 0.7632211538461539,
+        "delta": -0.015625,
+        "seed": 1903
+      }
+    ],
+    "seed_wins": 1
+  },
+  "per_family": {
+    "Z0": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 1.0,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.9921875,
+        "false_positives_per_case": 0.00390625,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9961389961389961,
+        "recall": 0.9934895833333334
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 0.7552083333333334,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6315104166666666,
+        "false_positives_per_case": 0.18098958333333334,
+        "macro_evidence_average_precision": 0.9949869791666667,
+        "precision": 0.5965612497895146,
+        "recall": 0.453125
+      }
+    },
+    "Z1": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.9986979166666666,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 0.9989583333333333
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.9986979166666666,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 0.9991319444444444,
+        "precision": 1.0,
+        "recall": 0.9986979166666666
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 0.7638888888888888,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6666666666666666,
+        "false_positives_per_case": 0.13151041666666666,
+        "macro_evidence_average_precision": 0.9775173611111111,
+        "precision": 0.6289109121909634,
+        "recall": 0.4505208333333333
+      }
+    }
+  },
+  "run_source_commits": [
+    "d3fe4241e164154b362fad9f695c5aea05f91508"
+  ],
+  "score_definition": "min(exact_set, precision, recall)",
+  "sealed_access_count": 0,
+  "selected_finalist": "Z0",
+  "source_commit": "d3fe4241e164154b362fad9f695c5aea05f91508",
+  "symbol_overlap_count": 0,
+  "target_score": 0.82,
+  "temperature_fit_count": 0
+}
