@@ -56,8 +56,8 @@ not alter inference: selection remains the raw comparison
 - Matched outcome: two seed wins over Z0. Reachability recall increased from
   0.4531 to 0.7161, while lookup recall remained 0.0026.
 - Decision: keep as the parent for iteration 4 because the score improved by
-  0.0398. Do not select it as a finalist: it misses the 0.82 target and the
-  0.90 precision constraint.
+  0.0398. Do not select it as a finalist: it misses the 0.82 target, and
+  aggregate precision also falls below the inherited 0.90 diagnostic floor.
 
 ## Iteration 4 hypothesis — bounded hard-negative NULL margin
 
@@ -75,8 +75,8 @@ This is the final registered iteration and does not change inference.
   scored-positive coverage 0.9988, macro AP 0.9269).
 - Lookup recall increased from 0.0026 in Z2 to 0.0833, but lookup precision
   was 0.2874 and reachability recall fell from 0.7161 to 0.5833.
-- Decision: reject. Z3 regressed 0.0061 from Z2 and did not pass the target or
-  precision constraint. The four-iteration budget is exhausted.
+- Decision: reject. Z3 regressed 0.0061 from Z2, did not pass the target, and
+  remained below 0.90 aggregate precision. The iteration budget is exhausted.
 
 ## Campaign conclusion
 

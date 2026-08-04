@@ -1,0 +1,42 @@
+{
+  "accepted_finalist": false,
+  "checkpoints": [
+    {
+      "checkpoint_sha256": "d97d17fb54fe796efea66f3bbb64238205cdc6cfa601461a6ae6fb73ca4bc367",
+      "seed": 1701,
+      "selected_step": 2000,
+      "source_commit": "6802f87ff6d784e3b28b8d3be1469060b33c4501"
+    },
+    {
+      "checkpoint_sha256": "1e72564235ec5a2bab80f05dd4c54865cf07971b4332059ff3b5694254a1ed51",
+      "seed": 1802,
+      "selected_step": 1500,
+      "source_commit": "6802f87ff6d784e3b28b8d3be1469060b33c4501"
+    },
+    {
+      "checkpoint_sha256": "3fac8e17b5faa822bbc6232e033b6c6339209cad2bf0f0b050e6fb33574de4ea",
+      "seed": 1903,
+      "selected_step": 1750,
+      "source_commit": "6802f87ff6d784e3b28b8d3be1469060b33c4501"
+    }
+  ],
+  "dataset_hash": "a05d301bef77d86abcbb658444c2ed277545b82653dac202cef319ecfc1abc17",
+  "primary_metric": {
+    "exact_evidence_set_accuracy": 0.7998046875,
+    "false_positives_per_case": 0.10026041666666667,
+    "macro_average_precision": 0.9492361111111111,
+    "mean_absolute_cardinality_error": 0.2565104166666667,
+    "mean_selected_step": 1750.0,
+    "mean_worst_positive_rank": 1.3942708333333333,
+    "precision": 0.8722369158864942,
+    "recall": 0.8020833333333334,
+    "score": 0.7998046875,
+    "scored_positive_coverage": 1.0
+  },
+  "sealed_access_count": 0,
+  "selected_arm": "Z2",
+  "selection_reason": "highest registered weakest-metric score with frozen tie-breakers",
+  "symbol_overlap_count": 0,
+  "target_score": 0.82,
+  "temperature_fit_count": 0
+}

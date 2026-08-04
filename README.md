@@ -428,11 +428,11 @@ aggregate:
 
 The completed twelve-run campaign used completely disjoint observable symbol
 namespaces and never fitted an inference-time temperature, threshold, or
-cardinality policy. Graph-balanced candidate-vs-NULL training raised recall
-but missed the precision and 0.82 score gates; a bounded hard-negative margin
-did not improve the best aggregate. Z0 remains the accepted control, while Z2
-is preserved separately as the best unaccepted diagnostic arm. No sealed data
-or A100 replication was used.
+cardinality policy. Graph-balanced candidate-vs-NULL training raised recall,
+but aggregate precision fell below 0.90 and the weakest-metric score missed its
+0.82 target; a bounded hard-negative margin did not improve the best aggregate.
+Z0 remains the accepted control, while Z2 is preserved separately as the best
+unaccepted diagnostic arm. No sealed data or A100 replication was used.
 
 See the [v0.6 final report](docs/spider_v0_6/FINAL_REPORT.md), [training
 notes](docs/spider_v0_6/TRAINING.md), [dataset card](docs/spider_v0_6/DATASET_CARD.md),

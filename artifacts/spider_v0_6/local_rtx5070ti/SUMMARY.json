@@ -1,5 +1,5 @@
 {
-  "accepted_training_run_count": 9,
+  "accepted_training_run_count": 12,
   "arm_summaries": {
     "Z0": {
       "exact_evidence_set_accuracy": 0.7809244791666666,
@@ -36,8 +36,21 @@
       "recall": 0.8020833333333334,
       "score": 0.7998046875,
       "scored_positive_coverage": 1.0
+    },
+    "Z3": {
+      "exact_evidence_set_accuracy": 0.7981770833333334,
+      "false_positives_per_case": 0.0830078125,
+      "macro_average_precision": 0.9268687996031746,
+      "mean_absolute_cardinality_error": 0.23046875,
+      "mean_selected_step": 1666.6666666666667,
+      "mean_worst_positive_rank": 1.4067708333333333,
+      "precision": 0.8905629027904877,
+      "recall": 0.7936698717948718,
+      "score": 0.7936698717948718,
+      "scored_positive_coverage": 0.9987980769230769
     }
   },
+  "best_observed_arm": "Z2",
   "campaign": "Spider v0.6 zero-shot evidence energy",
   "dataset_hash": "a05d301bef77d86abcbb658444c2ed277545b82653dac202cef319ecfc1abc17",
   "gate": {
@@ -91,6 +104,33 @@
             "candidate_score": 0.7924743443557583,
             "control_score": 0.7632211538461539,
             "delta": 0.0292531905096044,
+            "seed": 1903
+          }
+        ],
+        "seed_wins": 2
+      },
+      "Z3": {
+        "candidate_success": false,
+        "seed_results": [
+          {
+            "advances": true,
+            "candidate_score": 0.78125,
+            "control_score": 0.7415865384615384,
+            "delta": 0.039663461538461564,
+            "seed": 1701
+          },
+          {
+            "advances": false,
+            "candidate_score": 0.7680288461538461,
+            "control_score": 0.7752403846153846,
+            "delta": -0.007211538461538436,
+            "seed": 1802
+          },
+          {
+            "advances": true,
+            "candidate_score": 0.802734375,
+            "control_score": 0.7632211538461539,
+            "delta": 0.039513221153846145,
             "seed": 1903
           }
         ],
@@ -188,16 +228,47 @@
         "precision": 0.5068761102824364,
         "recall": 0.7161458333333334
       }
+    },
+    "Z3": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 1.0,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.9947916666666666,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9987029831387808,
+        "recall": 0.99609375
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.5182291666666666,
+        "false_positives_per_case": 0.059895833333333336,
+        "macro_evidence_average_precision": 0.75390625,
+        "precision": 0.28738512949039263,
+        "recall": 0.08333333333333333
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6796875,
+        "false_positives_per_case": 0.2708333333333333,
+        "macro_evidence_average_precision": 0.880437748015873,
+        "precision": 0.5385142062773641,
+        "recall": 0.5833333333333334
+      }
     }
   },
   "run_source_commits": [
     "6802f87ff6d784e3b28b8d3be1469060b33c4501",
+    "992d98a8f2c057713041faf394d31f9355bde0e1",
     "d3fe4241e164154b362fad9f695c5aea05f91508"
   ],
   "score_definition": "min(exact_set, precision, recall)",
   "sealed_access_count": 0,
   "selected_finalist": "Z0",
-  "source_commit": "6802f87ff6d784e3b28b8d3be1469060b33c4501",
+  "source_commit": "31808cf696905528a010a9e91f834c7d808aaa46",
   "symbol_overlap_count": 0,
   "target_score": 0.82,
   "temperature_fit_count": 0
