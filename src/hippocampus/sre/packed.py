@@ -24,6 +24,7 @@ class PackedSRERetrievalBatch:
     candidate_node_ids: torch.Tensor
     candidate_features: torch.Tensor
     relevance: torch.Tensor
+    hard_negative: torch.Tensor
     adversary: torch.Tensor
     tie_break: torch.Tensor
 
@@ -226,6 +227,11 @@ def pack_sre_batch(
         dtype=torch.int16,
         device=target,
     )
+    hard_negative = torch.tensor(
+        [[label.hard_negative for label in case.labels] for case in cases],
+        dtype=torch.bool,
+        device=target,
+    )
     tie_break = torch.tensor(
         [
             [stable_u63(candidate.candidate_id) for candidate in case.candidates]
@@ -242,6 +248,7 @@ def pack_sre_batch(
         candidate_node_ids=candidate_ids,
         candidate_features=candidate_features.to(target, dtype=torch.float32),
         relevance=relevance,
+        hard_negative=hard_negative,
         adversary=adversary,
         tie_break=tie_break,
     )

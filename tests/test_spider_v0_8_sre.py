@@ -12,13 +12,33 @@ from hippocampus.sre import (
     SRECandidateLabel,
     SRERelationship,
     SRERetrievalCase,
+    PackedSRECanonicalRetriever,
+    SREModelConfig,
+    SRERetrievalLossConfig,
     build_candidate_features,
     build_runtime_vocabulary,
+    encode_sre_cases,
     evaluate_retrieval,
+    load_encoded_cases,
     load_sre_cases,
     pack_sre_batch,
+    save_encoded_cases,
+    sre_retrieval_loss,
     split_sre_development,
 )
+
+
+class _DeterministicEncoder:
+    width = 8
+
+    def encode(self, texts: list[str]) -> torch.Tensor:
+        rows = []
+        for text in texts:
+            values = torch.zeros(self.width)
+            for index, byte in enumerate(text.encode()):
+                values[index % self.width] += byte / 255
+            rows.append(values)
+        return torch.stack(rows) if rows else torch.empty((0, self.width))
 
 
 def _case(index: int, *, pool_size: int = 4, positive_count: int = 1) -> SRERetrievalCase:
@@ -96,6 +116,33 @@ def test_runtime_features_are_finite_and_pool_aligned() -> None:
     assert not np.array_equal(features[0], features[1])
 
 
+def test_encoded_case_cache_round_trip_validates_observations(tmp_path: Path) -> None:
+    cases = (_case(1), _case(2))
+    vocabulary = build_runtime_vocabulary(cases)
+    encoded = encode_sre_cases(
+        cases,
+        vocabulary=vocabulary,
+        encoder=_DeterministicEncoder(),
+        encoder_name="fixture",
+        encoder_revision="one",
+    )
+    path = tmp_path / "encoded.npz"
+    save_encoded_cases(path, encoded)
+    loaded = load_encoded_cases(path, cases=cases)
+    assert loaded.case_ids == encoded.case_ids
+    assert loaded.candidate_embeddings.shape == (2, 4, 8)
+    assert torch.allclose(loaded.query_embeddings, encoded.query_embeddings, atol=1e-3)
+    changed = list(cases)
+    changed[0] = SRERetrievalCase(
+        **{
+            **{name: getattr(cases[0], name) for name in cases[0].__dataclass_fields__},
+            "query_text": "changed observation",
+        }
+    )
+    with pytest.raises(ValueError, match="fingerprint"):
+        load_encoded_cases(path, cases=changed)
+
+
 def test_packed_sre_batch_enumerates_candidates_through_frontier() -> None:
     case = _case(2)
     vocabulary = build_runtime_vocabulary((case,))
@@ -122,6 +169,97 @@ def test_packed_sre_batch_enumerates_candidates_through_frontier() -> None:
     )
     assert neighbor_expansion.total_arcs == 2
     assert batch.graph.summaries.gather(expansion.destination_node_ids).total_rows == 4
+
+
+def test_canonical_retriever_uses_packed_frontiers_and_backpropagates() -> None:
+    cases = (_case(2), _case(3, positive_count=2))
+    vocabulary = build_runtime_vocabulary(cases)
+    width = 8
+    generator = torch.Generator().manual_seed(40)
+    packed = pack_sre_batch(
+        cases,
+        query_embeddings=torch.randn((2, width), generator=generator),
+        incoming_embeddings=torch.randn((2, width), generator=generator),
+        incoming_present=torch.tensor([True, False]),
+        candidate_embeddings=torch.randn((2, 4, width), generator=generator),
+        candidate_features=torch.stack(
+            [torch.from_numpy(build_candidate_features(case, vocabulary)) for case in cases]
+        ),
+        vocabulary=vocabulary,
+    )
+    model = PackedSRECanonicalRetriever(
+        SREModelConfig(
+            input_width=width,
+            feature_width=vocabulary.feature_width,
+            hidden_width=16,
+            attention_heads=4,
+        )
+    )
+    output = model(packed)
+    assert output.scores.shape == (2, 4)
+    assert output.null_scores.shape == (2,)
+    loss, components = sre_retrieval_loss(
+        output,
+        packed,
+        SRERetrievalLossConfig(alignment_weight=0.2),
+    )
+    loss.backward()
+    assert torch.isfinite(loss)
+    assert components["raw_hard_negative"].item() > 0
+    assert model.query_projection[1].weight.grad is not None
+
+
+def test_canonical_retriever_is_candidate_order_equivariant() -> None:
+    case = _case(9)
+    vocabulary = build_runtime_vocabulary((case,))
+    width = 8
+    generator = torch.Generator().manual_seed(41)
+    query = torch.randn((1, width), generator=generator)
+    incoming = torch.randn((1, width), generator=generator)
+    candidates = torch.randn((1, 4, width), generator=generator)
+    features = torch.from_numpy(build_candidate_features(case, vocabulary)).unsqueeze(0)
+    reversed_case = SRERetrievalCase(
+        case_id=case.case_id,
+        request_time=case.request_time,
+        query_text=case.query_text,
+        incoming_text=case.incoming_text,
+        candidates=tuple(reversed(case.candidates)),
+        relationships=case.relationships,
+        labels=tuple(reversed(case.labels)),
+        scenario_family=case.scenario_family,
+        entity_lineage=case.entity_lineage,
+    )
+    original = pack_sre_batch(
+        (case,),
+        query_embeddings=query,
+        incoming_embeddings=incoming,
+        incoming_present=torch.tensor([True]),
+        candidate_embeddings=candidates,
+        candidate_features=features,
+        vocabulary=vocabulary,
+    )
+    permuted = pack_sre_batch(
+        (reversed_case,),
+        query_embeddings=query,
+        incoming_embeddings=incoming,
+        incoming_present=torch.tensor([True]),
+        candidate_embeddings=candidates.flip(1),
+        candidate_features=features.flip(1),
+        vocabulary=vocabulary,
+    )
+    model = PackedSRECanonicalRetriever(
+        SREModelConfig(
+            input_width=width,
+            feature_width=vocabulary.feature_width,
+            hidden_width=16,
+            attention_heads=4,
+        )
+    ).eval()
+    with torch.no_grad():
+        first = model(original)
+        second = model(permuted)
+    assert torch.allclose(first.scores, second.scores.flip(1), atol=1e-5)
+    assert torch.allclose(first.null_scores, second.null_scores, atol=1e-5)
 
 
 def test_retrieval_metrics_reward_perfect_ranking_and_null_selection() -> None:
