@@ -7,7 +7,7 @@ from typing import Sequence
 import numpy as np
 import torch
 
-from ..config import GraphSchema, PackConfig
+from ..config import ExecutionMode, ExecutionPolicy, GraphSchema, PackConfig
 from ..graph import PackedGraph, pack_graph_from_topology
 from ..manifold import PackedManifoldFamily, pack_manifold_family
 from ..topology import TopologyComponent, pack_topology
@@ -93,6 +93,7 @@ def pack_sre_batch(
     candidate_features: torch.Tensor,
     vocabulary: SREVocabulary,
     device: torch.device | str = "cpu",
+    execution_policy: ExecutionPolicy | ExecutionMode | None = None,
     validate: bool = True,
 ) -> PackedSRERetrievalBatch:
     if not cases:
@@ -182,6 +183,7 @@ def pack_sre_batch(
     topology = pack_topology(
         components,
         device=target,
+        execution_policy=execution_policy,
         schema=schema,
         validate=validate,
     )
@@ -191,6 +193,7 @@ def pack_sre_batch(
         contexts,
         edges,
         pack_config=pack_config,
+        execution_policy=execution_policy,
         schema=schema,
         validate=validate,
     )

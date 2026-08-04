@@ -1,0 +1,28 @@
+{
+  "arm": "T2",
+  "description": "Packed canonical retriever with multi-positive alignment",
+  "trainable": true,
+  "steps": 1000,
+  "batch_size": 32,
+  "evaluation_batch_size": 16,
+  "checkpoint_interval": 250,
+  "learning_rate": 0.0005,
+  "weight_decay": 0.0001,
+  "gradient_clip": 1.0,
+  "model": {
+    "input_width": 384,
+    "feature_width": 82,
+    "hidden_width": 128,
+    "attention_heads": 4,
+    "set_layers": 1,
+    "dropout": 0.0,
+    "canonical_temperature": 0.1
+  },
+  "loss": {
+    "bce_weight": 1.0,
+    "listwise_weight": 0.5,
+    "hard_negative_weight": 0.25,
+    "alignment_weight": 0.25,
+    "ranking_margin": 0.25
+  }
+}

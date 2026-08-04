@@ -22,6 +22,7 @@ from hippocampus.sre import (
     load_encoded_cases,
     load_sre_cases,
     pack_sre_batch,
+    permute_partition_candidates,
     save_encoded_cases,
     sre_retrieval_loss,
     split_sre_development,
@@ -141,6 +142,30 @@ def test_encoded_case_cache_round_trip_validates_observations(tmp_path: Path) ->
     )
     with pytest.raises(ValueError, match="fingerprint"):
         load_encoded_cases(path, cases=changed)
+
+
+def test_partition_candidate_permutation_keeps_observations_aligned() -> None:
+    from hippocampus.sre.experiment import SREPartition
+
+    cases = (_case(4), _case(5))
+    encoded = encode_sre_cases(
+        cases,
+        vocabulary=build_runtime_vocabulary(cases),
+        encoder=_DeterministicEncoder(),
+        encoder_name="fixture",
+        encoder_revision="one",
+    )
+    partition = SREPartition(cases, encoded)
+    orders = torch.tensor([[3, 2, 1, 0], [1, 0, 3, 2]])
+    changed = permute_partition_candidates(partition, orders)
+    assert changed.cases[0].candidates[0] == cases[0].candidates[3]
+    assert torch.equal(
+        changed.encoded.candidate_embeddings[1, 0],
+        encoded.candidate_embeddings[1, 1],
+    )
+    assert changed.cases[1].labels[0].candidate_id == (
+        changed.cases[1].candidates[0].candidate_id
+    )
 
 
 def test_packed_sre_batch_enumerates_candidates_through_frontier() -> None:

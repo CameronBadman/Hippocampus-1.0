@@ -63,23 +63,17 @@ def _hard_negative_ranking(
     hard_negatives: torch.Tensor,
     margin: float,
 ) -> torch.Tensor:
-    losses = []
-    for case_scores, case_positive, case_negative in zip(
-        logits,
-        positives,
-        hard_negatives,
-        strict=True,
-    ):
-        positive_scores = case_scores[case_positive]
-        negative_scores = case_scores[case_negative]
-        if positive_scores.numel() and negative_scores.numel():
-            hardest = negative_scores.topk(min(8, negative_scores.numel())).values
-            losses.append(
-                F.softplus(
-                    hardest[:, None] - positive_scores[None, :] + margin
-                ).mean()
-            )
-    return torch.stack(losses).mean() if losses else logits.sum() * 0
+    hard_count = min(8, logits.shape[1])
+    masked_negatives = logits.masked_fill(~hard_negatives, -torch.inf)
+    hardest = masked_negatives.topk(hard_count, dim=1).values
+    valid_negative = torch.isfinite(hardest)
+    pair_mask = valid_negative[:, :, None] & positives[:, None, :]
+    if not bool(pair_mask.any()):
+        return logits.sum() * 0
+    pair_losses = F.softplus(
+        hardest[:, :, None] - logits[:, None, :] + margin
+    )
+    return pair_losses.masked_select(pair_mask).mean()
 
 
 def sre_retrieval_loss(

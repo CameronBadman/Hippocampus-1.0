@@ -1,0 +1,5 @@
+{
+  "arm": "T0",
+  "description": "Frozen MiniLM cosine plus registered runtime status control",
+  "trainable": false
+}

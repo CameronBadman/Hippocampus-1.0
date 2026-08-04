@@ -135,6 +135,7 @@ class PackedSRECanonicalRetriever(nn.Module):
         query_values = segment_mean(
             query_rows.values,
             query_rows.offsets,
+            execution_policy=batch.graph.topology.execution_policy,
         ).values
 
         candidate_expansion = batch.graph.topology.expand_frontier(
@@ -186,14 +187,17 @@ class PackedSRECanonicalRetriever(nn.Module):
         neighbor_mean = segment_mean(
             neighbor_values,
             neighbor_expansion.arc_offsets,
+            execution_policy=batch.graph.topology.execution_policy,
         ).values
         neighbor_maximum = segment_max(
             neighbor_values,
             neighbor_expansion.arc_offsets,
+            execution_policy=batch.graph.topology.execution_policy,
         ).values
         neighbor_edge_mean = segment_mean(
             neighbor_edge_values,
             neighbor_expansion.arc_offsets,
+            execution_policy=batch.graph.topology.execution_policy,
         ).values
 
         graph_positions = candidate_expansion.frontier_positions

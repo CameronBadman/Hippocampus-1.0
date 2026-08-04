@@ -86,12 +86,26 @@ def evaluate_retrieval(
         "macro_average_precision": float(np.mean(average_precisions)),
         "macro_hard_negative_pairwise_accuracy": macro_pairwise,
     }
+    positive_ranks = []
+    margins = []
+    for index, order in enumerate(orders):
+        ranks = np.flatnonzero(relevance[index, order]) + 1
+        if ranks.size:
+            positive_ranks.append(int(ranks.max()))
+            positives = scores[index, relevance[index]]
+            negatives = scores[index, ~relevance[index]]
+            margins.append(float(positives.min() - negatives.max()))
     result: dict[str, Any] = {
         "score": _harmonic(tuple(components.values())),
         "components": components,
         "answerable_case_count": len(reciprocal),
         "case_count": case_count,
         "oracle_cardinality_top_rank_exact": float(np.mean(exact_top_k)),
+        "scored_positive_coverage": 1.0,
+        "mean_worst_positive_rank": float(np.mean(positive_ranks)),
+        "maximum_worst_positive_rank": int(max(positive_ranks)),
+        "mean_positive_best_negative_margin": float(np.mean(margins)),
+        "minimum_positive_best_negative_margin": float(min(margins)),
     }
     if null_scores is not None:
         null = np.asarray(null_scores, dtype=np.float64)
@@ -119,6 +133,10 @@ def evaluate_retrieval(
         for family in sorted(set(scenario_families)):
             indexes = [index for index, value in enumerate(scenario_families) if value == family]
             answerable = [index for index in indexes if relevance[index].any()]
+            family_average_precision = [
+                _average_precision(relevance[index, orders[index]])
+                for index in answerable
+            ]
             per_family[family] = {
                 "case_count": len(indexes),
                 "answerable_case_count": len(answerable),
@@ -139,6 +157,16 @@ def evaluate_retrieval(
                         ]
                     )
                 ) if answerable else 0.0,
+                "average_precision": float(np.mean(family_average_precision))
+                if family_average_precision
+                else 0.0,
             }
         result["per_scenario_family"] = per_family
+        family_ap = [
+            value["average_precision"]
+            for value in per_family.values()
+            if value["answerable_case_count"]
+        ]
+        components["macro_average_precision"] = float(np.mean(family_ap))
+        result["score"] = _harmonic(tuple(components.values()))
     return result
