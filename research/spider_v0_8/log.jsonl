@@ -1,3 +1,7 @@
-{"experiment_id": "V08S-T0-s1701", "failure_reason": null, "hypothesis": "Frozen semantic/status control", "iteration": 1, "score": 0.6328809458996412, "status": "accepted"}
-{"experiment_id": "V08S-T1-s1701", "failure_reason": null, "hypothesis": "Packed canonical scorer without alignment", "iteration": 2, "score": 1.0, "status": "accepted"}
-{"experiment_id": "V08S-T2-s1701", "failure_reason": null, "hypothesis": "Multi-positive canonical alignment", "iteration": 3, "score": 0.9960754581105962, "status": "accepted"}
+{"experiment_id": "V08C-T1-s1802", "failure_reason": null, "hypothesis": "Packed canonical scorer without alignment", "iteration": 1, "score": 1.0, "status": "accepted"}
+{"experiment_id": "V08C-T1-s1903", "failure_reason": null, "hypothesis": "Packed canonical scorer without alignment", "iteration": 2, "score": 1.0, "status": "accepted"}
+{"experiment_id": "V08C-T2-s1802", "failure_reason": null, "hypothesis": "Multi-positive canonical alignment", "iteration": 3, "score": 0.9986790308674277, "status": "accepted"}
+{"experiment_id": "V08C-T2-s1903", "failure_reason": null, "hypothesis": "Multi-positive canonical alignment", "iteration": 4, "score": 0.9998295902130853, "status": "accepted"}
+{"experiment_id": "V08S-T0-s1701", "failure_reason": null, "hypothesis": "Frozen semantic/status control", "iteration": 5, "score": 0.6328809458996412, "status": "accepted"}
+{"experiment_id": "V08S-T1-s1701", "failure_reason": null, "hypothesis": "Packed canonical scorer without alignment", "iteration": 6, "score": 1.0, "status": "accepted"}
+{"experiment_id": "V08S-T2-s1701", "failure_reason": null, "hypothesis": "Multi-positive canonical alignment", "iteration": 7, "score": 0.9960754581105962, "status": "accepted"}

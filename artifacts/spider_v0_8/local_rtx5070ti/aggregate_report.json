@@ -1,5 +1,5 @@
 {
-  "accepted_run_count": 3,
+  "accepted_run_count": 7,
   "arms": {
     "T0": {
       "mean_components": {
@@ -22,32 +22,36 @@
         "recall_at_8": 1.0
       },
       "mean_score": 1.0,
-      "run_count": 1,
+      "run_count": 3,
       "scores": [
+        1.0,
+        1.0,
         1.0
       ]
     },
     "T2": {
       "mean_components": {
-        "macro_average_precision": 0.9897726236088306,
-        "macro_hard_negative_pairwise_accuracy": 0.9975290114551576,
+        "macro_average_precision": 0.9949419965942955,
+        "macro_hard_negative_pairwise_accuracy": 0.9988411242226519,
         "mrr": 1.0,
-        "recall_at_8": 0.9970588235294118
+        "recall_at_8": 0.9990196078431373
       },
-      "mean_score": 0.9960754581105962,
-      "run_count": 1,
+      "mean_score": 0.998194693063703,
+      "run_count": 3,
       "scores": [
+        0.9986790308674277,
+        0.9998295902130853,
         0.9960754581105962
       ]
     }
   },
   "component_floor": 0.8,
   "format": "spider-v0.8-sre-aggregate-v1",
-  "generated_at": "2026-08-04T04:35:22.297916+00:00",
+  "generated_at": "2026-08-04T04:39:34.997120+00:00",
   "invalid_run_count": 0,
   "recommendation": "T1",
   "sealed_access_count": 0,
-  "source_commit": "1d90f6e1348c6b64b322b25032a90dde332ca77c",
+  "source_commit": "7fbd65ec4e7367fc0dc17160f0421e3d17d36803",
   "target_met": true,
   "target_score": 0.85
 }
