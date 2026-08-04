@@ -32,6 +32,7 @@ from hippocampus.spider import (
     SpiderLossConfig,
     SpiderModelConfig,
     evidence_null_loss_term,
+    evidence_null_margin_loss_term,
     load_experiment,
 )
 from hippocampus.spider.types import CandidateOutputs
@@ -336,6 +337,40 @@ def test_graph_balanced_null_loss_handles_all_negative_graphs() -> None:
     assert torch.isfinite(logits.grad).all()
 
 
+def test_null_margin_uses_only_bounded_plausible_hard_negatives() -> None:
+    null = torch.tensor([0.5], requires_grad=True)
+    logits = torch.tensor([0.5, 3.0, 1.5, -2.0], requires_grad=True)
+    targets = torch.tensor([True, False, False, False])
+    plausible = torch.tensor([False, False, True, True])
+    term = evidence_null_margin_loss_term(
+        null,
+        logits,
+        targets,
+        plausible,
+        torch.zeros(4, dtype=torch.int32),
+        config=SpiderLossConfig(
+            evidence_null_margin=0.25,
+            evidence_null_margin_value=0.2,
+            evidence_null_hard_negative_count=1,
+        ),
+    )
+
+    assert term is not None
+    expected = 0.5 * (
+        torch.nn.functional.softplus(torch.tensor(0.2))
+        + torch.nn.functional.softplus(torch.tensor(1.2))
+    )
+    assert term.target_count == 1
+    assert torch.allclose(term.raw, expected)
+    term.weighted.backward()
+    assert null.grad is not None
+    assert logits.grad is not None
+    assert logits.grad[0] != 0
+    assert logits.grad[1] == 0
+    assert logits.grad[2] != 0
+    assert logits.grad[3] == 0
+
+
 def test_candidate_null_policy_requires_the_candidate_decoder(
     tmp_path: Path,
 ) -> None:
@@ -365,7 +400,7 @@ def test_v0_6_partitions_have_disjoint_symbol_namespaces() -> None:
 
 
 def test_v0_6_configs_use_no_calibrated_threshold_or_count() -> None:
-    for arm in ("Z0", "Z1", "Z2"):
+    for arm in ("Z0", "Z1", "Z2", "Z3"):
         raw = json.loads(
             (ROOT / f"configs/spider_v0_6/{arm}.json").read_text()
         )
@@ -383,9 +418,13 @@ def test_v0_6_configs_use_no_calibrated_threshold_or_count() -> None:
     assert z1.controller_config.evidence_selection_policy == "candidate_null"
     z2 = load_experiment(ROOT / "configs/spider_v0_6/Z2.json")
     assert z2.loss_config.evidence_null_mode == "graph_balanced"
+    z3 = load_experiment(ROOT / "configs/spider_v0_6/Z3.json")
+    assert z3.loss_config.evidence_null_mode == "graph_balanced"
+    assert z3.loss_config.evidence_null_margin == pytest.approx(0.25)
+    assert z3.loss_config.evidence_null_hard_negative_count == 4
 
     module = _autoresearch_module()
-    assert module.ARMS == ("Z0", "Z1", "Z2")
+    assert module.ARMS == ("Z0", "Z1", "Z2", "Z3")
 
     validate_calibration_source(
         split_name="model_selection",

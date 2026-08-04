@@ -39,6 +39,9 @@ class SpiderLossConfig:
     null_expansion: float = 1.0
     evidence_null: float = 0.0
     evidence_null_mode: EvidenceNullLossMode = "plain"
+    evidence_null_margin: float = 0.0
+    evidence_null_margin_value: float = 0.2
+    evidence_null_hard_negative_count: int = 4
     evidence_cardinality: float = 0.0
     evidence_candidate_count: float = 0.0
 
@@ -52,6 +55,13 @@ class SpiderLossConfig:
         if self.evidence_null_mode not in {"plain", "graph_balanced"}:
             raise ValueError(
                 "evidence_null_mode must be plain or graph_balanced"
+            )
+        if (
+            self.evidence_null_margin > 0
+            and self.evidence_null_hard_negative_count <= 0
+        ):
+            raise ValueError(
+                "evidence NULL margin requires a hard-negative count"
             )
         if (
             self.evidence_ranking > 0
@@ -548,6 +558,99 @@ def evidence_null_loss_term(
         raw,
         weight=config.evidence_null,
         target_count=target_count,
+    )
+
+
+def evidence_null_margin_loss_term(
+    null_logits: torch.Tensor | None,
+    candidate_logits: torch.Tensor,
+    candidate_targets: torch.Tensor,
+    plausible_negative_mask: torch.Tensor | None,
+    candidate_graph_ids: torch.Tensor,
+    *,
+    config: SpiderLossConfig,
+) -> LossTerm | None:
+    """Place positives and bounded graph-local hard negatives around NULL."""
+
+    if null_logits is None or config.evidence_null_margin == 0:
+        return None
+    if not (
+        candidate_logits.shape
+        == candidate_targets.shape
+        == candidate_graph_ids.shape
+    ):
+        raise ValueError("evidence NULL margin must align with candidates")
+    if (
+        plausible_negative_mask is not None
+        and plausible_negative_mask.shape != candidate_logits.shape
+    ):
+        raise ValueError("plausible negatives must align with candidates")
+    graph_ids = candidate_graph_ids.to(
+        device=null_logits.device,
+        dtype=torch.int64,
+    )
+    if graph_ids.numel() and (
+        bool((graph_ids < 0).any().item())
+        or bool((graph_ids >= null_logits.numel()).any().item())
+    ):
+        raise IndexError("candidate graph ID is out of range")
+    if candidate_logits.numel() == 0:
+        return _term(
+            _zero(null_logits),
+            weight=config.evidence_null_margin,
+            target_count=0,
+        )
+
+    targets = candidate_targets.bool()
+    plausible = (
+        plausible_negative_mask.bool()
+        if plausible_negative_mask is not None
+        else torch.zeros_like(targets)
+    )
+    relative = candidate_logits.float() - null_logits[graph_ids].float()
+    graph_losses: list[torch.Tensor] = []
+    for graph_index in range(int(null_logits.numel())):
+        graph_mask = graph_ids == graph_index
+        positive_relative = relative[graph_mask & targets]
+        negative_mask = graph_mask & ~targets
+        plausible_mask = negative_mask & plausible
+        selected_negative_mask = (
+            plausible_mask
+            if bool(plausible_mask.any().item())
+            else negative_mask
+        )
+        negative_relative = relative[selected_negative_mask]
+        if negative_relative.numel() > config.evidence_null_hard_negative_count:
+            negative_relative = torch.topk(
+                negative_relative,
+                k=config.evidence_null_hard_negative_count,
+                largest=True,
+                sorted=False,
+            ).values
+        class_losses: list[torch.Tensor] = []
+        if positive_relative.numel():
+            class_losses.append(
+                F.softplus(
+                    config.evidence_null_margin_value - positive_relative
+                ).mean()
+            )
+        if negative_relative.numel():
+            class_losses.append(
+                F.softplus(
+                    config.evidence_null_margin_value + negative_relative
+                ).mean()
+            )
+        if class_losses:
+            graph_losses.append(torch.stack(class_losses).mean())
+    raw = (
+        torch.stack(graph_losses).mean()
+        if graph_losses
+        else _zero(null_logits)
+    )
+    return _term(
+        raw,
+        weight=config.evidence_null_margin,
+        target_count=len(graph_losses),
     )
 
 

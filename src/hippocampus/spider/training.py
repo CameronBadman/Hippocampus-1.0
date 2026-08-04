@@ -40,6 +40,7 @@ from .losses import (
     evidence_candidate_count_loss_term,
     evidence_cardinality_loss_term,
     evidence_null_loss_term,
+    evidence_null_margin_loss_term,
     null_expansion_loss_term,
     termination_loss_report,
 )
@@ -583,6 +584,18 @@ def controller_rollout(
             proposal.candidate_graph_ids,
             config=config,
         )
+        evidence_null_margin_term = evidence_null_margin_loss_term(
+            (
+                proposal.evidence_candidate_null_logits
+                if proposal.evidence_candidate_null_logits is not None
+                else proposal.evidence_null_logits
+            ),
+            transition.refined_outputs.evidence_logits,
+            supervision.candidates.include_as_evidence,
+            supervision.candidates.evidence_plausible_negative,
+            proposal.candidate_graph_ids,
+            config=config,
+        )
         evidence_cardinality_term = evidence_cardinality_loss_term(
             proposal.evidence_cardinality_logits,
             torch.tensor(
@@ -615,6 +628,11 @@ def controller_rollout(
                     **(
                         {"evidence_null": evidence_null_term}
                         if evidence_null_term is not None
+                        else {}
+                    ),
+                    **(
+                        {"evidence_null_margin": evidence_null_margin_term}
+                        if evidence_null_margin_term is not None
                         else {}
                     ),
                     **(

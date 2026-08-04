@@ -24,7 +24,7 @@ from style_presets import rcparams
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "artifacts/spider_v0_6/local_rtx5070ti"
 SEEDS = (1701, 1802, 1903)
-ARMS = ("Z0", "Z1", "Z2")
+ARMS = ("Z0", "Z1", "Z2", "Z3")
 CONFIGS = {arm: ROOT / f"configs/spider_v0_6/{arm}.json" for arm in ARMS}
 TRAIN_STEPS = 2_000
 TARGET_SCORE = 0.82
