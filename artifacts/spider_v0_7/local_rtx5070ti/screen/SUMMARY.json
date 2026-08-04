@@ -1,0 +1,169 @@
+{
+  "accepted_training_run_count": 9,
+  "arm_summaries": {
+    "R0": {
+      "exact_evidence_set_accuracy": 0.7786458333333334,
+      "false_positives_per_case": 0.0537109375,
+      "macro_average_precision": 0.9190897817460317,
+      "precision": 0.9201387737803154,
+      "recall": 0.7608173076923077,
+      "score": 0.7608173076923077,
+      "scored_positive_coverage": 0.9995993589743589
+    },
+    "R1": {
+      "exact_evidence_set_accuracy": 0.7802734375,
+      "false_positives_per_case": 0.058268229166666664,
+      "macro_average_precision": 0.9196974206349205,
+      "precision": 0.9144422401707849,
+      "recall": 0.764823717948718,
+      "score": 0.764823717948718,
+      "scored_positive_coverage": 0.9995993589743589
+    },
+    "R2": {
+      "exact_evidence_set_accuracy": 0.9856770833333334,
+      "false_positives_per_case": 0.0107421875,
+      "macro_average_precision": 0.9981770833333333,
+      "precision": 0.9868859250115172,
+      "recall": 0.9927884615384616,
+      "score": 0.9856770833333334,
+      "scored_positive_coverage": 0.9995993589743589
+    }
+  },
+  "campaign": "Spider v0.7 canonical zero-shot binding",
+  "completed_steps": 1000,
+  "dataset_hash": "240d5c0e222f1ca6f056bf0b31140a094d126e7d2695916cdfc1d8815a199409",
+  "gate": {
+    "canonical_minimum_direct_auroc": 1.0,
+    "canonical_minimum_direct_top1_at_256": 0.9973958333333334,
+    "corroboration_recall_regression": -0.0031249999999999334,
+    "latest_valid_recall_regression": 0.0,
+    "passed": true,
+    "seed_results": [
+      {
+        "advances": true,
+        "exact_set_gain_over_R0": 0.20703125,
+        "lookup_recall_gain_over_R1": 0.9765625,
+        "seed": 1701
+      },
+      {
+        "advances": true,
+        "exact_set_gain_over_R0": 0.208984375,
+        "lookup_recall_gain_over_R1": 0.9765625,
+        "seed": 1802
+      },
+      {
+        "advances": true,
+        "exact_set_gain_over_R0": 0.205078125,
+        "lookup_recall_gain_over_R1": 1.0,
+        "seed": 1903
+      }
+    ],
+    "seed_wins": 3
+  },
+  "per_family": {
+    "R0": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.9921875,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 0.9916666666666667
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.9947916666666666,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9987029831387808,
+        "recall": 0.9934895833333334
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 0.615451388888889,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6276041666666666,
+        "false_positives_per_case": 0.21354166666666666,
+        "macro_evidence_average_precision": 0.9799975198412698,
+        "precision": 0.53008658008658,
+        "recall": 0.4791666666666667
+      }
+    },
+    "R1": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.9921875,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 0.9916666666666667
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.9947916666666666,
+        "false_positives_per_case": 0.0013020833333333333,
+        "macro_evidence_average_precision": 0.9991319444444444,
+        "precision": 0.9987029831387808,
+        "recall": 0.9934895833333334
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.5,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 0.6150173611111112,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.6341145833333334,
+        "false_positives_per_case": 0.23177083333333334,
+        "macro_evidence_average_precision": 0.9847718253968254,
+        "precision": 0.5227442612460685,
+        "recall": 0.5052083333333334
+      }
+    },
+    "R2": {
+      "corroboration": {
+        "exact_evidence_set_accuracy": 0.9934895833333334,
+        "false_positives_per_case": 0.0026041666666666665,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9979067260801556,
+        "recall": 0.9947916666666666
+      },
+      "latest_valid": {
+        "exact_evidence_set_accuracy": 0.99609375,
+        "false_positives_per_case": 0.0,
+        "macro_evidence_average_precision": 0.9991319444444444,
+        "precision": 1.0,
+        "recall": 0.9934895833333334
+      },
+      "lookup": {
+        "exact_evidence_set_accuracy": 0.9791666666666666,
+        "false_positives_per_case": 0.013020833333333334,
+        "macro_evidence_average_precision": 1.0,
+        "precision": 0.9751428130307241,
+        "recall": 0.984375
+      },
+      "reachability": {
+        "exact_evidence_set_accuracy": 0.9739583333333334,
+        "false_positives_per_case": 0.02734375,
+        "macro_evidence_average_precision": 0.9921875,
+        "precision": 0.9480309632270417,
+        "recall": 0.9947916666666666
+      }
+    }
+  },
+  "run_source_commits": [
+    "c75ead59616ba2f7e5ad5496495692e6fbd07f13",
+    "f6a1ebda612cfc95d94294f72c0dba5d79ce9e8b",
+    "fffc9b3bb1b6b6bf95b2c44cd89aa42d4a276009"
+  ],
+  "score_definition": "min(exact_set, precision, recall)",
+  "sealed_access_count": 0,
+  "selected_finalist": "R2",
+  "source_commit": "f6a1ebda612cfc95d94294f72c0dba5d79ce9e8b",
+  "stage": "screen",
+  "symbol_overlap_count": 0,
+  "target_score": 0.82,
+  "temperature_fit_count": 0,
+  "trainable_scope": "evidence"
+}
