@@ -31,12 +31,14 @@ from hippocampus.programs import (
     pack_rendered_cases,
 )
 from hippocampus.spider import (
+    BindingRetrievalConfig,
     ControllerExecutionPolicy,
     build_model,
     evaluate_closed_loop_batches,
     fast_calibrate_closed_loop_evidence,
     load_experiment,
     parameter_count,
+    run_model_binding_retrieval,
     train_oracle_batches,
 )
 
@@ -600,6 +602,15 @@ def main() -> None:
         experiment,
         selected_checkpoint,
     )
+    binding_retrieval = run_model_binding_retrieval(
+        model,
+        renderer,
+        config=BindingRetrievalConfig(seed=args.seed + 7_000_000),
+    )
+    _write_json(
+        args.output_dir / "binding_retrieval.json",
+        binding_retrieval.as_dict(),
+    )
     calibration_batches = _pack_static(
         calibration_cases,
         renderer=renderer,
@@ -710,6 +721,7 @@ def main() -> None:
         "calibration": calibration.as_dict(),
         "training": training_payload,
         "development_evaluation": evaluation_payload,
+        "binding_retrieval": binding_retrieval.as_dict(),
         "primary_metric": {
             "exact_evidence_set_accuracy": overall[
                 "exact_evidence_set_accuracy"

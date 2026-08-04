@@ -23,12 +23,15 @@ from hippocampus.programs import (
     verify_case,
 )
 from hippocampus.spider import (
+    BindingRetrievalConfig,
     CanonicalBindingEvidenceReadout,
     PooledScorer,
     SpiderModelConfig,
     load_experiment,
+    run_model_binding_retrieval,
 )
 from hippocampus.spider.types import CandidateReadoutContext, PaddedSet
+from hippocampus.spider.calibration import validate_calibration_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +43,18 @@ def _phase_b_module():
         sys.path.insert(0, scripts)
     path = ROOT / "scripts/spider_v0_4_phase_b.py"
     spec = importlib.util.spec_from_file_location("spider_v07_phase_b", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _autoresearch_module():
+    scripts = str(ROOT / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    path = ROOT / "scripts/run_spider_v0_7_autoresearch.py"
+    spec = importlib.util.spec_from_file_location("spider_v07_runner", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -346,6 +361,10 @@ def test_v0_7_configs_isolate_the_registered_alignment_variable() -> None:
         == "candidate_null"
         for experiment in experiments.values()
     )
+    validate_calibration_source(
+        split_name="model_selection",
+        dataset_version=V07_DATASET_VERSION,
+    )
 
 
 def test_evidence_only_scope_freezes_the_transition_backbone() -> None:
@@ -364,3 +383,82 @@ def test_evidence_only_scope_freezes_the_transition_backbone() -> None:
     )
     assert not model.query_projection.weight.requires_grad
     assert not model.transition[1].weight.requires_grad
+
+
+def test_binding_retrieval_probe_is_diagnostic_only() -> None:
+    schema = GraphSchema(summary_dim=16, context_dim=16, edge_dim=16)
+    renderer = SyntheticManifoldRenderer(
+        schema,
+        query_dim=16,
+        seed=91337,
+        geometry="orthogonal_aligned",
+    )
+    model = PooledScorer(
+        SpiderModelConfig(
+            summary_dim=16,
+            context_dim=16,
+            edge_dim=16,
+            query_dim=16,
+            d_model=32,
+            num_heads=4,
+            num_blocks=1,
+            path_rows=4,
+            evidence_rows=4,
+            evidence_readout="canonical_binding",
+        )
+    )
+    before = {
+        name: value.detach().clone()
+        for name, value in model.state_dict().items()
+    }
+
+    report = run_model_binding_retrieval(
+        model,
+        renderer,
+        config=BindingRetrievalConfig(
+            train_symbol_count=64,
+            test_symbol_count=256,
+            steps=1,
+            batch_size=32,
+            seed=97,
+        ),
+    )
+
+    assert [stage.stage for stage in report.stages] == [
+        "raw",
+        "family_projected",
+        "evidence_canonical",
+    ]
+    assert report.diagnostic_only
+    assert all(
+        torch.equal(before[name], value)
+        for name, value in model.state_dict().items()
+    )
+
+
+def test_v0_7_runner_resolves_frozen_z1_checkpoints() -> None:
+    module = _autoresearch_module()
+
+    assert module.SCREEN_ARMS == ("R0", "R1", "R2")
+    assert module.CONFIRM_ARMS == ("R0", "R2")
+    assert module.TARGET_SCORE == 0.82
+    for seed in module.SEEDS:
+        checkpoint = module._v06_z1_checkpoint(seed)
+        assert checkpoint.is_file()
+        assert f"V06-Z1-s{seed}" in str(checkpoint)
+
+
+def test_v0_7_score_uses_the_weakest_metric_and_coverage_guard() -> None:
+    module = _autoresearch_module()
+    row = {
+        "primary_metric": {
+            "exact_evidence_set_accuracy": 0.88,
+            "precision": 0.91,
+            "recall": 0.83,
+            "scored_positive_coverage": 0.99,
+        }
+    }
+
+    assert module._score(row) == 0.83
+    row["primary_metric"]["scored_positive_coverage"] = 0.97
+    assert module._score(row) == 0.0

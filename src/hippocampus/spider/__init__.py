@@ -1,6 +1,13 @@
 """Trainable recurrent manifold graph interpreter and deterministic controller."""
 
 from .baselines import FlatTransformerScorer, PooledScorer
+from .binding_probe import (
+    BindingPairRetrieval,
+    BindingRetrievalConfig,
+    BindingRetrievalReport,
+    BindingStageRetrieval,
+    run_model_binding_retrieval,
+)
 from .calibration import (
     EvidenceCalibration,
     PrecisionRecallPoint,
@@ -157,6 +164,10 @@ __all__ = [
     "ActionDiagnostic",
     "ActionSchedule",
     "ActionSource",
+    "BindingPairRetrieval",
+    "BindingRetrievalConfig",
+    "BindingRetrievalReport",
+    "BindingStageRetrieval",
     "CandidateOutputs",
     "CandidateEvidenceSetDecoder",
     "CandidateEvidenceNullDecoder",
@@ -268,6 +279,7 @@ __all__ = [
     "parameter_count",
     "padded_family_gather",
     "precision_recall_curve",
+    "run_model_binding_retrieval",
     "stable_candidate_selection",
     "termination_control_features",
     "termination_loss_report",

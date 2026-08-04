@@ -26,3 +26,6 @@ artifacts/spider_v0_5/**/.campaign.lock
 artifacts/spider_v0_6/**/runs/
 artifacts/spider_v0_6/**/logs/
 artifacts/spider_v0_6/**/.campaign.lock
+artifacts/spider_v0_7/**/runs/
+artifacts/spider_v0_7/**/logs/
+artifacts/spider_v0_7/**/.campaign.lock
