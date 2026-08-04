@@ -14,6 +14,7 @@ V04_DATASET_VERSION = "spider-programs-v0.4-aligned-dev"
 V04_1_DATASET_VERSION = "spider-programs-v0.4.1-aligned-evidence-dev"
 V05_DATASET_VERSION = "spider-programs-v0.5-score-decode-dev"
 V06_DATASET_VERSION = "spider-programs-v0.6-zero-shot-dev"
+V07_DATASET_VERSION = "spider-programs-v0.7-binding-dev"
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,6 +165,37 @@ def default_zero_shot_specs() -> tuple[AlignedDevSplitSpec, ...]:
     )
 
 
+def default_binding_specs() -> tuple[AlignedDevSplitSpec, ...]:
+    """Return symbol-disjoint, non-sealed Spider v0.7 partitions."""
+
+    return (
+        AlignedDevSplitSpec(
+            "training",
+            8_192,
+            1_210_000,
+            dataset_version=V07_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "model_selection",
+            512,
+            1_310_000,
+            dataset_version=V07_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "calibration",
+            512,
+            1_320_000,
+            dataset_version=V07_DATASET_VERSION,
+        ),
+        AlignedDevSplitSpec(
+            "development_evaluation",
+            1_024,
+            1_330_000,
+            dataset_version=V07_DATASET_VERSION,
+        ),
+    )
+
+
 _GRAPH_SIZE_BUCKETS = (8, 16, 24, 32)
 _PATH_LENGTH_BUCKETS = (1, 2, 3, 4)
 
@@ -285,6 +317,22 @@ def generate_zero_shot_cases(
     return _generate_supported_evidence_cases(spec, limit=limit)
 
 
+def generate_binding_cases(
+    spec: AlignedDevSplitSpec,
+    *,
+    limit: int | None = None,
+) -> tuple[GraphProgramCase, ...]:
+    """Generate Spider v0.7 cases with matched lookup conjunctions."""
+
+    if spec.dataset_version != V07_DATASET_VERSION:
+        raise ValueError("binding cases require the v0.7 dataset version")
+    return _generate_supported_evidence_cases(
+        spec,
+        limit=limit,
+        lookup_binding_mode="matched_conjunction",
+    )
+
+
 def observable_symbols(cases: Sequence[GraphProgramCase]) -> set[str]:
     """Return every model-visible surface symbol in a case collection."""
 
@@ -305,6 +353,7 @@ def _generate_supported_evidence_cases(
     spec: AlignedDevSplitSpec,
     *,
     limit: int | None,
+    lookup_binding_mode: str = "legacy_value_shared",
 ) -> tuple[GraphProgramCase, ...]:
     """Generate evidence-only cases without unsupported-query shortcuts."""
 
@@ -329,22 +378,32 @@ def _generate_supported_evidence_cases(
                     min_path_length=path_length,
                     max_path_length=path_length,
                     generator_version=spec.dataset_version,
+                    lookup_binding_mode=lookup_binding_mode,
                 )
             )
             generator_cache[cache_key] = generator
         unknown_decision = None
         context_budget_exhausted = False
-        if not answerable:
+        if not answerable and not (
+            lookup_binding_mode == "matched_conjunction"
+            and family is ProgramFamily.LOOKUP
+        ):
             outcome_group = index // len(families)
             if (outcome_group // 2) % 2 == 1:
                 unknown_decision = TerminationDecision.UNKNOWN_INCOMPLETE
                 context_budget_exhausted = (
                     family is ProgramFamily.LATEST_VALID
                 )
+        case_seed = spec.seed_start + index
+        if (
+            lookup_binding_mode == "matched_conjunction"
+            and family is ProgramFamily.LOOKUP
+        ):
+            case_seed = spec.seed_start + (index // 8) * 8
         cases.append(
             generator.generate(
                 family=family,
-                seed=spec.seed_start + index,
+                seed=case_seed,
                 answerable=answerable,
                 require_multiple_paths=(
                     family is ProgramFamily.REACHABILITY and index % 3 == 0

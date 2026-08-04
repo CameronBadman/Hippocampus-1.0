@@ -1,0 +1,174 @@
+{
+  "aggregate_sha256": "240d5c0e222f1ca6f056bf0b31140a094d126e7d2695916cdfc1d8815a199409",
+  "dataset_version": "spider-programs-v0.7-binding-dev",
+  "matched_lookup_pair_count": 1280,
+  "partition_count": 4,
+  "purpose": "zero-shot relation/value binding and exact evidence",
+  "related_view_partition_rule": "matched lookup seeds stay in one partition",
+  "sealed_access_count": 0,
+  "splits": [
+    {
+      "case_count": 8192,
+      "distributions": {
+        "family": {
+          "corroboration": 2048,
+          "latest_valid": 2048,
+          "lookup": 2048,
+          "reachability": 2048
+        },
+        "graph_size": {
+          "16": 2048,
+          "24": 2048,
+          "32": 2048,
+          "8": 2048
+        },
+        "observed_path_length": {
+          "0": 3072,
+          "1": 4267,
+          "2": 341,
+          "3": 256,
+          "4": 256
+        },
+        "outcome": {
+          "answerable": 4096,
+          "unknown": 4096
+        },
+        "required_evidence_cardinality": {
+          "0": 3072,
+          "1": 3584,
+          "2": 1536
+        }
+      },
+      "manifest_file": "training.json",
+      "matched_lookup_pair_count": 1024,
+      "name": "training",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "5c465c52713d150d46eda4df3db513c865620df7f067649f5c6a6101ad95ef72",
+      "symbol_count": 595612,
+      "symbol_sha256": "3add6c5a01d2ee61f85bd2c6862b54323f13d36a52a40368fefb433b4069a073"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 192,
+          "1": 267,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 192,
+          "1": 224,
+          "2": 96
+        }
+      },
+      "manifest_file": "model_selection.json",
+      "matched_lookup_pair_count": 64,
+      "name": "model_selection",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "ae8364a8616633f93110de63847edc60025fbcabd29b0795e5c2980f5663d886",
+      "symbol_count": 37227,
+      "symbol_sha256": "c8fdeb31d33dafb3e8c17ba94df82cb05ac7b79405d18d91a7a5bdaeb8ee1304"
+    },
+    {
+      "case_count": 512,
+      "distributions": {
+        "family": {
+          "corroboration": 128,
+          "latest_valid": 128,
+          "lookup": 128,
+          "reachability": 128
+        },
+        "graph_size": {
+          "16": 128,
+          "24": 128,
+          "32": 128,
+          "8": 128
+        },
+        "observed_path_length": {
+          "0": 192,
+          "1": 267,
+          "2": 21,
+          "3": 16,
+          "4": 16
+        },
+        "outcome": {
+          "answerable": 256,
+          "unknown": 256
+        },
+        "required_evidence_cardinality": {
+          "0": 192,
+          "1": 224,
+          "2": 96
+        }
+      },
+      "manifest_file": "calibration.json",
+      "matched_lookup_pair_count": 64,
+      "name": "calibration",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "52fd0f01a29f9cc5f67e271b7c0b123a955d876b859309895a351f22d7591809",
+      "symbol_count": 37233,
+      "symbol_sha256": "a5b4d2e2ff5b114f86186c93b66b69623e1b150affc470f5b2fdf13ef380e13d"
+    },
+    {
+      "case_count": 1024,
+      "distributions": {
+        "family": {
+          "corroboration": 256,
+          "latest_valid": 256,
+          "lookup": 256,
+          "reachability": 256
+        },
+        "graph_size": {
+          "16": 256,
+          "24": 256,
+          "32": 256,
+          "8": 256
+        },
+        "observed_path_length": {
+          "0": 384,
+          "1": 533,
+          "2": 43,
+          "3": 32,
+          "4": 32
+        },
+        "outcome": {
+          "answerable": 512,
+          "unknown": 512
+        },
+        "required_evidence_cardinality": {
+          "0": 384,
+          "1": 448,
+          "2": 192
+        }
+      },
+      "manifest_file": "development_evaluation.json",
+      "matched_lookup_pair_count": 128,
+      "name": "development_evaluation",
+      "query_cardinality_answerability_accuracy": 0.5,
+      "sha256": "f1ac955999141608ae8ad3053f858cfd77ce09d1223cb0a040f6f0c3272936af",
+      "symbol_count": 74445,
+      "symbol_sha256": "b1c68f15666708264ac00675a3eeea3413fd610130c216bfac16d9484b6f383d"
+    }
+  ],
+  "symbol_overlap_count": 0,
+  "total_case_count": 10240,
+  "total_symbol_count": 744517
+}

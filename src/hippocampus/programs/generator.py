@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import random
 from dataclasses import dataclass, replace
-from typing import Callable
+from typing import Callable, Literal
 
 from .schema import (
     CandidateTarget,
@@ -31,6 +31,10 @@ class GeneratorConfig:
     max_context_rows: int = 6
     max_distractor_edges: int = 8
     generator_version: str = "spider-programs-v0.1"
+    lookup_binding_mode: Literal[
+        "legacy_value_shared",
+        "matched_conjunction",
+    ] = "legacy_value_shared"
 
     def __post_init__(self) -> None:
         if self.min_nodes < 8:
@@ -49,6 +53,11 @@ class GeneratorConfig:
             raise ValueError("context row counts must be non-negative")
         if self.max_context_rows < self.min_context_rows:
             raise ValueError("invalid context row range")
+        if self.lookup_binding_mode not in {
+            "legacy_value_shared",
+            "matched_conjunction",
+        }:
+            raise ValueError("unsupported lookup binding mode")
 
 
 @dataclass(slots=True)
@@ -93,8 +102,14 @@ class GraphProgramGenerator:
             if answerable is None
             else answerable
         )
+        rng_answerable = (
+            False
+            if resolved_family is ProgramFamily.LOOKUP
+            and self.config.lookup_binding_mode == "matched_conjunction"
+            else resolved_answerable
+        )
         rng = random.Random(
-            self._derived_seed(seed, resolved_family.value, resolved_answerable)
+            self._derived_seed(seed, resolved_family.value, rng_answerable)
         )
         dispatch: dict[ProgramFamily, Callable[..., GraphProgramCase]] = {
             ProgramFamily.LOOKUP: self._generate_lookup,
@@ -414,6 +429,13 @@ class GraphProgramGenerator:
         answerable: bool,
         require_multiple_paths: bool,
     ) -> GraphProgramCase:
+        if self.config.lookup_binding_mode == "matched_conjunction":
+            return self._generate_matched_lookup(
+                rng=rng,
+                seed=seed,
+                answerable=answerable,
+                require_multiple_paths=require_multiple_paths,
+            )
         del require_multiple_paths
         node_count = rng.randint(self.config.min_nodes, self.config.max_nodes)
         nodes = self._base_nodes(rng, node_count)
@@ -482,6 +504,140 @@ class GraphProgramGenerator:
                 acceptable=answerable and index == decisive_edge,
                 priority_tier=0 if answerable and index == decisive_edge else 1,
                 remaining_cost=0.0 if answerable and index == decisive_edge else 1.0,
+                include_as_evidence=answerable and index == decisive_edge,
+                support=1.0 if answerable and index == decisive_edge else 0.0,
+            )
+            for index, edge in enumerate(frozen_edges)
+            if edge.source_node == start
+        )
+        answer_nodes = (correct,) if answerable else ()
+        termination = TerminationTarget(
+            TerminationDecision.ANSWER
+            if answerable
+            else TerminationDecision.UNKNOWN_ABSENT,
+            answer_nodes,
+        )
+        trace = ParallelOracleTrace(
+            rounds=(OracleRound((start,), candidates, termination),),
+            valid_paths=((start, correct),) if answerable else (),
+        )
+        return self._final_case(
+            family=ProgramFamily.LOOKUP,
+            seed=seed,
+            answerable=answerable,
+            nodes=nodes,
+            edges=frozen_edges,
+            query_atoms=(
+                ObservableAtom((nodes[start].name,)),
+                ObservableAtom((desired_relation,)),
+                ObservableAtom((desired_value,)),
+            ),
+            start_nodes=(start,),
+            answer_nodes=answer_nodes,
+            evidence_nodes=answer_nodes,
+            trace=trace,
+            termination=termination,
+            context_budget=0,
+        )
+
+    def _generate_matched_lookup(
+        self,
+        *,
+        rng: random.Random,
+        seed: int,
+        answerable: bool,
+        require_multiple_paths: bool,
+    ) -> GraphProgramCase:
+        """Generate a metadata-matched relation/value conjunction task.
+
+        Answerable and absent cases generated with the same seed share their
+        topology, symbol inventory, row counts, and scalar inventory. The
+        absent case breaks the sole valid relation/value conjunction while
+        retaining each observable token elsewhere in the candidate set.
+        """
+
+        del require_multiple_paths
+        node_count = rng.randint(self.config.min_nodes, self.config.max_nodes)
+        nodes = self._base_nodes(rng, node_count)
+        roles = list(range(node_count))
+        rng.shuffle(roles)
+        start, correct, wrong_value, wrong_relation, invalid = roles[:5]
+
+        desired_value = self._surface(rng, "v")
+        other_value = self._surface(rng, "v")
+        desired_relation = self._surface(rng, "r")
+        other_relation = self._surface(rng, "r")
+        foreground = (correct, wrong_value, wrong_relation, invalid)
+        target_base_rows = max(len(nodes[node_id].summary) for node_id in foreground)
+        for node_id in foreground:
+            while len(nodes[node_id].summary) < target_base_rows:
+                nodes[node_id].summary.append(
+                    ObservableAtom((self._surface(rng, "a"),))
+                )
+        destination_values = (
+            desired_value if answerable else other_value,
+            other_value,
+            desired_value,
+            desired_value,
+        )
+        for node_id, value in zip(
+            foreground,
+            destination_values,
+            strict=True,
+        ):
+            nodes[node_id].summary.append(ObservableAtom((value,)))
+
+        relations = (
+            desired_relation if answerable else other_relation,
+            desired_relation,
+            other_relation,
+            desired_relation,
+        )
+        validity = (True, True, True, False)
+        gate_values = (1.0, 1.0, 1.0, -1.0)
+        gate_tokens = tuple(self._surface(rng, "gate") for _ in foreground)
+        used_edges: set[int] = set()
+        edges: list[ProgramEdge] = []
+        for node_id, relation, is_valid, gate_value, gate_token in zip(
+            foreground,
+            relations,
+            validity,
+            gate_values,
+            gate_tokens,
+            strict=True,
+        ):
+            edges.append(
+                self._edge(
+                    rng,
+                    used_edges,
+                    start,
+                    node_id,
+                    (
+                        ObservableAtom((relation,)),
+                        ObservableAtom((gate_token,), scalar=gate_value),
+                    ),
+                    valid=is_valid,
+                )
+            )
+        decisive_latent_id = edges[0].latent_id
+        self._add_background_edges(rng, edges, used_edges, nodes, {start})
+        frozen_edges = self._shuffle_edges(rng, edges)
+        decisive_edge = next(
+            index
+            for index, edge in enumerate(frozen_edges)
+            if edge.latent_id == decisive_latent_id
+        )
+
+        candidates = tuple(
+            CandidateTarget(
+                edge_id=index,
+                source_node=edge.source_node,
+                destination_node=edge.destination_node,
+                acceptable=answerable and index == decisive_edge,
+                priority_tier=0 if answerable and index == decisive_edge else 1,
+                remaining_cost=(
+                    0.0 if answerable and index == decisive_edge else 1.0
+                ),
                 include_as_evidence=answerable and index == decisive_edge,
                 support=1.0 if answerable and index == decisive_edge else 0.0,
             )
