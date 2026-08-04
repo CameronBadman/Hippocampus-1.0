@@ -1,0 +1,16 @@
+{
+  "format": "spider-v0.8-sre-source-manifest-v1",
+  "source_repository": "/home/cameron/projects/hippo-qwen-2",
+  "source_commit": "ee2fc4a",
+  "synthetic": true,
+  "sealed_access_count": 0,
+  "files": {
+    "train.inputs.jsonl": "ddfd76ce63c588001d6b0f93d1a09c879d7dfdd86f9892751e6f105d9f91d207",
+    "train.labels.jsonl": "966fe084deba95f875d0cf8a42426330df857551ac039545d19a686fab0bca21",
+    "validation.inputs.jsonl": "3efff43b641b9e2b538c2f90947d713500f4ae5efc164f2f2d751bc418dd9cd8",
+    "validation.labels.jsonl": "1764c9ecc44626e211af88272fe074c26defd60251253c39e7ff1d95bceb6ec1",
+    "demo.inputs.jsonl": "5ece203ce0edcccad99dadbfe66988e05e49bd8bb6c7f8c95cd24fdb8f43a11f",
+    "demo.labels.jsonl": "d45b4460d4ff79e00f3cc52e7da639a869cbf34f8f06ef8430126a8e7d69fce9",
+    "sre_agent_demo.json": "167df7557c2980fa6158091cd94fd5aa525a4f7dd0c273b3d110a8907c31ea65"
+  }
+}

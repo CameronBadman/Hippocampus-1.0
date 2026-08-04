@@ -29,3 +29,7 @@ artifacts/spider_v0_6/**/.campaign.lock
 artifacts/spider_v0_7/**/runs/
 artifacts/spider_v0_7/**/logs/
 artifacts/spider_v0_7/**/.campaign.lock
+artifacts/spider_v0_8/**/cache/
+artifacts/spider_v0_8/**/runs/
+artifacts/spider_v0_8/**/logs/
+artifacts/spider_v0_8/**/.campaign.lock

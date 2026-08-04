@@ -13,6 +13,7 @@ dependencies = ["numpy>=2", "torch>=2.2"]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+sre = ["transformers>=5,<6"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hippocampus"]
