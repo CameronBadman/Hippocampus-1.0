@@ -80,7 +80,8 @@ the ledger and reverted before the next hypothesis.
 | 0 | Freeze the symbol-disjoint, calibration-free protocol. | kept | 0.7444 | v0.5 recall is the limiting control statistic; no sealed data is in scope. |
 | 1 | Re-run the global learned NULL without calibration. | control | 0.7600 | Three seeds; exact 0.7809, precision 0.9322, recall 0.7600. Lookup recall was zero. |
 | 2 | Condition NULL on the current candidate set. | rejected | 0.7608 | Exact set improved by 0.0101, but recall improved by only 0.0008 and the arm won one of three seeds. |
+| 3 | Balance relative-energy BCE within each graph state. | kept parent | 0.7998 | Won two seeds and raised recall to 0.8021, but precision fell to 0.8722 and lookup recall stayed at 0.0026. |
 
-Iteration 3 is therefore the pre-registered graph-balanced relative-energy
-objective. The architecture, data, raw zero-margin inference rule, and all
-non-evidence losses remain fixed.
+Iteration 4 is therefore the final pre-registered bounded hard-negative margin
+around NULL, layered on the graph-balanced objective. The architecture, data,
+raw zero-margin inference rule, and all non-evidence losses remain fixed.

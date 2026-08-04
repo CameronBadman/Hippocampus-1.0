@@ -2,3 +2,4 @@ iteration	timestamp	hypothesis	status	score	baseline_score	delta	notes
 0	2026-08-04T00:00:00+10:00	freeze calibration-free candidate-energy protocol	kept	0.7444	0.7444	0.0000	unseen symbols; zero-margin NULL comparison; no sealed access
 1	2026-08-04T10:25:03+10:00	global learned NULL without calibration	control	0.7600	0.7444	0.0156	three seeds; exact=0.7809 precision=0.9322 recall=0.7600 coverage=1.0000
 2	2026-08-04T10:25:03+10:00	candidate-conditioned NULL with plain relative BCE	rejected	0.7608	0.7600	0.0008	one of three seed wins; lookup recall=0; no temperature or threshold fit
+3	2026-08-04T10:52:14+10:00	graph-balanced candidate-to-NULL BCE	kept	0.7998	0.7600	0.0398	two seed wins; recall=0.8021 precision=0.8722 lookup recall=0.0026; not finalist

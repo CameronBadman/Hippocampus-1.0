@@ -23,7 +23,7 @@
   "score": 0.7600160256410257,
   "sealed_access_count": 0,
   "selected_arm": "Z0",
-  "selection_reason": "candidate-relative NULL did not pass the zero-shot gate",
+  "selection_reason": "no candidate passed the zero-shot gate",
   "symbol_overlap_count": 0,
   "temperature_fit_count": 0
 }

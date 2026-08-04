@@ -45,3 +45,23 @@ separately, give each present class equal mass, then average over graph states.
 This tests whether large negative candidate sets dominate the boundary. It does
 not alter inference: selection remains the raw comparison
 `candidate_energy > null_energy` on unseen symbols.
+
+## Iteration 3 result — graph-balanced relative energy
+
+- Date: 2026-08-04 Australia/Brisbane.
+- Source: `6802f87ff6d784e3b28b8d3be1469060b33c4501`.
+- Runs: `V06-Z2-s1701`, `V06-Z2-s1802`, and `V06-Z2-s1903`.
+- Mean score: 0.7998 (exact 0.7998, precision 0.8722, recall 0.8021,
+  scored-positive coverage 1.0000).
+- Matched outcome: two seed wins over Z0. Reachability recall increased from
+  0.4531 to 0.7161, while lookup recall remained 0.0026.
+- Decision: keep as the parent for iteration 4 because the score improved by
+  0.0398. Do not select it as a finalist: it misses the 0.82 target and the
+  0.90 precision constraint.
+
+## Iteration 4 hypothesis — bounded hard-negative NULL margin
+
+Retain graph-balanced BCE and add a modest loss that places required positives
+above NULL and only the highest-scoring structurally plausible negatives below
+NULL. Bound the negative set per graph so easy-negative count cannot dominate.
+This is the final registered iteration and does not change inference.
