@@ -1,0 +1,109 @@
+{
+  "dataset": "sre-incident-memory-v3-synthetic",
+  "encoder": "sentence-transformers/all-MiniLM-L6-v2",
+  "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "format": "spider-v0.8-sre-split-manifest-v1",
+  "partitions": {
+    "demo": {
+      "balance": {
+        "clock_skew|evidence=1": 1,
+        "regional_failover|evidence=4": 1,
+        "secret_rotation|evidence=2": 1
+      },
+      "case_count": 3,
+      "case_id_sha256": "7f32e48590ad502fd5c05342b10a0f3c7b19e7fef8de6de643e9f65b743448d2"
+    },
+    "evaluation": {
+      "balance": {
+        "clock_skew|evidence=0": 5,
+        "clock_skew|evidence=1": 12,
+        "clock_skew|evidence=2": 3,
+        "clock_skew|evidence=3": 13,
+        "regional_failover|evidence=0": 4,
+        "regional_failover|evidence=2": 3,
+        "regional_failover|evidence=3": 14,
+        "regional_failover|evidence=4": 12,
+        "secret_rotation|evidence=0": 6,
+        "secret_rotation|evidence=2": 3,
+        "secret_rotation|evidence=3": 13,
+        "secret_rotation|evidence=4": 12
+      },
+      "case_count": 100,
+      "case_id_sha256": "b87e455ee15375b4be74293c75feb2ce645d1d65d786b1a2956b5cbf943fa566"
+    },
+    "selection": {
+      "balance": {
+        "clock_skew|evidence=0": 5,
+        "clock_skew|evidence=1": 12,
+        "clock_skew|evidence=2": 4,
+        "clock_skew|evidence=3": 13,
+        "regional_failover|evidence=0": 5,
+        "regional_failover|evidence=2": 4,
+        "regional_failover|evidence=3": 14,
+        "regional_failover|evidence=4": 11,
+        "secret_rotation|evidence=0": 5,
+        "secret_rotation|evidence=2": 3,
+        "secret_rotation|evidence=3": 13,
+        "secret_rotation|evidence=4": 11
+      },
+      "case_count": 100,
+      "case_id_sha256": "30b5419a54d8c193bca3516b0bbef2a4295f534664b11a835f4535779da9c114"
+    },
+    "train": {
+      "balance": {
+        "bad_deployment|evidence=0": 17,
+        "bad_deployment|evidence=2": 8,
+        "bad_deployment|evidence=3": 62,
+        "bad_deployment|evidence=4": 47,
+        "cache_stampede|evidence=0": 27,
+        "cache_stampede|evidence=2": 12,
+        "cache_stampede|evidence=3": 51,
+        "cache_stampede|evidence=4": 43,
+        "certificate_rotation|evidence=0": 17,
+        "certificate_rotation|evidence=1": 50,
+        "certificate_rotation|evidence=2": 12,
+        "certificate_rotation|evidence=3": 54,
+        "db_connection_exhaustion|evidence=0": 22,
+        "db_connection_exhaustion|evidence=2": 15,
+        "db_connection_exhaustion|evidence=3": 46,
+        "db_connection_exhaustion|evidence=4": 51,
+        "dependency_timeout|evidence=0": 21,
+        "dependency_timeout|evidence=1": 49,
+        "dependency_timeout|evidence=2": 15,
+        "dependency_timeout|evidence=3": 49,
+        "disk_pressure|evidence=0": 15,
+        "disk_pressure|evidence=2": 14,
+        "disk_pressure|evidence=3": 52,
+        "disk_pressure|evidence=4": 52,
+        "feature_flag_regression|evidence=0": 22,
+        "feature_flag_regression|evidence=2": 12,
+        "feature_flag_regression|evidence=3": 48,
+        "feature_flag_regression|evidence=4": 51,
+        "memory_leak|evidence=0": 17,
+        "memory_leak|evidence=1": 47,
+        "memory_leak|evidence=2": 14,
+        "memory_leak|evidence=3": 55,
+        "queue_backlog|evidence=0": 29,
+        "queue_backlog|evidence=2": 22,
+        "queue_backlog|evidence=3": 46,
+        "queue_backlog|evidence=4": 37,
+        "rate_limit_exhaustion|evidence=0": 19,
+        "rate_limit_exhaustion|evidence=1": 33,
+        "rate_limit_exhaustion|evidence=2": 13,
+        "rate_limit_exhaustion|evidence=3": 68,
+        "schema_mismatch|evidence=0": 15,
+        "schema_mismatch|evidence=2": 12,
+        "schema_mismatch|evidence=3": 54,
+        "schema_mismatch|evidence=4": 52,
+        "stale_dns|evidence=0": 19,
+        "stale_dns|evidence=2": 11,
+        "stale_dns|evidence=3": 55,
+        "stale_dns|evidence=4": 48
+      },
+      "case_count": 1600,
+      "case_id_sha256": "e8863bd1d9e2a2cce5d9bd90c19de6bc54a66a51c15f153be9366897fec92cfd"
+    }
+  },
+  "sealed_access_count": 0,
+  "selection_seed": 80008
+}
