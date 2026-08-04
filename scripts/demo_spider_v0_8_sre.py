@@ -16,15 +16,15 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from hippocampus.sre import load_development_corpus, pack_partition  # noqa: E402
 from evaluate_spider_v0_8_sre import (  # noqa: E402
+    DEFAULT_MANIFEST,
     DEFAULT_OUTPUT,
-    DEFAULT_RESULT,
     load_selected_model,
 )
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--result", type=Path, default=DEFAULT_RESULT)
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--device", default="cuda")
     parser.add_argument(
@@ -39,7 +39,7 @@ def main() -> None:
     args = parse_args()
     device = torch.device(args.device)
     corpus = load_development_corpus(cache_root=args.output_root / "cache")
-    model, selected = load_selected_model(args.result, device)
+    model, selected = load_selected_model(args.manifest, device)
     torch.use_deterministic_algorithms(True)
     model.eval()
     with torch.inference_mode():
@@ -97,7 +97,8 @@ def main() -> None:
         "format": "spider-v0.8-sre-public-demo-v1",
         "diagnostic_only": True,
         "aggregate_metric": None,
-        "selected_checkpoint_sha256": selected["selected_checkpoint_sha256"],
+        "selected_checkpoint_sha256": selected["checkpoint_sha256"],
+        "portable_weights_sha256": selected["portable_weights_sha256"],
         "sealed_access_count": 0,
         "cases": cases,
     }

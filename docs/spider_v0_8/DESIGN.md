@@ -17,7 +17,24 @@ small scorer projects query and memory rows into a canonical space, combines
 row-level similarity, graph-neighbour state, and runtime-visible numeric
 features, and emits a relevance energy plus a per-case NULL energy.
 
-Training-only relevance alignment creates multi-positive contrastive targets.
-Candidate IDs and labels are never inference inputs. The comparison isolates
-this alignment loss against an otherwise identical packed scorer and a frozen
-semantic baseline.
+The candidate scorer is a position-free set Transformer over independently
+fused candidate states. Its direct canonical similarity residual and learned
+NULL energy make set selection calibration-free. Training uses graph-balanced
+BCE, multi-positive listwise mass, and hard-negative ranking. T2 alone adds an
+explicit multi-positive canonical-alignment loss; T1 has the same architecture
+without that extra objective.
+
+Candidate IDs and labels are never inference inputs. Candidate IDs are used
+only as stable audit tie-breakers after scoring. Runtime validation rejects
+supervisor fields, and model execution receives only query/incoming text
+embeddings, memory text embeddings, runtime-visible attributes, relationship
+edges, and controller-independent packed mappings.
+
+The frozen comparison is intentionally small:
+
+- T0: frozen MiniLM similarity and registered active/supersession controls;
+- T1: packed canonical scorer without explicit alignment loss;
+- T2: T1 plus the explicit multi-positive alignment loss.
+
+The three learned arms share all parameters, data, optimization, and checkpoint
+selection rules. No post-screen architecture edits were allowed.

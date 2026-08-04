@@ -209,6 +209,7 @@
   ],
   "diagnostic_only": true,
   "format": "spider-v0.8-sre-public-demo-v1",
+  "portable_weights_sha256": "76a0592b9d7644a4bb71cd1d292648332a86cf5052c9e314d7fcb569f9a111ea",
   "sealed_access_count": 0,
   "selected_checkpoint_sha256": "657dc420c7d5aa452c42a76de67d0cd511e9018f201eeb503b889a0c82cad9c3"
 }

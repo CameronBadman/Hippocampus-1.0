@@ -4,6 +4,8 @@
   "checkpoint_sha256": "657dc420c7d5aa452c42a76de67d0cd511e9018f201eeb503b889a0c82cad9c3",
   "config": "configs/spider_v0_8/T1.json",
   "format": "spider-v0.8-selected-checkpoint-manifest-v1",
+  "portable_weights_path": "artifacts/spider_v0_8/selected_model.safetensors",
+  "portable_weights_sha256": "76a0592b9d7644a4bb71cd1d292648332a86cf5052c9e314d7fcb569f9a111ea",
   "reason": "Highest model-selection score with the registered earlier-checkpoint tie-break",
   "sealed_access_count": 0,
   "seed": 1701,

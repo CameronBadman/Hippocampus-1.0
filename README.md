@@ -438,3 +438,26 @@ See the [v0.6 final report](docs/spider_v0_6/FINAL_REPORT.md), [training
 notes](docs/spider_v0_6/TRAINING.md), [dataset card](docs/spider_v0_6/DATASET_CARD.md),
 and [design](docs/spider_v0_6/DESIGN.md). Machine-readable results are under
 `artifacts/spider_v0_6/local_rtx5070ti/`.
+
+## Spider v0.8 SRE retrieval demo
+
+Prepare the frozen MiniLM cache, reproduce the registered local campaign, or
+run the selected terminal demo:
+
+```bash
+uv sync --extra test --extra sre
+.venv/bin/python scripts/prepare_spider_v0_8_sre.py --device cuda
+.venv/bin/python scripts/run_spider_v0_8_autoresearch.py --stage all
+.venv/bin/python scripts/demo_spider_v0_8_sre.py
+```
+
+The completed three-seed T1 retriever achieved 1.000 MRR, Recall@8, macro AP,
+and hard-negative pairwise accuracy on the 100-case scenario-family-OOD
+development evaluation. Mean exact-set accuracy was 0.9833 at 0.9907 precision
+and 1.0000 recall. The explicit T2 alignment loss did not improve T1. All
+inputs are synthetic and the SRE sealed test remains unopened.
+
+See the [v0.8 final report](docs/spider_v0_8/FINAL_REPORT.md), [training and
+reproduction guide](docs/spider_v0_8/TRAINING.md), [dataset
+card](docs/spider_v0_8/DATASET_CARD.md), and [design](docs/spider_v0_8/DESIGN.md).
+The machine ledger is under `artifacts/spider_v0_8/local_rtx5070ti/`.

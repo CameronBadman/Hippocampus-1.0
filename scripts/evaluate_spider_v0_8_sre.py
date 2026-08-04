@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import sys
 
 import torch
+from safetensors.torch import load_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,12 +26,12 @@ from hippocampus.sre import (  # noqa: E402
 
 
 DEFAULT_OUTPUT = ROOT / "artifacts/spider_v0_8/local_rtx5070ti"
-DEFAULT_RESULT = DEFAULT_OUTPUT / "runs/V08S-T1-s1701/result.json"
+DEFAULT_MANIFEST = ROOT / "artifacts/spider_v0_8/SELECTED_CHECKPOINT.json"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--result", type=Path, default=DEFAULT_RESULT)
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument(
         "--partition",
         choices=("selection", "evaluation"),
@@ -40,21 +42,27 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_selected_model(result_path: Path, device: torch.device):
-    result = json.loads(result_path.read_text())
-    if result["sealed_access_count"] != 0:
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_selected_model(manifest_path: Path, device: torch.device):
+    manifest = json.loads(manifest_path.read_text())
+    if manifest["sealed_access_count"] != 0:
         raise RuntimeError("refusing a checkpoint associated with sealed access")
-    config = json.loads((ROOT / "configs/spider_v0_8/T1.json").read_text())
-    if result["arm"] != config["arm"]:
+    config = json.loads((ROOT / manifest["config"]).read_text())
+    if manifest["arm"] != config["arm"]:
         raise ValueError("result and selected model configuration disagree")
+    weights_path = ROOT / manifest["portable_weights_path"]
+    if _sha256(weights_path) != manifest["portable_weights_sha256"]:
+        raise RuntimeError("portable selected weights hash disagrees")
     model = PackedSRECanonicalRetriever(SREModelConfig(**config["model"])).to(device)
-    checkpoint = torch.load(
-        result["selected_checkpoint"],
-        map_location=device,
-        weights_only=True,
-    )
-    model.load_state_dict(checkpoint["model"])
-    return model, result
+    model.load_state_dict(load_file(weights_path, device=str(device)))
+    return model, manifest
 
 
 def main() -> None:
@@ -62,7 +70,7 @@ def main() -> None:
     device = torch.device(args.device)
     corpus = load_development_corpus(cache_root=args.output_root / "cache")
     partition = getattr(corpus, args.partition)
-    model, result = load_selected_model(args.result, device)
+    model, manifest = load_selected_model(args.manifest, device)
     torch.use_deterministic_algorithms(True)
     metrics, _, _ = evaluate_model(
         model,
@@ -76,14 +84,15 @@ def main() -> None:
         partition,
         vocabulary=corpus.vocabulary,
         device=device,
-        seed=int(result["seed"]),
+        seed=int(manifest["seed"]),
     )
     print(
         json.dumps(
             {
                 "format": "spider-v0.8-sre-evaluation-v1",
                 "partition": args.partition,
-                "checkpoint_sha256": result["selected_checkpoint_sha256"],
+                "checkpoint_sha256": manifest["checkpoint_sha256"],
+                "portable_weights_sha256": manifest["portable_weights_sha256"],
                 "metrics": metrics,
                 "row_permutation": invariance,
                 "sealed_access_count": 0,

@@ -11,6 +11,12 @@ rendered text while deterministic state machines supplied labels.
 | Development evaluation | 100 | One evaluation after selection |
 | Public demo | 3 | Qualitative terminal demo only |
 
+The 1,600 training cases contain twelve incident scenario families. The
+development partitions contain three different scenario families—clock skew,
+regional failover, and secret rotation—so evaluation is scenario-family and
+entity-lineage OOD under the same deterministic generator and text-rendering
+pipeline. Related observations never cross partitions.
+
 Each case has 64 candidate memories and 10–13 graph relationships. Required
 evidence cardinality ranges from zero through four. Candidate pools include
 query echoes, answer-shaped text, stale ownership, rolled-back deployments,
@@ -21,3 +27,7 @@ The upstream SRE sealed test is explicitly excluded. Dataset loaders and
 campaign commands reject `test.inputs.jsonl` and `test.labels.jsonl`. No v0.8
 claim may be interpreted as real-world SRE reliability or production
 validation.
+
+Frozen hashes and the exact model-selection/evaluation partition IDs are in
+[`SOURCE_MANIFEST.json`](../../artifacts/spider_v0_8/SOURCE_MANIFEST.json) and
+[`SPLIT_MANIFEST.json`](../../artifacts/spider_v0_8/SPLIT_MANIFEST.json).
