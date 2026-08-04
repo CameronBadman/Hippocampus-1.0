@@ -44,6 +44,8 @@ class SpiderLossConfig:
     evidence_null_hard_negative_count: int = 4
     evidence_cardinality: float = 0.0
     evidence_candidate_count: float = 0.0
+    binding_alignment: float = 0.0
+    binding_temperature: float = 0.07
 
     def __post_init__(self) -> None:
         for field in fields(self):
@@ -56,6 +58,8 @@ class SpiderLossConfig:
             raise ValueError(
                 "evidence_null_mode must be plain or graph_balanced"
             )
+        if self.binding_temperature <= 0:
+            raise ValueError("binding_temperature must be positive")
         if (
             self.evidence_null_margin > 0
             and self.evidence_null_hard_negative_count <= 0

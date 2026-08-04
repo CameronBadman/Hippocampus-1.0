@@ -25,6 +25,16 @@ class RenderedCase:
     summaries: tuple[torch.Tensor, ...]
     contexts: tuple[torch.Tensor, ...]
     edges: tuple[torch.Tensor, ...]
+    query_row_symbols: tuple[tuple[str, ...], ...] = ()
+    summary_row_symbols: tuple[
+        tuple[tuple[str, ...], ...], ...
+    ] = ()
+    context_row_symbols: tuple[
+        tuple[tuple[str, ...], ...], ...
+    ] = ()
+    edge_row_symbols: tuple[
+        tuple[tuple[str, ...], ...], ...
+    ] = ()
 
     @property
     def query_dim(self) -> int:
@@ -269,6 +279,24 @@ class SyntheticManifoldRenderer:
         permutation_seed: int,
         owner: int,
     ) -> torch.Tensor:
+        rows, _ = self._render_rows_with_symbols(
+            atoms,
+            family=family,
+            width=width,
+            permutation_seed=permutation_seed,
+            owner=owner,
+        )
+        return rows
+
+    def _render_rows_with_symbols(
+        self,
+        atoms: tuple[ObservableAtom, ...],
+        *,
+        family: str,
+        width: int,
+        permutation_seed: int,
+        owner: int,
+    ) -> tuple[torch.Tensor, tuple[tuple[str, ...], ...]]:
         if atoms:
             rows = torch.stack(
                 [
@@ -278,6 +306,7 @@ class SyntheticManifoldRenderer:
             )
         else:
             rows = torch.empty((0, width), dtype=self.dtype)
+        order = torch.arange(rows.shape[0])
         if rows.shape[0] > 1:
             generator = torch.Generator(device="cpu")
             generator.manual_seed(
@@ -288,8 +317,10 @@ class SyntheticManifoldRenderer:
                     owner,
                 )
             )
-            rows = rows[torch.randperm(rows.shape[0], generator=generator)]
-        return rows.contiguous()
+            order = torch.randperm(rows.shape[0], generator=generator)
+            rows = rows[order]
+        symbols = tuple(atoms[int(index)].symbols for index in order.tolist())
+        return rows.contiguous(), symbols
 
     def render(
         self,
@@ -297,15 +328,15 @@ class SyntheticManifoldRenderer:
         *,
         row_permutation_seed: int = 0,
     ) -> RenderedCase:
-        query = self._render_rows(
+        query, query_symbols = self._render_rows_with_symbols(
             case.query_atoms,
             family="query",
             width=self.query_dim,
             permutation_seed=row_permutation_seed,
             owner=0,
         )
-        summaries = tuple(
-            self._render_rows(
+        rendered_summaries = tuple(
+            self._render_rows_with_symbols(
                 node.summary_atoms,
                 family="summary",
                 width=self.schema.summary_dim,
@@ -314,8 +345,8 @@ class SyntheticManifoldRenderer:
             )
             for node_id, node in enumerate(case.nodes)
         )
-        contexts = tuple(
-            self._render_rows(
+        rendered_contexts = tuple(
+            self._render_rows_with_symbols(
                 node.context_atoms,
                 family="context",
                 width=self.schema.context_dim,
@@ -324,8 +355,8 @@ class SyntheticManifoldRenderer:
             )
             for node_id, node in enumerate(case.nodes)
         )
-        edges = tuple(
-            self._render_rows(
+        rendered_edges = tuple(
+            self._render_rows_with_symbols(
                 edge.atoms,
                 family="edge",
                 width=self.schema.edge_dim,
@@ -334,10 +365,23 @@ class SyntheticManifoldRenderer:
             )
             for edge_id, edge in enumerate(case.edges)
         )
+        summaries = tuple(rows for rows, _ in rendered_summaries)
+        contexts = tuple(rows for rows, _ in rendered_contexts)
+        edges = tuple(rows for rows, _ in rendered_edges)
         return RenderedCase(
             case_id=case.case_id,
             query=query,
             summaries=summaries,
             contexts=contexts,
             edges=edges,
+            query_row_symbols=query_symbols,
+            summary_row_symbols=tuple(
+                symbols for _, symbols in rendered_summaries
+            ),
+            context_row_symbols=tuple(
+                symbols for _, symbols in rendered_contexts
+            ),
+            edge_row_symbols=tuple(
+                symbols for _, symbols in rendered_edges
+            ),
         )

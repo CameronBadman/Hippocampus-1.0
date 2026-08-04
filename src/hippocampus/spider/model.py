@@ -15,6 +15,7 @@ from .config import SpiderModelConfig
 from .context_refiner import ContextRefiner
 from .evidence import EvidenceUpdater
 from .evidence_readout import (
+    CanonicalBindingEvidenceReadout,
     DedicatedPooledEvidenceReadout,
     PairwiseEvidenceReadout,
     SlotAwareEvidenceReadout,
@@ -82,8 +83,13 @@ class CandidateScorerBase(nn.Module, ABC):
                 config.control_width,
                 config.dropout,
             )
-        else:
+        elif config.evidence_readout == "pairwise_matcher":
             self.evidence_readout = PairwiseEvidenceReadout(
+                config.d_model,
+                config.control_width,
+            )
+        else:
+            self.evidence_readout = CanonicalBindingEvidenceReadout(
                 config.d_model,
                 config.control_width,
             )
@@ -386,6 +392,26 @@ class CandidateScorerBase(nn.Module, ABC):
                 evidence_logits=self.evidence_readout(path_state, context),
             )
         return replace(outputs, readout_context=context)
+
+    def binding_alignment_loss(
+        self,
+        batch: PackedProgramBatch,
+        *,
+        temperature: float,
+    ) -> tuple[torch.Tensor, int]:
+        readout = self.evidence_readout
+        targets = batch.binding_targets
+        if not isinstance(readout, CanonicalBindingEvidenceReadout):
+            return self.path_seed.sum() * 0.0, 0
+        if targets is None or targets.pair_count == 0:
+            return self.path_seed.sum() * 0.0, 0
+        return readout.alignment_loss(
+            self.query_projection(batch.query.values),
+            self.summary_projection(batch.graph.summaries.values),
+            self.edge_projection(batch.graph.edges.values),
+            targets,
+            temperature=temperature,
+        )
 
     def refine_with_context(
         self,

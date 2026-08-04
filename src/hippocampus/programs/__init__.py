@@ -22,6 +22,7 @@ from .aligned_splits import (
     observable_symbols,
 )
 from .batching import (
+    BindingTargets,
     FreshRenderedBatchSource,
     PackedProgramBatch,
     pack_rendered_cases,
@@ -88,6 +89,7 @@ from .stress import (
 __all__ = [
     "AlignedDevSplitManifest",
     "AlignedDevSplitSpec",
+    "BindingTargets",
     "CandidateTarget",
     "CounterfactualKind",
     "GeneratorConfig",

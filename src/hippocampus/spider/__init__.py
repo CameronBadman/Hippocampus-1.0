@@ -68,7 +68,10 @@ from .evidence_decoding import (
     audit_frozen_evidence_policies,
     evidence_pipeline_case_report_from_dict,
 )
-from .evidence_readout import PairwiseEvidenceReadout
+from .evidence_readout import (
+    CanonicalBindingEvidenceReadout,
+    PairwiseEvidenceReadout,
+)
 from .evidence_selector import (
     CandidateEvidenceNullDecoder,
     CandidateEvidenceSetDecoder,
@@ -157,6 +160,7 @@ __all__ = [
     "CandidateOutputs",
     "CandidateEvidenceSetDecoder",
     "CandidateEvidenceNullDecoder",
+    "CanonicalBindingEvidenceReadout",
     "CandidateScorerBase",
     "CandidateSupervision",
     "ClosedLoopEvaluationReport",

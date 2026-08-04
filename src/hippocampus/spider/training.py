@@ -715,6 +715,21 @@ def controller_rollout(
             break
 
     report = _aggregate_reports(reports, reference=model.path_seed)
+    if config.binding_alignment > 0:
+        raw_alignment, alignment_count = model.binding_alignment_loss(
+            batch,
+            temperature=config.binding_temperature,
+        )
+        report = SpiderLossReport(
+            terms={
+                **report.terms,
+                "binding_alignment": LossTerm(
+                    raw=raw_alignment,
+                    weighted=raw_alignment * config.binding_alignment,
+                    target_count=alignment_count,
+                ),
+            }
+        )
     return OracleRollout(
         loss=report.total,
         report=report,

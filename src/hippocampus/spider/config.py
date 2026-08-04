@@ -20,6 +20,7 @@ EvidenceReadoutMode = Literal[
     "dedicated_pooled",
     "slot_aware",
     "pairwise_matcher",
+    "canonical_binding",
 ]
 
 
@@ -90,10 +91,11 @@ class SpiderModelConfig:
             "dedicated_pooled",
             "slot_aware",
             "pairwise_matcher",
+            "canonical_binding",
         }:
             raise ValueError(
                 "evidence_readout must be shared, dedicated_pooled, "
-                "slot_aware, or pairwise_matcher"
+                "slot_aware, pairwise_matcher, or canonical_binding"
             )
 
 

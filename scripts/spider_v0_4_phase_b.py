@@ -22,10 +22,12 @@ from hippocampus.programs import (
     default_aligned_evidence_specs,
     default_score_decode_specs,
     default_zero_shot_specs,
+    default_binding_specs,
     generate_aligned_dev_cases,
     generate_aligned_evidence_cases,
     generate_score_decode_cases,
     generate_zero_shot_cases,
+    generate_binding_cases,
     pack_rendered_cases,
 )
 from hippocampus.spider import (
@@ -81,6 +83,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--training-source-commit")
     parser.add_argument("--elapsed-before-seconds", type=float)
+    parser.add_argument("--initial-checkpoint", type=Path)
+    parser.add_argument(
+        "--trainable-scope",
+        choices=("all", "evidence"),
+        default="all",
+    )
     return parser.parse_args()
 
 
@@ -135,6 +143,63 @@ def _load_model_checkpoint(experiment, checkpoint: Path):
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
     model.load_state_dict(payload["model"], strict=True)
     return model, payload
+
+
+def _initialize_backbone(model, checkpoint: Path) -> dict[str, object]:
+    """Load compatible historical weights while resetting evidence-local state."""
+
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    source = payload["model"]
+    target = model.state_dict()
+    reset_prefixes = (
+        "evidence_readout.",
+        "candidate_evidence_null_decoder.",
+    )
+    compatible = {
+        name: value
+        for name, value in source.items()
+        if name in target
+        and target[name].shape == value.shape
+        and not name.startswith(reset_prefixes)
+    }
+    model.load_state_dict(compatible, strict=False)
+    return {
+        "checkpoint": str(checkpoint),
+        "checkpoint_sha256": _sha256(checkpoint),
+        "source_step": int(payload["step"]),
+        "loaded_tensor_count": len(compatible),
+        "reset_prefixes": reset_prefixes,
+    }
+
+
+def _configure_trainable_scope(model, scope: str) -> tuple[str, ...]:
+    if scope == "all":
+        for parameter in model.parameters():
+            parameter.requires_grad_(True)
+    elif scope == "evidence":
+        for parameter in model.parameters():
+            parameter.requires_grad_(False)
+        modules = (
+            model.evidence_readout,
+            model.candidate_evidence_null_decoder,
+        )
+        if any(module is None for module in modules):
+            raise ValueError(
+                "evidence scope requires a dedicated readout and candidate NULL"
+            )
+        for module in modules:
+            assert module is not None
+            for parameter in module.parameters():
+                parameter.requires_grad_(True)
+    else:
+        raise ValueError(f"unsupported trainable scope {scope!r}")
+    names = tuple(
+        name for name, parameter in model.named_parameters()
+        if parameter.requires_grad
+    )
+    if not names:
+        raise RuntimeError("training scope selected no parameters")
+    return names
 
 
 def _selection_key(report: dict[str, Any], step: int) -> tuple[float, ...]:
@@ -214,6 +279,7 @@ def main() -> None:
         "spider-v0.4-set-decoding",
         "spider-v0.5-score-decode",
         "spider-v0.6-zero-shot",
+        "spider-v0.7-binding",
     }:
         raise ValueError("config does not name a registered evidence protocol")
     manifest_path = ROOT / experiment.raw["dataset"]["manifest"]
@@ -224,10 +290,10 @@ def main() -> None:
     if manifest["sealed_access_count"] != 0:
         raise RuntimeError("development manifest records sealed access")
     if (
-        protocol == "spider-v0.6-zero-shot"
+        protocol in {"spider-v0.6-zero-shot", "spider-v0.7-binding"}
         and bool(experiment.raw["dataset"].get("fit_operating_policy", True))
     ):
-        raise ValueError("v0.6 forbids fitting an operating policy")
+        raise ValueError("zero-shot protocols forbid fitting an operating policy")
     if experiment.device.type != "cuda" or not torch.cuda.is_available():
         raise RuntimeError("registered evidence runs require the local CUDA GPU")
     training_config = replace(
@@ -290,6 +356,9 @@ def main() -> None:
     elif dataset_version == "spider-programs-v0.6-zero-shot-dev":
         specs = {spec.name: spec for spec in default_zero_shot_specs()}
         generate_cases = generate_zero_shot_cases
+    elif dataset_version == "spider-programs-v0.7-binding-dev":
+        specs = {spec.name: spec for spec in default_binding_specs()}
+        generate_cases = generate_binding_cases
     else:
         raise ValueError("unsupported evidence development dataset version")
     train_cases = generate_cases(
@@ -318,6 +387,8 @@ def main() -> None:
     )
     checkpoint_records: list[dict[str, object]] = []
     training_payload: dict[str, object] | None = None
+    initialization_payload: dict[str, object] | None = None
+    trainable_names: tuple[str, ...] = ()
     historical_template = experiment.raw.get("historical_checkpoint_template")
     if args.resume_evaluation:
         training_path = args.output_dir / "training.json"
@@ -382,6 +453,15 @@ def main() -> None:
                 raise FileNotFoundError(checkpoint_paths[0])
         else:
             model = build_model(experiment)
+            if args.initial_checkpoint is not None:
+                initialization_payload = _initialize_backbone(
+                    model,
+                    args.initial_checkpoint,
+                )
+            trainable_names = _configure_trainable_scope(
+                model,
+                args.trainable_scope,
+            )
             train_source = FreshRenderedBatchSource(
                 train_cases,
                 renderer=renderer,
@@ -420,6 +500,9 @@ def main() -> None:
                     train_source.presentation_counts
                 ),
                 "history": [asdict(record) for record in training.records],
+                "initialization": initialization_payload,
+                "trainable_scope": args.trainable_scope,
+                "trainable_parameter_names": trainable_names,
             }
             _write_json(args.output_dir / "training.json", training_payload)
             checkpoint_paths = []
@@ -614,6 +697,10 @@ def main() -> None:
         "resolved_seed": args.seed,
         "renderer": renderer_data,
         "parameter_count": parameter_count(model),
+        "trainable_scope": args.trainable_scope,
+        "initial_checkpoint": (
+            None if args.initial_checkpoint is None else str(args.initial_checkpoint)
+        ),
         "planned_steps": training_config.steps,
         "completed_steps": stop_after_steps,
         "selected_step": int(selected_record["step"]),

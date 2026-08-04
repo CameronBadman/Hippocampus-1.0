@@ -16,10 +16,39 @@ from .schema import GraphProgramCase
 
 
 @dataclass(frozen=True, slots=True)
+class BindingTargets:
+    """Supervisor-only flat row pairs sharing an observable symbol."""
+
+    query_summary_pairs: torch.Tensor
+    query_edge_pairs: torch.Tensor
+
+    def __post_init__(self) -> None:
+        for name in ("query_summary_pairs", "query_edge_pairs"):
+            value = getattr(self, name)
+            if value.dtype is not torch.int64:
+                raise TypeError(f"{name} must use int64 indices")
+            if value.ndim != 2 or value.shape[1] != 2:
+                raise ValueError(f"{name} must have shape [pair_count, 2]")
+
+    @property
+    def pair_count(self) -> int:
+        return int(
+            self.query_summary_pairs.shape[0]
+            + self.query_edge_pairs.shape[0]
+        )
+
+    @classmethod
+    def empty(cls, device: torch.device | str) -> "BindingTargets":
+        empty = torch.empty((0, 2), dtype=torch.int64, device=device)
+        return cls(empty, empty.clone())
+
+
+@dataclass(frozen=True, slots=True)
 class PackedProgramBatch:
     graph: PackedGraph
     query: PackedManifoldFamily
     cases: tuple[GraphProgramCase, ...]
+    binding_targets: BindingTargets | None = None
 
     @property
     def device(self) -> torch.device:
@@ -217,8 +246,79 @@ def pack_rendered_cases(
         family_name="query",
         validate=validate,
     )
+    binding_targets = _binding_targets(rendered, device=graph.device)
     return PackedProgramBatch(
         graph=graph,
         query=query,
         cases=tuple(cases),
+        binding_targets=binding_targets,
+    )
+
+
+def _binding_targets(
+    rendered: Sequence[RenderedCase],
+    *,
+    device: torch.device,
+) -> BindingTargets:
+    query_summary: list[tuple[int, int]] = []
+    query_edge: list[tuple[int, int]] = []
+    query_offset = 0
+    summary_offset = 0
+    edge_offset = 0
+    for case in rendered:
+        has_provenance = bool(
+            case.query_row_symbols
+            or case.summary_row_symbols
+            or case.edge_row_symbols
+        )
+        if has_provenance:
+            if len(case.query_row_symbols) != case.query.shape[0]:
+                raise ValueError("query row provenance does not align")
+            if len(case.summary_row_symbols) != len(case.summaries):
+                raise ValueError("summary row provenance does not align")
+            if len(case.edge_row_symbols) != len(case.edges):
+                raise ValueError("edge row provenance does not align")
+            summary_symbols = tuple(
+                symbols
+                for owner_symbols in case.summary_row_symbols
+                for symbols in owner_symbols
+            )
+            edge_symbols = tuple(
+                symbols
+                for owner_symbols in case.edge_row_symbols
+                for symbols in owner_symbols
+            )
+            if len(summary_symbols) != sum(
+                rows.shape[0] for rows in case.summaries
+            ):
+                raise ValueError("summary provenance row count does not align")
+            if len(edge_symbols) != sum(rows.shape[0] for rows in case.edges):
+                raise ValueError("edge provenance row count does not align")
+            for query_row, query_values in enumerate(case.query_row_symbols):
+                query_set = set(query_values)
+                if not query_set:
+                    continue
+                query_id = query_offset + query_row
+                query_summary.extend(
+                    (query_id, summary_offset + row)
+                    for row, values in enumerate(summary_symbols)
+                    if query_set.intersection(values)
+                )
+                query_edge.extend(
+                    (query_id, edge_offset + row)
+                    for row, values in enumerate(edge_symbols)
+                    if query_set.intersection(values)
+                )
+        query_offset += case.query.shape[0]
+        summary_offset += sum(rows.shape[0] for rows in case.summaries)
+        edge_offset += sum(rows.shape[0] for rows in case.edges)
+
+    def tensor(values: list[tuple[int, int]]) -> torch.Tensor:
+        if not values:
+            return torch.empty((0, 2), dtype=torch.int64, device=device)
+        return torch.tensor(values, dtype=torch.int64, device=device)
+
+    return BindingTargets(
+        query_summary_pairs=tensor(query_summary),
+        query_edge_pairs=tensor(query_edge),
     )
