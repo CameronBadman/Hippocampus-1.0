@@ -81,7 +81,8 @@ the ledger and reverted before the next hypothesis.
 | 1 | Re-run the global learned NULL without calibration. | control | 0.7600 | Three seeds; exact 0.7809, precision 0.9322, recall 0.7600. Lookup recall was zero. |
 | 2 | Condition NULL on the current candidate set. | rejected | 0.7608 | Exact set improved by 0.0101, but recall improved by only 0.0008 and the arm won one of three seeds. |
 | 3 | Balance relative-energy BCE within each graph state. | kept parent | 0.7998 | Won two seeds and raised recall to 0.8021, but precision fell to 0.8722 and lookup recall stayed at 0.0026. |
+| 4 | Add a bounded plausible-hard-negative margin around NULL. | rejected | 0.7937 | Lookup recall rose to 0.0833, but reachability, macro AP, and aggregate score regressed from iteration 3. |
 
-Iteration 4 is therefore the final pre-registered bounded hard-negative margin
-around NULL, layered on the graph-balanced objective. The architecture, data,
-raw zero-margin inference rule, and all non-evidence losses remain fixed.
+The four-iteration budget is exhausted. No candidate met the 0.82 target. Z0
+remains the accepted control; Z2 is retained separately as the best observed
+experimental arm, not as an accepted finalist.

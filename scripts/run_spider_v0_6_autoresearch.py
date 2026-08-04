@@ -401,6 +401,24 @@ def _family_summary(
     }
 
 
+def _best_observed_arm(
+    summaries: dict[str, dict[str, float]],
+) -> str:
+    """Return the best measured arm without implying gate acceptance."""
+
+    return max(
+        ARMS,
+        key=lambda arm: (
+            summaries[arm]["score"],
+            summaries[arm]["exact_evidence_set_accuracy"],
+            summaries[arm]["macro_average_precision"],
+            -summaries[arm]["false_positives_per_case"],
+            -summaries[arm]["mean_absolute_cardinality_error"],
+            -summaries[arm]["mean_selected_step"],
+        ),
+    )
+
+
 def _load_all(
     output_root: Path,
 ) -> dict[tuple[str, int], dict[str, Any]]:
@@ -567,6 +585,7 @@ def _summarize(output_root: Path) -> dict[str, Any]:
         if successful
         else "Z0"
     )
+    best_observed = _best_observed_arm(summaries)
     payload = {
         "campaign": "Spider v0.6 zero-shot evidence energy",
         "source_commit": _source_commit(),
@@ -577,6 +596,7 @@ def _summarize(output_root: Path) -> dict[str, Any]:
         "per_family": per_family,
         "gate": {"candidates": candidate_gates},
         "selected_finalist": finalist,
+        "best_observed_arm": best_observed,
         "accepted_training_run_count": len(ARMS) * len(SEEDS),
         "temperature_fit_count": 0,
         "symbol_overlap_count": 0,
@@ -605,6 +625,7 @@ def _summarize(output_root: Path) -> dict[str, Any]:
         (
             "",
             f"Selected finalist: `{finalist}`.",
+            f"Best observed (not necessarily accepted): `{best_observed}`.",
             "",
             "No temperature, threshold, or cardinality policy was fitted.",
             "No sealed split was materialised or evaluated.",
@@ -638,6 +659,38 @@ def _summarize(output_root: Path) -> dict[str, Any]:
                         "selected_checkpoint_sha256"
                     ],
                     "source_commit": results[(finalist, seed)][
+                        "source_commit"
+                    ],
+                }
+                for seed in SEEDS
+            ],
+            "temperature_fit_count": 0,
+            "symbol_overlap_count": 0,
+            "sealed_access_count": 0,
+        },
+    )
+    _write(
+        output_root / "BEST_OBSERVED.json",
+        {
+            "selected_arm": best_observed,
+            "accepted_finalist": best_observed == finalist,
+            "selection_reason": (
+                "highest registered weakest-metric score with frozen "
+                "tie-breakers"
+            ),
+            "primary_metric": summaries[best_observed],
+            "target_score": TARGET_SCORE,
+            "dataset_hash": payload["dataset_hash"],
+            "checkpoints": [
+                {
+                    "seed": seed,
+                    "selected_step": results[(best_observed, seed)][
+                        "selected_step"
+                    ],
+                    "checkpoint_sha256": results[(best_observed, seed)][
+                        "selected_checkpoint_sha256"
+                    ],
+                    "source_commit": results[(best_observed, seed)][
                         "source_commit"
                     ],
                 }

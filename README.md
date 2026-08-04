@@ -414,3 +414,27 @@ reproduction notes](docs/spider_v0_5/TRAINING.md), [dataset
 card](docs/spider_v0_5/DATASET_CARD.md), and [frozen
 design](docs/spider_v0_5/DESIGN.md). The machine-readable ledger and aggregate
 are under `artifacts/spider_v0_5/local_rtx5070ti/`.
+
+## Spider v0.6 zero-shot evidence selection
+
+Run or resume one calibration-free arm/seed, then regenerate the completed
+aggregate:
+
+```bash
+.venv/bin/python scripts/run_spider_v0_6_autoresearch.py \
+  --phase run --arm Z2 --seed 1701
+.venv/bin/python scripts/run_spider_v0_6_autoresearch.py --phase summarize
+```
+
+The completed twelve-run campaign used completely disjoint observable symbol
+namespaces and never fitted an inference-time temperature, threshold, or
+cardinality policy. Graph-balanced candidate-vs-NULL training raised recall
+but missed the precision and 0.82 score gates; a bounded hard-negative margin
+did not improve the best aggregate. Z0 remains the accepted control, while Z2
+is preserved separately as the best unaccepted diagnostic arm. No sealed data
+or A100 replication was used.
+
+See the [v0.6 final report](docs/spider_v0_6/FINAL_REPORT.md), [training
+notes](docs/spider_v0_6/TRAINING.md), [dataset card](docs/spider_v0_6/DATASET_CARD.md),
+and [design](docs/spider_v0_6/DESIGN.md). Machine-readable results are under
+`artifacts/spider_v0_6/local_rtx5070ti/`.

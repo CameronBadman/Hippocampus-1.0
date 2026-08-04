@@ -65,3 +65,25 @@ Retain graph-balanced BCE and add a modest loss that places required positives
 above NULL and only the highest-scoring structurally plausible negatives below
 NULL. Bound the negative set per graph so easy-negative count cannot dominate.
 This is the final registered iteration and does not change inference.
+
+## Iteration 4 result — bounded hard-negative NULL margin
+
+- Date: 2026-08-04 Australia/Brisbane.
+- Source: `992d98a8f2c057713041faf394d31f9355bde0e1`.
+- Runs: `V06-Z3-s1701`, `V06-Z3-s1802`, and `V06-Z3-s1903`.
+- Mean score: 0.7937 (exact 0.7982, precision 0.8906, recall 0.7937,
+  scored-positive coverage 0.9988, macro AP 0.9269).
+- Lookup recall increased from 0.0026 in Z2 to 0.0833, but lookup precision
+  was 0.2874 and reachability recall fell from 0.7161 to 0.5833.
+- Decision: reject. Z3 regressed 0.0061 from Z2 and did not pass the target or
+  precision constraint. The four-iteration budget is exhausted.
+
+## Campaign conclusion
+
+The best measured zero-shot selector was Z2 at score 0.7998, but it is not an
+accepted finalist because precision was 0.8722 and the target was 0.82. Z0
+remains the accepted control. Candidate coverage was effectively complete and
+all arms retained deterministic replay and row-permutation invariance. The
+remaining lookup failure is a scorer/representation-readout problem rather
+than candidate enumeration, and further NULL-loss tuning is not justified by
+this campaign.

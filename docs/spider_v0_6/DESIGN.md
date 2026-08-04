@@ -54,3 +54,16 @@ The pooled recurrent processor, aligned orthogonal renderer, dimensions,
 controller, fixed horizon, optimizer, and graph substrate are unchanged. The
 campaign does not test a larger Spider, learned stopping, natural-language
 writers, or sealed evaluation.
+
+## Registered training variants
+
+- Z0: the historical global learned NULL, with no post-training calibration.
+- Z1: candidate-conditioned NULL with candidate-weighted relative BCE.
+- Z2: Z1 with positive and negative relative losses balanced within each
+  graph state.
+- Z3: Z2 plus a weight-0.25, margin-0.2 loss over all positives and at most
+  four highest-scoring structurally plausible negatives per graph.
+
+Only Z1 changes the selector architecture. Z2 and Z3 change training losses;
+all four use the same immutable zero-margin inference rule. The completed
+results are in [FINAL_REPORT.md](FINAL_REPORT.md).

@@ -448,6 +448,30 @@ def test_v0_6_score_is_limited_by_the_weakest_required_metric() -> None:
     assert module._score(row) == 0.0
 
 
+def test_v0_6_best_observed_is_distinct_from_an_accepted_finalist() -> None:
+    module = _autoresearch_module()
+    template = {
+        "exact_evidence_set_accuracy": 0.78,
+        "precision": 0.93,
+        "recall": 0.76,
+        "scored_positive_coverage": 1.0,
+        "macro_average_precision": 0.95,
+        "false_positives_per_case": 0.04,
+        "mean_absolute_cardinality_error": 0.24,
+        "mean_selected_step": 1500.0,
+        "score": 0.76,
+    }
+    summaries = {arm: dict(template) for arm in module.ARMS}
+    summaries["Z2"].update(
+        score=0.80,
+        exact_evidence_set_accuracy=0.80,
+        precision=0.87,
+        recall=0.80,
+    )
+
+    assert module._best_observed_arm(summaries) == "Z2"
+
+
 def test_v0_6_runner_rejects_fitted_temperature() -> None:
     module = _autoresearch_module()
     config = ROOT / "configs/spider_v0_6/Z1.json"
